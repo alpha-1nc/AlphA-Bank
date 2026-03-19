@@ -1,0 +1,10 @@
+{
+  "name": "alpha-bank-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix alpha-bank",
+    "build": "npm run build --prefix alpha-bank",
+    "start": "npm run start --prefix alpha-bank",
+    "lint": "npm run lint --prefix alpha-bank"
+  }
+}
