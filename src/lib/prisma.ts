@@ -1,10 +1,11 @@
+import path from "path";
 import { PrismaClient } from "@/generated/prisma";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 function createPrismaClient() {
   const url =
     process.env.DATABASE_URL ??
-    `file:/Volumes/AlphA DataLink/DL_Project/AlphA Bank/alpha-bank/prisma/dev.db`;
+    `file:${path.join(process.cwd(), "prisma", "dev.db")}`;
 
   const adapter = new PrismaLibSql({ url });
   return new PrismaClient({ adapter });
