@@ -641,8 +641,8 @@ function AssetBreakdownChart({
         </div>
         </div>
 
-        {/* Legend - clickable/hover sync */}
-        <div className="flex flex-wrap gap-x-6 gap-y-3 mt-5">
+        {/* Legend - 일정한 간격으로 칸 전체에 정렬, 공간 부족 시 줄바꿈 (스크롤바 없음) */}
+        <div className="flex flex-wrap gap-x-4 gap-y-3 md:gap-0 md:justify-between mt-5 md:pb-1 w-full min-w-0 overflow-hidden">
         {segments.map((seg) => {
           const colors = SEGMENT_COLORS[seg.type] ?? {
             bar: "bg-muted",
@@ -656,23 +656,21 @@ function AssetBreakdownChart({
             <button
               key={seg.type}
               type="button"
-              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 -mx-1 transition-all duration-200 text-left ${
+              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 -mx-1 transition-all duration-200 text-left shrink-0 whitespace-nowrap ${
                 isHovered ? "bg-muted/80 ring-1 ring-border" : "hover:bg-muted/50"
               }`}
               onMouseEnter={() => handleEnter(seg.type)}
+              title={`${seg.type}: ${formatKRW(seg.amount)} (${seg.percent.toFixed(1)}%)`}
             >
               <span
-                className={`inline-block w-3 h-3 rounded-full shrink-0 shadow-sm ${colors.dot} ${
+                className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${colors.dot} ${
                   isHovered ? "ring-2 ring-white ring-offset-2 ring-offset-background scale-110" : ""
                 }`}
               />
-              <Icon className={`h-3.5 w-3.5 shrink-0 ${meta.color}`} />
+              <Icon className={`h-3 w-3 shrink-0 ${meta.color}`} />
               <span className="font-medium text-foreground text-sm">{seg.type}</span>
               <span className={`font-bold tabular-nums ${meta.color}`}>
                 {seg.percent.toFixed(1)}%
-              </span>
-              <span className="text-muted-foreground text-xs tabular-nums hidden sm:inline">
-                {formatKRW(seg.amount)}
               </span>
             </button>
           );

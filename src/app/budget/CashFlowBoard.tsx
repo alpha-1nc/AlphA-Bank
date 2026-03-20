@@ -208,6 +208,28 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
               ))}
             </SelectContent>
           </Select>
+          {type === "SAVING" && (
+            <>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1 block mt-3">입금 계좌</label>
+              <Select value={accountId ?? ""} onValueChange={(v) => setAccountId(v || null)}>
+                <SelectTrigger className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100">
+                  <SelectValue placeholder="입금 계좌 선택">
+                    {(value: string | null) => {
+                      const acc = accounts.find((a) => a.id === value);
+                      return acc ? `${acc.name} (${acc.type})` : null;
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name} ({acc.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -235,25 +257,7 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
           </div>
         </div>
 
-        {type === "SAVING" && (
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">입금 계좌</label>
-            <Select value={accountId ?? ""} onValueChange={(v) => setAccountId(v || null)}>
-              <SelectTrigger className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl">
-                {accounts.map((acc) => (
-                  <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.type})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        <div className={type === "SAVING" ? "md:col-span-2" : ""}>
+        <div>
           <Button
             type="submit"
             disabled={isPending || !type || !title.trim() || !amount.trim()}
@@ -471,7 +475,12 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">입금 계좌</label>
                 <Select value={editAccountId ?? ""} onValueChange={(v) => setEditAccountId(v || null)}>
                   <SelectTrigger className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100">
-                    <SelectValue />
+                    <SelectValue placeholder="입금 계좌 선택">
+                      {(value: string | null) => {
+                        const acc = accounts.find((a) => a.id === value);
+                        return acc ? `${acc.name} (${acc.type})` : null;
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     {accounts.map((acc) => (
