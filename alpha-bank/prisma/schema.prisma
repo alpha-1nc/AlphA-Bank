@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Account {
+  id             String     @id @default(uuid())
+  name           String     // 계좌명
+  type           String     // 입출금, 금고, 저축, 증권, 연금
+  bankName       String?    // 은행/증권사 명
+  accountNumber  String?    // 계좌번호
+  description    String?    // 계좌 용도 설명
+  initialBalance Int        @default(0) // 초기 잔액
+  createdAt      DateTime   @default(now())
+  transactions   CashFlow[] // 연결된 예산/현금흐름
+}
+
+model MonthlyBudget {
+  id                String     @id @default(uuid())
+  month             String     @unique // "YYYY-MM" 포맷
+  personalAllowance Int        @default(0) // 전월 이월된 개인 용돈
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  transactions      CashFlow[]
+}
+
+model CashFlow {
+  id                     String                  @id @default(uuid())
+  type                   String                  // INCOME, EXPENSE_FIXED, EXPENSE_VAR, SAVING
+  title                  String                  // 내역
+  amount                 Int
+  isCompleted            Boolean                 @default(false) // 실제 집행 여부 (체크박스)
+  monthlyBudgetId        String
+  monthlyBudget          MonthlyBudget           @relation(fields: [monthlyBudgetId], references: [id], onDelete: Cascade)
+  accountId              String?                 // 자산과 연동될 경우 계좌 ID
+  account                Account?                @relation(fields: [accountId], references: [id])
+  createdAt              DateTime                @default(now())
+}
+
+model BucketList {
+  id            String   @id @default(uuid())
+  title         String
+  importance    Int      @default(3) // 중요도
+  targetAmount  Int
+  currentAmount Int      @default(0)
+  isAchieved    Boolean  @default(false) // 돈 목표 달성
+  isCompleted   Boolean  @default(false) // 실제 완료 (물건 구매/여행 완료 등)
+  imageUrl      String?  // 이미지 링크 저장
+  createdAt     DateTime @default(now())
+}
+
+model SystemSettings {
+  id              String   @id @default("global")
+  budgetStartDate Int      @default(1) // 예산 시작일 (1~31)
+  updatedAt       DateTime @updatedAt
+}

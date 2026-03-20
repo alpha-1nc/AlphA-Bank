@@ -1,0 +1,256 @@
+@import "tw-animate-css";
+
+@import "tailwindcss";
+@source "../**/*.{ts,tsx,js,jsx}";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  :root {
+    /* AlphA Bank Brand Colors
+     * Primary Blue:  #3498db → oklch(0.627 0.152 253.5)
+     * Primary Dark:  #217dbb → oklch(0.524 0.140 253.5)
+     * Primary Light: #5faee3 → oklch(0.700 0.130 253.5)
+     */
+    --background: oklch(0.972 0.008 253.5); /* #f4f7fe — dashboard canvas */
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+
+    /* Primary: AlphA Bank Blue #3498db */
+    --primary: oklch(0.627 0.152 253.5);
+    --primary-foreground: oklch(1 0 0);
+
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.945 0.035 253.5);
+    --accent-foreground: oklch(0.524 0.140 253.5);
+    --destructive: oklch(0.577 0.245 27.325);
+
+    /* Flat/minimal: thin borders */
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.627 0.152 253.5);
+
+    /* Chart hex colors (for Recharts) */
+    --chart-income: #3b82f6;
+    --chart-expense: #f87171;
+    --chart-saving: #34d399;
+    --chart-blue-1: #3b82f6;
+    --chart-blue-2: #60a5fa;
+    --chart-blue-3: #93c5fd;
+    --chart-indigo-1: #6366f1;
+    --chart-indigo-2: #a5b4fc;
+    --chart-slate-1: #94a3b8;
+    --chart-slate-2: #cbd5e1;
+
+    /* Chart oklch palette */
+    --chart-1: oklch(0.700 0.130 253.5);
+    --chart-2: oklch(0.627 0.152 253.5);
+    --chart-3: oklch(0.524 0.140 253.5);
+    --chart-4: oklch(0.450 0.120 253.5);
+    --chart-5: oklch(0.380 0.100 253.5);
+
+    --radius: 0.5rem;
+
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.627 0.152 253.5);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.945 0.035 253.5);
+    --sidebar-accent-foreground: oklch(0.524 0.140 253.5);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.627 0.152 253.5);
+    --logo-card-bg: oklch(1 0 0);
+  }
+
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.185 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.185 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+
+    /* Primary in dark mode: slightly lighter blue */
+    --primary: oklch(0.700 0.130 253.5);
+    --primary-foreground: oklch(0.100 0 0);
+
+    --secondary: oklch(0.240 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.240 0 0);
+    --muted-foreground: oklch(0.650 0 0);
+    --accent: oklch(0.220 0.040 253.5);
+    --accent-foreground: oklch(0.700 0.130 253.5);
+    --destructive: oklch(0.704 0.191 22.216);
+
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.700 0.130 253.5);
+
+    --chart-1: oklch(0.700 0.130 253.5);
+    --chart-2: oklch(0.627 0.152 253.5);
+    --chart-3: oklch(0.524 0.140 253.5);
+    --chart-4: oklch(0.450 0.120 253.5);
+    --chart-5: oklch(0.380 0.100 253.5);
+
+    /* Chart hex colors - brighter for dark mode */
+    --chart-income: #60a5fa;
+    --chart-expense: #fca5a5;
+    --chart-saving: #6ee7b7;
+    --chart-blue-1: #60a5fa;
+    --chart-blue-2: #93c5fd;
+    --chart-blue-3: #bfdbfe;
+    --chart-indigo-1: #818cf8;
+    --chart-indigo-2: #a5b4fc;
+    --chart-slate-1: #94a3b8;
+    --chart-slate-2: #cbd5e1;
+
+    --sidebar: oklch(0.185 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.700 0.130 253.5);
+    --sidebar-primary-foreground: oklch(0.100 0 0);
+    --sidebar-accent: oklch(0.220 0.040 253.5);
+    --sidebar-accent-foreground: oklch(0.700 0.130 253.5);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.700 0.130 253.5);
+    --logo-card-bg: oklch(0.22 0.02 250);
+  }
+
+  * {
+    border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-manrope), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Glassmorphism panel (reference: Google Stitch) */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .dark .glass-panel {
+    background: rgba(24, 24, 27, 0.75);
+  }
+
+  .glass-sidebar {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .dark .glass-sidebar {
+    background: rgba(24, 24, 27, 0.7);
+  }
+
+  .glass-header {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .dark .glass-header {
+    background: rgba(24, 24, 27, 0.75);
+  }
+
+  /* Logo fly overlay - premium transition */
+  --logo-card-bg: #ffffff;
+  .dark {
+    --logo-card-bg: #1e293b;
+  }
+  @keyframes logo-zoom-overshoot {
+    0% { transform: var(--logo-start) scale(var(--logo-start-scale)); }
+    70% { transform: translate(-50%, -50%) scale(1.08); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+  }
+  @keyframes logo-card-pop {
+    0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    60% { transform: translate(-50%, -50%) scale(1.06); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  @keyframes logo-card-fade-out {
+    to { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  }
+  @keyframes logo-full-fade-in {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  @keyframes logo-text-reveal {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+  @keyframes logo-overlay-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* 모바일 전용: 가로 스크롤 완전 차단, 상하 스크롤만 허용 */
+  @media (max-width: 767px) {
+    html,
+    body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+    main {
+      min-width: 0;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    [data-slot="dialog-content"],
+    [data-slot="sheet-content"] {
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+  }
+}
