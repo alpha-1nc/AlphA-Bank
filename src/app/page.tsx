@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
-import { AlertCircle, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import AssetDonutChart from "@/components/dashboard/AssetDonutChart";
 import CashFlowBarChart from "@/components/dashboard/CashFlowBarChart";
 import { PendingActionsChecklist } from "@/components/dashboard/PendingActionsChecklist";
+import PrimeBucketDashboardCard from "@/components/dashboard/PrimeBucketDashboardCard";
 
 export const dynamic = "force-dynamic";
 
@@ -131,14 +132,18 @@ export default async function DashboardPage() {
       (t) => t.type === "EXPENSE_FIXED" || t.type === "EXPENSE_VAR"
     );
 
-  // ── d) Prime bucket progress ───────────────────────────────────────────────
-  const bucketProgress =
-    primeBucket && primeBucket.targetAmount > 0
-      ? Math.min(
-          100,
-          (primeBucket.currentAmount / primeBucket.targetAmount) * 100
-        )
-      : 0;
+  const primeBucketItem = primeBucket
+    ? {
+        id: primeBucket.id,
+        title: primeBucket.title,
+        importance: primeBucket.importance,
+        targetAmount: primeBucket.targetAmount,
+        currentAmount: primeBucket.currentAmount,
+        isAchieved: primeBucket.isAchieved,
+        isCompleted: primeBucket.isCompleted,
+        imageUrl: primeBucket.imageUrl,
+      }
+    : null;
 
   return (
     <div className="p-6 md:p-8 lg:p-10 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden">
@@ -329,81 +334,7 @@ export default async function DashboardPage() {
           />
         </div>
 
-        {/* Prime Bucket Card (2 cols) */}
-        <div
-          className="
-            md:col-span-2 rounded-3xl border border-slate-100 dark:border-white/10
-            shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            overflow-hidden relative min-h-[320px]
-            flex flex-col justify-end
-            transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
-          "
-          style={{
-            background: primeBucket?.imageUrl
-              ? `url(${primeBucket.imageUrl}) center/cover no-repeat`
-              : "linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #3b82f6 100%)",
-          }}
-        >
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-          {/* Content */}
-          <div className="relative z-10 p-7">
-            {primeBucket ? (
-              <>
-                <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">
-                  Prime Bucket · #{primeBucket.importance}순위
-                </p>
-                <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-white leading-tight mb-4">
-                  {primeBucket.title}
-                </h2>
-
-                {/* Progress bar */}
-                <div className="mb-3">
-                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-sm font-semibold text-white/70">
-                      {formatKRW(primeBucket.currentAmount)}
-                    </span>
-                    <span className="text-sm font-black text-white tracking-tighter">
-                      {bucketProgress.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-700 dark:shadow-[0_0_10px_rgba(96,165,250,0.5)]"
-                      style={{ width: `${bucketProgress}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between mt-1.5">
-                    <span className="text-xs text-white/40 font-medium">
-                      현재
-                    </span>
-                    <span className="text-xs text-white/60 font-semibold">
-                      목표 {formatKRW(primeBucket.targetAmount)}
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-white/40 font-medium">
-                  {formatKRW(
-                    primeBucket.targetAmount - primeBucket.currentAmount
-                  )}{" "}
-                  남음
-                </p>
-              </>
-            ) : (
-              <div className="text-center py-6">
-                <AlertCircle className="h-10 w-10 text-white/30 mx-auto mb-3" />
-                <p className="text-white/60 font-semibold text-sm">
-                  등록된 버킷리스트가 없습니다
-                </p>
-                <p className="text-white/40 text-xs mt-1">
-                  버킷리스트 메뉴에서 목표를 추가해보세요
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        <PrimeBucketDashboardCard bucket={primeBucketItem} />
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Star, Trash2, CheckCircle2, Circle } from "lucide-react";
+import { Plus, Star, Trash2, CheckCircle2, Circle, Pencil } from "lucide-react";
 import { addBucketFund, deleteBucket, toggleBucketCompleted } from "@/app/actions/bucket";
 import EditBucketDialog from "@/app/bucket/EditBucketDialog";
 
@@ -63,16 +63,14 @@ export default function BucketCard({ bucket }: Props) {
     });
   }
 
-  function handleDelete(e: React.MouseEvent) {
-    e.stopPropagation();
+  function handleDelete() {
     if (!confirm(`"${bucket.title}" 목표를 삭제하시겠습니까?`)) return;
     startTransition(async () => {
       await deleteBucket(bucket.id);
     });
   }
 
-  function handleToggleCompleted(e: React.MouseEvent) {
-    e.stopPropagation();
+  function handleToggleCompleted() {
     if (pending) return;
     startTransition(async () => {
       await toggleBucketCompleted(bucket.id);
@@ -84,11 +82,7 @@ export default function BucketCard({ bucket }: Props) {
   return (
     <>
       <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setEditOpen(true)}
-        onKeyDown={(e) => e.key === "Enter" && setEditOpen(true)}
-        className={`rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col transition-all duration-300 ease-out cursor-pointer hover:-translate-y-1 hover:shadow-xl ${
+        className={`rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl ${
           bucket.isCompleted
             ? "border-primary ring-2 ring-primary/20"
             : "border-slate-100"
@@ -112,8 +106,16 @@ export default function BucketCard({ bucket }: Props) {
           {/* Gradient mask overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-          {/* Importance stars + complete button — overlaid on image */}
-          <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          {/* 수정 · 완료 — 이미지 상단 */}
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-xl bg-black/30 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/50 active:scale-[0.98] transition-transform duration-150"
+              aria-label="목표 수정"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
             <button
               type="button"
               onClick={handleToggleCompleted}
@@ -169,10 +171,7 @@ export default function BucketCard({ bucket }: Props) {
         </div>
 
         {/* Action bar */}
-        <div
-          className="bg-white dark:bg-[#18181B] px-4 py-3 flex items-center gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="bg-white dark:bg-[#18181B] px-4 py-3 flex items-center gap-2">
           <Dialog open={depositOpen} onOpenChange={setDepositOpen}>
             <DialogTrigger
               render={
@@ -181,7 +180,6 @@ export default function BucketCard({ bucket }: Props) {
                   variant="outline"
                   className="h-8 text-xs rounded-2xl gap-1 border-slate-100 hover:bg-slate-50 flex-1 font-semibold"
                   disabled={pending || bucket.isAchieved}
-                  onClick={(e) => e.stopPropagation()}
                 >
                   <Plus className="h-3 w-3" />
                   납입
