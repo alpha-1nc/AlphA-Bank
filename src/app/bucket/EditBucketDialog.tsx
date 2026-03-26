@@ -35,6 +35,7 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
   const [title, setTitle] = useState(bucket.title);
   const [importance, setImportance] = useState<number>(bucket.importance);
   const [targetAmount, setTargetAmount] = useState(String(bucket.targetAmount));
+  const [currentAmount, setCurrentAmount] = useState(String(bucket.currentAmount));
   const [imageUrl, setImageUrl] = useState(bucket.imageUrl || "");
   const [imgPreviewError, setImgPreviewError] = useState(false);
 
@@ -43,6 +44,7 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
       setTitle(bucket.title);
       setImportance(bucket.importance);
       setTargetAmount(String(bucket.targetAmount));
+      setCurrentAmount(String(bucket.currentAmount));
       setImageUrl(bucket.imageUrl || "");
       setImgPreviewError(false);
     }
@@ -71,8 +73,16 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = parseInt(targetAmount.replace(/,/g, ""), 10);
-    if (!title.trim() || isNaN(parsed) || parsed < 0) return;
+    const parsedTarget = parseInt(targetAmount.replace(/,/g, ""), 10);
+    const parsedCurrent = parseInt(currentAmount.replace(/,/g, ""), 10);
+    if (
+      !title.trim() ||
+      isNaN(parsedTarget) ||
+      parsedTarget < 0 ||
+      isNaN(parsedCurrent) ||
+      parsedCurrent < 0
+    )
+      return;
 
     startTransition(async () => {
       try {
@@ -83,7 +93,8 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
         await updateBucket(bucket.id, {
           title: title.trim(),
           importance,
-          targetAmount: parsed,
+          targetAmount: parsedTarget,
+          currentAmount: parsedCurrent,
           imageUrl: finalImageUrl,
         });
         onOpenChange(false);
@@ -183,6 +194,22 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
               type="number"
               value={targetAmount}
               onChange={(e) => setTargetAmount(e.target.value)}
+              required
+              min={0}
+              className="rounded-xl"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              누적 납입 금액 (원) *
+            </label>
+            <p className="text-[11px] text-muted-foreground">
+              지금까지 모은 금액입니다. 숫자로 직접 수정할 수 있습니다.
+            </p>
+            <Input
+              type="number"
+              value={currentAmount}
+              onChange={(e) => setCurrentAmount(e.target.value)}
               required
               min={0}
               className="rounded-xl"

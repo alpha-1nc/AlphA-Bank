@@ -22,7 +22,18 @@ export default async function AssetStatusPage() {
 
   const totalNetWorth = accounts.reduce((sum, acc) => sum + acc.initialBalance, 0);
 
+  const lastModifiedLabel =
+    accounts.length > 0
+      ? new Date(
+          Math.max(...accounts.map((a) => a.updatedAt.getTime()))
+        ).toLocaleDateString("ko-KR", { dateStyle: "medium" })
+      : null;
+
   return (
-    <AssetBoardClient grouped={grouped} totalNetWorth={totalNetWorth} />
+    <AssetBoardClient
+      grouped={grouped}
+      totalNetWorth={totalNetWorth}
+      lastModifiedLabel={lastModifiedLabel}
+    />
   );
 }

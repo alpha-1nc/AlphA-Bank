@@ -55,6 +55,8 @@ interface GroupedAccounts {
 interface Props {
   grouped: GroupedAccounts;
   totalNetWorth: number;
+  /** 계좌 중 가장 최근 수정 시각 (서버에서 포맷) */
+  lastModifiedLabel: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -683,7 +685,11 @@ function AssetBreakdownChart({
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-export default function AssetBoardClient({ grouped, totalNetWorth }: Props) {
+export default function AssetBoardClient({
+  grouped,
+  totalNetWorth,
+  lastModifiedLabel,
+}: Props) {
   const allTypes = Array.from(ACCOUNT_TYPES);
   const totalAccounts = allTypes.reduce((sum, t) => sum + (grouped[t]?.length ?? 0), 0);
 
@@ -697,6 +703,11 @@ export default function AssetBoardClient({ grouped, totalNetWorth }: Props) {
             <span className="break-words">자산 현황</span>
           </h1>
           <p className="text-sm text-slate-400 font-medium">계좌 및 투자 자산 현황 관리</p>
+          {lastModifiedLabel && (
+            <p className="text-[11px] text-slate-400/80 mt-1.5 tabular-nums">
+              마지막 수정 · {lastModifiedLabel}
+            </p>
+          )}
         </div>
       </div>
 

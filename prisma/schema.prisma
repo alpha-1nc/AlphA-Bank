@@ -20,6 +20,7 @@ model Account {
   description    String?    // 계좌 용도 설명
   initialBalance Int        @default(0) // 초기 잔액
   createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now()) @updatedAt
   transactions   CashFlow[] // 연결된 예산/현금흐름
 }
 

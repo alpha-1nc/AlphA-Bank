@@ -55,17 +55,33 @@ export interface UpdateBucketData {
   title?: string;
   importance?: number;
   targetAmount?: number;
+  currentAmount?: number;
   imageUrl?: string | null;
 }
 
 export async function updateBucket(id: string, data: UpdateBucketData) {
+  const existing = await prisma.bucketList.findUnique({ where: { id } });
+  if (!existing) throw new Error("목표를 찾을 수 없습니다.");
+
+  const nextTarget =
+    data.targetAmount !== undefined ? data.targetAmount : existing.targetAmount;
+  const nextCurrent =
+    data.currentAmount !== undefined
+      ? Math.max(0, data.currentAmount)
+      : existing.currentAmount;
+  const isAchieved = nextCurrent >= nextTarget;
+
   await prisma.bucketList.update({
     where: { id },
     data: {
       ...(data.title !== undefined && { title: data.title.trim() }),
       ...(data.importance !== undefined && { importance: data.importance }),
       ...(data.targetAmount !== undefined && { targetAmount: data.targetAmount }),
+      ...(data.currentAmount !== undefined && {
+        currentAmount: Math.max(0, data.currentAmount),
+      }),
       ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl?.trim() || null }),
+      isAchieved,
     },
   });
   revalidatePath("/bucket");
