@@ -22,6 +22,7 @@ model Account {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @default(now()) @updatedAt
   transactions   CashFlow[] // 연결된 예산/현금흐름
+  subscriptions  Subscription[]
 }
 
 model MonthlyBudget {
@@ -62,4 +63,18 @@ model SystemSettings {
   id              String   @id @default("global")
   budgetStartDate Int      @default(1) // 예산 시작일 (1~31)
   updatedAt       DateTime @updatedAt
+}
+
+model Subscription {
+  id         String   @id @default(uuid())
+  name       String
+  amount     Int
+  billingDay Int      @default(1)
+  category   String
+  isActive   Boolean  @default(true)
+  accountId  String?
+  account    Account? @relation(fields: [accountId], references: [id])
+  memo       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }

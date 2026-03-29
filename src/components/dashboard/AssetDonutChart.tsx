@@ -82,10 +82,10 @@ export default function AssetDonutChart({ data, totalNetWorth }: Props) {
       </ResponsiveContainer>
       {/* Center label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-xs font-medium text-slate-400 tracking-tight">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-400 tracking-tight">
           총 자산
         </span>
-        <span className="text-xl font-black tracking-tighter text-slate-300 leading-tight">
+        <span className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 leading-tight">
           {formatKRW(totalNetWorth)}
         </span>
       </div>
