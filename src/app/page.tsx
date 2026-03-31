@@ -6,6 +6,9 @@ import AssetDonutChart from "@/components/dashboard/AssetDonutChart";
 import CashFlowBarChart from "@/components/dashboard/CashFlowBarChart";
 import { PendingActionsChecklist } from "@/components/dashboard/PendingActionsChecklist";
 import PrimeBucketDashboardCard from "@/components/dashboard/PrimeBucketDashboardCard";
+import WorkSalaryDashboardCard from "@/components/dashboard/WorkSalaryDashboardCard";
+import { getKstCalendarYearMonth } from "@/lib/kst-date-key";
+import { getDashboardWorkNetForKstMonth } from "@/lib/dashboard-work-net";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +54,8 @@ const ACCOUNT_TYPE_LABEL: Record<string, string> = {
 export default async function DashboardPage() {
   const currentMonth = getCurrentMonth();
   const past6Months = getPast6Months();
+  const kstNow = getKstCalendarYearMonth();
+  const workMonthLabel = `${kstNow.year}년 ${kstNow.month}월`;
 
   // ── SystemSettings 먼저 조회 → 동적 예산 월 계산 ────────────────────────────
   const systemSettings = await getSystemSettings();
@@ -68,7 +73,7 @@ export default async function DashboardPage() {
   const currentBudgetMonth = `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
 
   // ── Data fetching ──────────────────────────────────────────────────────────
-  const [accounts, monthlyBudgets, primeBucket] = await Promise.all([
+  const [accounts, monthlyBudgets, primeBucket, workNet] = await Promise.all([
     // a) All accounts for total net worth + donut chart
     prisma.account.findMany({ select: { type: true, initialBalance: true } }),
 
@@ -78,12 +83,14 @@ export default async function DashboardPage() {
       include: { transactions: true },
     }),
 
-    // c) Top priority unachieved bucket
+    // c) Prime bucket: 미완료·미달성 중 중요도 최상위 (완료 시 자동으로 다음 순위)
     prisma.bucketList.findFirst({
-      where: { isAchieved: false },
+      where: { isAchieved: false, isCompleted: false },
       orderBy: [{ importance: "desc" }, { createdAt: "asc" }],
     }),
 
+    // d) KST 이번 달 알바 예상 실수령 (활성 근무지 합산)
+    getDashboardWorkNetForKstMonth(kstNow.year, kstNow.month),
   ]);
   const currentBudget =
     currentBudgetMonth === currentMonth
@@ -141,6 +148,9 @@ export default async function DashboardPage() {
         currentAmount: primeBucket.currentAmount,
         isAchieved: primeBucket.isAchieved,
         isCompleted: primeBucket.isCompleted,
+        completedAt: primeBucket.completedAt
+          ? primeBucket.completedAt.toISOString().slice(0, 10)
+          : null,
         imageUrl: primeBucket.imageUrl,
       }
     : null;
@@ -296,8 +306,14 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Grid Row 2: Actions & Bucket ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
+      {/* ── Grid Row 2: 알바 실수령 · Actions & Bucket ─────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
+        <WorkSalaryDashboardCard
+          netPay={workNet.netPay}
+          activeWorkplaces={workNet.activeWorkplaces}
+          monthLabel={workMonthLabel}
+        />
+
         {/* Action Checklist Card */}
         <div
           className="

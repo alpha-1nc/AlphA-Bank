@@ -37,6 +37,7 @@ import { Trash2, Pencil } from "lucide-react";
 import { ImportPreviousFixedButton } from "./ImportPreviousFixedButton";
 import { TYPE_LABELS, type BudgetCashFlowType } from "@/lib/budget-constants";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 /** 분류 드롭다운 옵션: 수입, 고정지출, 변동지출, 저축/투자 */
 const ADDABLE_TYPES: BudgetCashFlowType[] = [
@@ -73,6 +74,8 @@ interface CashFlowItem {
   amount: number;
   isCompleted: boolean;
   accountId: string | null;
+  /** 알바 근무지 실수령 동기화 항목 — 수정·삭제는 근무에서만 반영 */
+  workplaceId?: string | null;
 }
 
 function formatKRW(amount: number): string {
@@ -144,13 +147,15 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
     });
   }
 
-  function handleDelete(id: string) {
+  function handleDelete(id: string, workplaceId?: string | null) {
+    if (workplaceId) return;
     startToggleTransition(async () => {
       await deleteCashFlow(id);
     });
   }
 
   function handleEdit(item: CashFlowItem) {
+    if (item.workplaceId) return;
     setEditingItem(item);
     setEditTitle(item.title);
     setEditAmount(String(item.amount));
@@ -307,15 +312,22 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                           aria-label={`집행 완료: ${item.title}`}
                           className="rounded-md border-slate-300 shrink-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                         />
-                        <p
-                          className={cn(
-                            "text-sm font-semibold truncate",
-                            item.isCompleted ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p
+                            className={cn(
+                              "text-sm font-semibold truncate",
+                              item.isCompleted ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"
+                            )}
+                            title={item.title}
+                          >
+                            {item.title}
+                          </p>
+                          {item.workplaceId && (
+                            <Badge variant="secondary" className="shrink-0 text-[0.65rem] px-1.5 py-0">
+                              알바
+                            </Badge>
                           )}
-                          title={item.title}
-                        >
-                          {item.title}
-                        </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span
@@ -329,24 +341,28 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                           {formatKRW(item.amount)}
                         </span>
                         <div className="flex gap-1">
-                          <button
-                            type="button"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
-                            onClick={() => handleEdit(item)}
-                            disabled={togglePending}
-                            aria-label={`수정: ${item.title}`}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={togglePending}
-                            aria-label={`삭제: ${item.title}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          {!item.workplaceId && (
+                            <>
+                              <button
+                                type="button"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                                onClick={() => handleEdit(item)}
+                                disabled={togglePending}
+                                aria-label={`수정: ${item.title}`}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                                onClick={() => handleDelete(item.id)}
+                                disabled={togglePending}
+                                aria-label={`삭제: ${item.title}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -389,12 +405,19 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "px-6 md:px-8 py-4 font-semibold text-slate-700 dark:text-slate-300 min-w-0 max-w-[140px] sm:max-w-none truncate",
+                            "px-6 md:px-8 py-4 font-semibold text-slate-700 dark:text-slate-300 min-w-0 max-w-[140px] sm:max-w-none",
                             item.isCompleted && "line-through text-slate-400 dark:text-slate-500"
                           )}
                           title={item.title}
                         >
-                          {item.title}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="truncate">{item.title}</span>
+                            {item.workplaceId && (
+                              <Badge variant="secondary" className="shrink-0 text-[0.65rem] px-1.5 py-0">
+                                알바
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell
                           className={cn(
@@ -408,24 +431,28 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                         </TableCell>
                         <TableCell className="px-6 md:px-8 py-4 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors active:scale-[0.98] transition-transform duration-150"
-                              onClick={() => handleEdit(item)}
-                              disabled={togglePending}
-                              aria-label={`수정: ${item.title}`}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors active:scale-[0.98] transition-transform duration-150"
-                              onClick={() => handleDelete(item.id)}
-                              disabled={togglePending}
-                              aria-label={`삭제: ${item.title}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            {!item.workplaceId && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors active:scale-[0.98] transition-transform duration-150"
+                                  onClick={() => handleEdit(item)}
+                                  disabled={togglePending}
+                                  aria-label={`수정: ${item.title}`}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors active:scale-[0.98] transition-transform duration-150"
+                                  onClick={() => handleDelete(item.id)}
+                                  disabled={togglePending}
+                                  aria-label={`삭제: ${item.title}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

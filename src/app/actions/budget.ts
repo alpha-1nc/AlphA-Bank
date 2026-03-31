@@ -100,8 +100,15 @@ export interface UpdateCashFlowData {
 
 /**
  * 개별 CashFlow(현금흐름)의 이름, 금액, 계좌를 수정합니다.
+ * 알바 근무지에서 동기화된 수입(workplaceId 있음)은 근무 기록에서만 갱신됩니다.
  */
 export async function updateCashFlow(id: string, data: UpdateCashFlowData) {
+  const linked = await prisma.cashFlow.findUnique({
+    where: { id },
+    select: { workplaceId: true },
+  });
+  if (linked?.workplaceId) return;
+
   const updateData: { title?: string; amount?: number; accountId?: string | null } = {};
 
   if (data.title !== undefined) {
@@ -187,6 +194,10 @@ export async function toggleCashFlow(
 }
 
 export async function deleteCashFlow(id: string) {
+  const row = await prisma.cashFlow.findUnique({ where: { id } });
+  if (row?.workplaceId) {
+    return;
+  }
   await prisma.cashFlow.delete({
     where: { id },
   });

@@ -88,12 +88,32 @@ export async function updateBucket(id: string, data: UpdateBucketData) {
   revalidatePath("/");
 }
 
-export async function toggleBucketCompleted(id: string) {
+/** YYYY-MM-DD — 달성일 저장 후 완료 처리 */
+export async function completeBucket(id: string, completedAtDate: string) {
+  const bucket = await prisma.bucketList.findUnique({ where: { id } });
+  if (!bucket) throw new Error("목표를 찾을 수 없습니다.");
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(completedAtDate.trim());
+  if (!m) throw new Error("날짜 형식이 올바르지 않습니다.");
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const completedAt = new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0));
+  if (Number.isNaN(completedAt.getTime())) throw new Error("날짜가 올바르지 않습니다.");
+
+  await prisma.bucketList.update({
+    where: { id },
+    data: { isCompleted: true, completedAt },
+  });
+  revalidatePath("/bucket");
+  revalidatePath("/");
+}
+
+export async function uncompleteBucket(id: string) {
   const bucket = await prisma.bucketList.findUnique({ where: { id } });
   if (!bucket) throw new Error("목표를 찾을 수 없습니다.");
   await prisma.bucketList.update({
     where: { id },
-    data: { isCompleted: !bucket.isCompleted },
+    data: { isCompleted: false, completedAt: null },
   });
   revalidatePath("/bucket");
   revalidatePath("/");

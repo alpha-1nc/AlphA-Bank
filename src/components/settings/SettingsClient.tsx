@@ -32,6 +32,8 @@ import {
   exportAllDataCSV,
   factoryReset,
 } from "@/app/actions/settings";
+import type { Workplace } from "@/generated/prisma";
+import WorkplaceSettingsCard from "@/components/settings/WorkplaceSettingsCard";
 
 const CONFIRM_TEXT = "AlphA Inc.";
 
@@ -47,9 +49,13 @@ function downloadCSV(content: string, filename: string) {
 
 interface SettingsClientProps {
   initialBudgetStartDate: number;
+  initialWorkplaces: Workplace[];
 }
 
-export default function SettingsClient({ initialBudgetStartDate }: SettingsClientProps) {
+export default function SettingsClient({
+  initialBudgetStartDate,
+  initialWorkplaces,
+}: SettingsClientProps) {
   const [budgetStartDate, setBudgetStartDate] = useState(initialBudgetStartDate);
   const [factoryResetOpen, setFactoryResetOpen] = useState(false);
   const [confirmInput, setConfirmInput] = useState("");
@@ -270,6 +276,8 @@ export default function SettingsClient({ initialBudgetStartDate }: SettingsClien
             </Button>
           </div>
         </div>
+
+        <WorkplaceSettingsCard initialWorkplaces={initialWorkplaces} />
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}

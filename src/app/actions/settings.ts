@@ -130,7 +130,8 @@ export async function exportAllDataCSV(): Promise<ExportCSVResult> {
     ),
   ].join("\n");
 
-  const bucketHeaders = "id,title,importance,targetAmount,currentAmount,isAchieved,isCompleted,imageUrl,createdAt";
+  const bucketHeaders =
+    "id,title,importance,targetAmount,currentAmount,isAchieved,isCompleted,completedAt,imageUrl,createdAt";
   const bucketListCSV = [
     bucketHeaders,
     ...bucketList.map((b) =>
@@ -142,6 +143,7 @@ export async function exportAllDataCSV(): Promise<ExportCSVResult> {
         b.currentAmount,
         b.isAchieved,
         b.isCompleted,
+        b.completedAt?.toISOString() ?? "",
         escapeCSV(b.imageUrl ?? ""),
         b.createdAt.toISOString(),
       ].join(",")

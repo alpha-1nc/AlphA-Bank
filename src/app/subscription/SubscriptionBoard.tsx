@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, RefreshCw, ToggleLeft, ToggleRight, CalendarDays } from "lucide-react";
 import AddSubscriptionDialog from "./AddSubscriptionDialog";
@@ -55,6 +55,13 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
   const [editTarget, setEditTarget] = useState<Subscription | null>(null);
   const [reflectedIds, setReflectedIds] = useState<Set<string>>(new Set());
   const [isPendingAll, startAllTransition] = useTransition();
+  const [banner, setBanner] = useState<{ ok: boolean; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!banner) return;
+    const t = window.setTimeout(() => setBanner(null), 4500);
+    return () => clearTimeout(t);
+  }, [banner]);
 
   const categories = ["전체", ...SUBSCRIPTION_CATEGORIES];
 
@@ -66,20 +73,42 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
     startAllTransition(async () => {
       const result = await addAllSubscriptionsToBudget(currentBudgetMonth);
       if (result.added > 0) {
-        alert(`${result.added}개 구독이 예산에 반영되었습니다.${result.skipped > 0 ? ` (${result.skipped}개는 이미 반영됨)` : ""}`);
+        setBanner({
+          ok: true,
+          message: `${result.added}개 구독이 예산에 반영되었습니다.${result.skipped > 0 ? ` (${result.skipped}개는 이미 반영됨)` : ""}`,
+        });
       } else {
-        alert("반영할 구독이 없습니다. (이미 모두 반영되어 있거나 활성 구독이 없습니다)");
+        setBanner({
+          ok: false,
+          message: "반영할 구독이 없습니다. (이미 모두 반영되어 있거나 활성 구독이 없습니다)",
+        });
       }
     });
   }
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      {banner && (
+        <div
+          role="status"
+          className={cn(
+            "rounded-2xl border px-4 py-3 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300",
+            banner.ok
+              ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100"
+              : "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-100"
+          )}
+        >
+          {banner.message}
+        </div>
+      )}
+
+      <div className="rounded-2xl bg-gradient-to-br from-primary/12 via-primary/8 to-primary/5 border border-primary/20 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">월 총 구독료</p>
-          <p className="text-3xl font-black text-slate-900 dark:text-slate-100 mt-1">{formatKRW(totalMonthly)}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-3xl sm:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-1 tabular-nums">
+            {formatKRW(totalMonthly)}
+          </p>
+          <p className="text-xs text-slate-400 mt-1 font-medium">
             활성 구독 {subscriptions.filter((s) => s.isActive).length}건
           </p>
         </div>
@@ -87,7 +116,7 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5"
+            className="gap-1.5 rounded-xl border-slate-200 dark:border-white/15 transition-all hover:bg-primary/5 active:scale-[0.98]"
             onClick={handleAddAllToBudget}
             disabled={isPendingAll}
           >
@@ -96,7 +125,10 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
           </Button>
           <AddSubscriptionDialog
             trigger={
-              <Button size="sm" className="gap-1.5 rounded-full bg-gradient-to-br from-primary to-primary/90 text-white font-bold shadow-lg shadow-primary/20 hover:opacity-90">
+              <Button
+                size="sm"
+                className="gap-1.5 rounded-full bg-gradient-to-br from-primary to-primary/90 text-white font-bold shadow-lg shadow-primary/25 hover:opacity-95 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
                 <Plus className="h-4 w-4" />
                 새 구독 추가
               </Button>
@@ -106,16 +138,23 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div
+        className="flex flex-wrap gap-2 animate-in fade-in duration-500"
+        role="tablist"
+        aria-label="구독 카테고리 필터"
+      >
         {categories.map((cat) => (
           <button
             key={cat}
+            type="button"
+            role="tab"
+            aria-selected={categoryFilter === cat}
             onClick={() => setCategoryFilter(cat)}
             className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+              "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95",
               categoryFilter === cat
-                ? "bg-primary text-white"
-                : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                ? "bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]"
+                : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/18 hover:scale-[1.02]"
             )}
           >
             {cat}
@@ -124,8 +163,8 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 px-8 py-20 flex flex-col items-center justify-center text-center">
-          <RefreshCw className="h-12 w-12 text-slate-300 mb-4" />
+        <div className="rounded-3xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 px-8 py-20 flex flex-col items-center justify-center text-center transition-colors hover:border-primary/25 hover:bg-slate-50/80 dark:hover:bg-white/[0.07] animate-in fade-in zoom-in-95 duration-500">
+          <RefreshCw className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-4 opacity-80" />
           {subscriptions.length === 0 ? (
             <>
               <p className="text-base font-semibold text-slate-500">등록된 구독이 없습니다</p>
@@ -149,11 +188,12 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
                 isReflected={reflectedIds.has(sub.id)}
                 onReflected={() => setReflectedIds((prev) => new Set(prev).add(sub.id))}
                 onEdit={() => setEditTarget(sub)}
+                onBanner={setBanner}
               />
             ))}
           </div>
 
-          <div className="hidden md:block rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden">
+          <div className="hidden md:block rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.03)] transition-all duration-300 hover:shadow-md">
             <table className="w-full table-fixed border-collapse text-sm">
               <colgroup>
                 <col className="w-14 min-w-[3.5rem]" />
@@ -200,6 +240,7 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
                     isReflected={reflectedIds.has(sub.id)}
                     onReflected={() => setReflectedIds((prev) => new Set(prev).add(sub.id))}
                     onEdit={() => setEditTarget(sub)}
+                    onBanner={setBanner}
                   />
                 ))}
               </tbody>
@@ -226,10 +267,18 @@ interface RowProps {
   isReflected: boolean;
   onReflected: () => void;
   onEdit: () => void;
+  onBanner: (payload: { ok: boolean; message: string }) => void;
 }
 
 /** 모바일 전용 카드 행 */
-function SubscriptionRow({ subscription: sub, currentBudgetMonth, isReflected, onReflected, onEdit }: RowProps) {
+function SubscriptionRow({
+  subscription: sub,
+  currentBudgetMonth,
+  isReflected,
+  onReflected,
+  onEdit,
+  onBanner,
+}: RowProps) {
   const [isPendingToggle, startToggle] = useTransition();
   const [isPendingDelete, startDelete] = useTransition();
   const [isPendingReflect, startReflect] = useTransition();
@@ -254,9 +303,16 @@ function SubscriptionRow({ subscription: sub, currentBudgetMonth, isReflected, o
     startReflect(async () => {
       const result = await addSubscriptionToBudget(sub.id, currentBudgetMonth);
       if (result.alreadyExists) {
-        alert(`"${sub.name}"은 이미 이번 달 예산에 반영되어 있습니다.`);
+        onBanner({
+          ok: false,
+          message: `"${sub.name}"은 이미 이번 달 예산에 반영되어 있습니다.`,
+        });
       } else if (result.success) {
         onReflected();
+        onBanner({
+          ok: true,
+          message: `"${sub.name}"을(를) 이번 달 예산에 반영했습니다.`,
+        });
       }
     });
   }
@@ -264,7 +320,7 @@ function SubscriptionRow({ subscription: sub, currentBudgetMonth, isReflected, o
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-4 transition-opacity",
+        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-4 transition-all duration-200 hover:shadow-md hover:border-primary/15 active:scale-[0.99]",
         !sub.isActive && "opacity-50"
       )}
     >
@@ -315,7 +371,14 @@ function SubscriptionRow({ subscription: sub, currentBudgetMonth, isReflected, o
 }
 
 /** 데스크톱: thead와 동일 열을 쓰는 table 행 */
-function SubscriptionTableRow({ subscription: sub, currentBudgetMonth, isReflected, onReflected, onEdit }: RowProps) {
+function SubscriptionTableRow({
+  subscription: sub,
+  currentBudgetMonth,
+  isReflected,
+  onReflected,
+  onEdit,
+  onBanner,
+}: RowProps) {
   const [isPendingToggle, startToggle] = useTransition();
   const [isPendingDelete, startDelete] = useTransition();
   const [isPendingReflect, startReflect] = useTransition();
@@ -340,9 +403,16 @@ function SubscriptionTableRow({ subscription: sub, currentBudgetMonth, isReflect
     startReflect(async () => {
       const result = await addSubscriptionToBudget(sub.id, currentBudgetMonth);
       if (result.alreadyExists) {
-        alert(`"${sub.name}"은 이미 이번 달 예산에 반영되어 있습니다.`);
+        onBanner({
+          ok: false,
+          message: `"${sub.name}"은 이미 이번 달 예산에 반영되어 있습니다.`,
+        });
       } else if (result.success) {
         onReflected();
+        onBanner({
+          ok: true,
+          message: `"${sub.name}"을(를) 이번 달 예산에 반영했습니다.`,
+        });
       }
     });
   }
@@ -350,7 +420,7 @@ function SubscriptionTableRow({ subscription: sub, currentBudgetMonth, isReflect
   return (
     <tr
       className={cn(
-        "border-b border-slate-100 dark:border-white/10 last:border-b-0 transition-opacity",
+        "border-b border-slate-100 dark:border-white/10 last:border-b-0 transition-colors hover:bg-slate-50/90 dark:hover:bg-white/[0.04]",
         !sub.isActive && "opacity-50"
       )}
     >

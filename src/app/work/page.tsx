@@ -1,24 +1,23 @@
-import SettingsClient from "@/components/settings/SettingsClient";
-import { getSystemSettings } from "@/app/actions/settings";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultWorkUserId } from "@/lib/work-default-user";
 import { normalizeWorkplacesForClient } from "@/lib/workplace-client";
+import WorkBoardClient from "@/components/work/WorkBoardClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
-  const systemSettings = await getSystemSettings();
+export default async function WorkPage() {
   const userId = await ensureDefaultWorkUserId();
+
   const workplaces = normalizeWorkplacesForClient(
     await prisma.workplace.findMany({
       where: { userId },
-      orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
+      orderBy: { createdAt: "asc" },
     })
   );
 
   return (
-    <SettingsClient
-      initialBudgetStartDate={systemSettings.budgetStartDate}
+    <WorkBoardClient
+      userId={userId}
       initialWorkplaces={JSON.parse(JSON.stringify(workplaces))}
     />
   );

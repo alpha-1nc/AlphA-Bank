@@ -38,10 +38,10 @@ export default async function SubscriptionPage() {
 
   return (
     <div className="p-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2.5 min-w-0">
-            <RefreshCw className="h-8 w-8 text-primary shrink-0" />
+            <RefreshCw className="h-8 w-8 text-primary shrink-0 transition-transform duration-300 hover:rotate-180" />
             <span className="break-words">구독 관리</span>
           </h1>
           <p className="text-sm text-slate-400 font-medium">

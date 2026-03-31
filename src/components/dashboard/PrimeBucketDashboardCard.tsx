@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import type { BucketItem } from "@/components/BucketCard";
+import { cn } from "@/lib/utils";
 
 function formatKRW(amount: number): string {
   return new Intl.NumberFormat("ko-KR", {
@@ -20,29 +22,42 @@ export default function PrimeBucketDashboardCard({ bucket }: Props) {
       ? Math.min(100, (bucket.currentAmount / bucket.targetAmount) * 100)
       : 0;
 
+  const showEmpty = !bucket;
+  const hasImage = Boolean(bucket?.imageUrl);
+
   return (
     <div
-      className="
-            md:col-span-2 rounded-3xl border border-slate-100 dark:border-white/10
-            shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            overflow-hidden relative min-h-[320px]
-            flex flex-col justify-end
-            transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
-          "
-      style={{
-        background: bucket?.imageUrl
-          ? `url(${bucket.imageUrl}) center/cover no-repeat`
-          : "linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #3b82f6 100%)",
-      }}
+      className={cn(
+        "md:col-span-2 rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden relative min-h-[320px] flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl",
+        showEmpty ? "justify-center bg-white dark:bg-[#18181B]" : "justify-end",
+      )}
+      style={
+        showEmpty
+          ? undefined
+          : hasImage
+            ? {
+                backgroundImage: `url(${bucket!.imageUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : {
+                background:
+                  "linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #3b82f6 100%)",
+              }
+      }
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+      {!showEmpty && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+      )}
 
-      <div className="relative z-10 p-7">
+      <div
+        className={cn(
+          "relative z-10 p-7 w-full",
+          showEmpty && "text-center flex flex-col items-center justify-center",
+        )}
+      >
         {bucket ? (
           <>
-            <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">
-              Prime Bucket · #{bucket.importance}순위
-            </p>
             <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-white leading-tight mb-4">
               {bucket.title}
             </h2>
@@ -77,14 +92,17 @@ export default function PrimeBucketDashboardCard({ bucket }: Props) {
             </p>
           </>
         ) : (
-          <div className="text-center py-6">
-            <AlertCircle className="h-10 w-10 text-white/30 mx-auto mb-3" />
-            <p className="text-white/60 font-semibold text-sm">
-              등록된 버킷리스트가 없습니다
+          <div className="text-center py-6 flex flex-col items-center">
+            <AlertCircle className="h-9 w-9 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-slate-700 dark:text-slate-200 font-semibold text-sm">
+              머니 버킷리스트가 없습니다
             </p>
-            <p className="text-white/40 text-xs mt-1">
-              버킷리스트 메뉴에서 목표를 추가해보세요
-            </p>
+            <Link
+              href="/bucket"
+              className="mt-4 inline-flex items-center justify-center rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary ring-1 ring-primary/20 transition hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:ring-primary/25 dark:hover:bg-primary/20"
+            >
+              머니 버킷리스트 등록하기
+            </Link>
           </div>
         )}
       </div>

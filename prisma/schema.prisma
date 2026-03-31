@@ -11,6 +11,14 @@ datasource db {
   provider = "sqlite"
 }
 
+/// 앱 사용자 (근무지/급여 데이터의 소유자). 인증 연동 시 이 모델과 매핑하면 됩니다.
+model User {
+  id          String       @id @default(uuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  workplaces  Workplace[]
+}
+
 model Account {
   id             String     @id @default(uuid())
   name           String     // 계좌명
@@ -44,7 +52,12 @@ model CashFlow {
   monthlyBudget          MonthlyBudget           @relation(fields: [monthlyBudgetId], references: [id], onDelete: Cascade)
   accountId              String?                 // 자산과 연동될 경우 계좌 ID
   account                Account?                @relation(fields: [accountId], references: [id])
+  /// 알바 근무지에서 월별 실수령으로 자동 생성된 수입일 때만 설정 (수동 수입과 구분)
+  workplaceId            String?
+  workplace              Workplace?              @relation(fields: [workplaceId], references: [id], onDelete: Cascade)
   createdAt              DateTime                @default(now())
+
+  @@unique([monthlyBudgetId, workplaceId])
 }
 
 model BucketList {
@@ -55,6 +68,7 @@ model BucketList {
   currentAmount Int      @default(0)
   isAchieved    Boolean  @default(false) // 돈 목표 달성
   isCompleted   Boolean  @default(false) // 실제 완료 (물건 구매/여행 완료 등)
+  completedAt   DateTime? // 사용자가 선택한 달성일 (캘린더 일자)
   imageUrl      String?  // 이미지 링크 저장
   createdAt     DateTime @default(now())
 }
@@ -77,4 +91,46 @@ model Subscription {
   memo       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
+}
+
+/// 아르바이트 근무지 (사용자당 다수)
+model Workplace {
+  id                        String       @id @default(uuid())
+  userId                    String
+  user                      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                      String
+  color                     String       // UI 구분용 색상 코드 (예: #RRGGBB)
+  isActive                  Boolean      @default(true) // 퇴사/미사용 구분
+  hourlyWage                Int          @default(10030) // 시급(원) — 근무 기록에 복사·동기화
+  isWeeklyAllowanceActive   Boolean      @default(true) // 주휴수당 적용
+  isTaxActive               Boolean      @default(true) // 3.3% 세금 적용
+  /// 매월 급여 지급일 (1~31, 해당 월 말일이 더 짧으면 말일로 처리)
+  paydayOfMonth             Int          @default(10)
+  /// CALENDAR_MONTH: 당월 1일~말일 근무 → 익월 payday 지급 / ROLLING_BEFORE_PAYDAY: 전 월급일~이번 월급 전날 근무 → 이번 월급일 지급
+  payPeriodMode             String       @default("CALENDAR_MONTH")
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+  workRecords               WorkRecord[]
+  budgetIncomeLines         CashFlow[]   // 월별 예산에 자동 반영된 실수령 수입 (근무지당 월 1건)
+
+  @@index([userId])
+}
+
+/// 근무 기록 (근무지당 다수)
+model WorkRecord {
+  id                        String    @id @default(uuid())
+  workplaceId               String
+  workplace                 Workplace @relation(fields: [workplaceId], references: [id], onDelete: Cascade)
+  date                      DateTime  // 근무일 (일자 기준 조회·주차 계산에 사용)
+  startTime                 DateTime  // 근무 시작 시각
+  endTime                   DateTime  // 근무 종료 시각
+  breakTimeMinutes          Int       @default(0) // 휴게(분)
+  hourlyWage                Int       // 시급(원)
+  isWeeklyAllowanceActive   Boolean   @default(true) // 주휴수당 적용 여부(수동)
+  isTaxActive               Boolean   @default(true) // 3.3% 세금 적용 여부(수동)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@index([workplaceId])
+  @@index([date])
 }

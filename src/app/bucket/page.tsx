@@ -24,6 +24,7 @@ export default async function BucketListPage() {
     currentAmount: b.currentAmount,
     isAchieved: b.isAchieved,
     isCompleted: b.isCompleted,
+    completedAt: b.completedAt ? b.completedAt.toISOString().slice(0, 10) : null,
     imageUrl: b.imageUrl,
   }));
 

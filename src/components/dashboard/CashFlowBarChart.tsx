@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useChartColors } from "@/hooks/useChartColors";
 import {
   BarChart,
@@ -37,6 +38,22 @@ function formatKRWFull(amount: number): string {
   }).format(amount);
 }
 
+function useIsDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const read = () =>
+      setIsDark(document.documentElement.classList.contains("dark"));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
+}
+
 const CustomTooltip = ({
   active,
   payload,
@@ -53,8 +70,8 @@ const CustomTooltip = ({
       saving: "저축",
     };
     return (
-      <div className="bg-white border border-slate-100 rounded-xl px-4 py-3 shadow-lg text-sm space-y-1.5">
-        <p className="font-black tracking-tighter text-slate-800 mb-2">
+      <div className="bg-white dark:bg-[#18181B] border border-slate-100 dark:border-white/10 rounded-xl px-4 py-3 shadow-lg dark:shadow-black/40 text-sm space-y-1.5">
+        <p className="font-black tracking-tighter text-slate-800 dark:text-slate-100 mb-2">
           {label}
         </p>
         {payload.map((p) => (
@@ -63,10 +80,10 @@ const CustomTooltip = ({
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: p.color }}
             />
-            <span className="text-slate-500 font-medium">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">
               {labelMap[p.name] ?? p.name}
             </span>
-            <span className="font-semibold text-slate-800 ml-auto pl-4">
+            <span className="font-semibold text-slate-800 dark:text-slate-100 ml-auto pl-4">
               {formatKRWFull(p.value)}
             </span>
           </div>
@@ -79,6 +96,11 @@ const CustomTooltip = ({
 
 export default function CashFlowBarChart({ data }: Props) {
   const { income, expense, saving } = useChartColors();
+  const isDark = useIsDarkMode();
+  const mutedTick = isDark ? "#a1a1aa" : "#94a3b8";
+  const gridStroke = isDark ? "rgba(255,255,255,0.08)" : "#f1f5f9";
+  const cursorFill = isDark ? "rgba(255,255,255,0.06)" : "#f8fafc";
+
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart
@@ -89,23 +111,23 @@ export default function CashFlowBarChart({ data }: Props) {
       >
         <CartesianGrid
           strokeDasharray="3 3"
-          stroke="#f1f5f9"
+          stroke={gridStroke}
           vertical={false}
         />
         <XAxis
           dataKey="month"
-          tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 600 }}
+          tick={{ fontSize: 11, fill: mutedTick, fontWeight: 600 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           tickFormatter={formatYAxis}
-          tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }}
+          tick={{ fontSize: 11, fill: mutedTick, fontWeight: 500 }}
           axisLine={false}
           tickLine={false}
           width={44}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: cursorFill }} />
         <Legend
           iconType="circle"
           iconSize={7}
@@ -117,7 +139,7 @@ export default function CashFlowBarChart({ data }: Props) {
             };
             return (
               <span
-                style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600 }}
+                style={{ fontSize: 11, color: mutedTick, fontWeight: 600 }}
               >
                 {map[value] ?? value}
               </span>

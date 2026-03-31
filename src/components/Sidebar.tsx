@@ -12,6 +12,7 @@ import {
   Settings,
   Moon,
   Sun,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/", label: "대시보드", icon: LayoutDashboard },
   { href: "/asset", label: "자산현황", icon: Landmark },
   { href: "/budget", label: "월별 예산", icon: Wallet },
+  { href: "/work", label: "급여 계산기", icon: Briefcase },
   { href: "/subscription", label: "구독 관리", icon: RefreshCw },
   { href: "/bucket", label: "머니 버킷리스트", icon: Star },
   { href: "/settings", label: "설정", icon: Settings },
