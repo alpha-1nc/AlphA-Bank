@@ -1,14 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
-import { LayoutDashboard } from "lucide-react";
+import { Check, LayoutDashboard } from "lucide-react";
 import AssetDonutChart from "@/components/dashboard/AssetDonutChart";
 import CashFlowBarChart from "@/components/dashboard/CashFlowBarChart";
 import { PendingActionsChecklist } from "@/components/dashboard/PendingActionsChecklist";
 import PrimeBucketDashboardCard from "@/components/dashboard/PrimeBucketDashboardCard";
 import WorkSalaryDashboardCard from "@/components/dashboard/WorkSalaryDashboardCard";
-import { getKstCalendarYearMonth } from "@/lib/kst-date-key";
-import { getDashboardWorkNetForKstMonth } from "@/lib/dashboard-work-net";
+import { getDashboardWorkNet } from "@/lib/dashboard-work-net";
 
 export const dynamic = "force-dynamic";
 
@@ -54,8 +53,6 @@ const ACCOUNT_TYPE_LABEL: Record<string, string> = {
 export default async function DashboardPage() {
   const currentMonth = getCurrentMonth();
   const past6Months = getPast6Months();
-  const kstNow = getKstCalendarYearMonth();
-  const workMonthLabel = `${kstNow.year}년 ${kstNow.month}월`;
 
   // ── SystemSettings 먼저 조회 → 동적 예산 월 계산 ────────────────────────────
   const systemSettings = await getSystemSettings();
@@ -89,8 +86,8 @@ export default async function DashboardPage() {
       orderBy: [{ importance: "desc" }, { createdAt: "asc" }],
     }),
 
-    // d) KST 이번 달 알바 예상 실수령 (활성 근무지 합산)
-    getDashboardWorkNetForKstMonth(kstNow.year, kstNow.month),
+    // d) KST·근무지 월급일 기준 미지급 근무월 알바 예상 실수령 (활성 근무지 합산)
+    getDashboardWorkNet(),
   ]);
   const currentBudget =
     currentBudgetMonth === currentMonth
@@ -276,7 +273,7 @@ export default async function DashboardPage() {
                   color: "text-blue-600 dark:text-blue-400",
                 },
                 {
-                  label: "이번달 지출",
+                  label: "이번달 예상 지출",
                   value: currentBudgetResolved.transactions
                     .filter((t) => t.type === "EXPENSE_FIXED" || t.type === "EXPENSE_VAR")
                     .reduce((s, t) => s + t.amount, 0),
@@ -311,7 +308,7 @@ export default async function DashboardPage() {
         <WorkSalaryDashboardCard
           netPay={workNet.netPay}
           activeWorkplaces={workNet.activeWorkplaces}
-          monthLabel={workMonthLabel}
+          monthLabel={workNet.monthLabel}
         />
 
         {/* Action Checklist Card */}
@@ -319,15 +316,11 @@ export default async function DashboardPage() {
           className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-6 flex flex-col
+            p-6 flex flex-col min-h-[200px]
             transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
           "
         >
-          <div className="flex items-center gap-2 mb-5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 dark:bg-blue-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600 dark:bg-blue-500" />
-            </span>
+          <div className="flex items-start justify-between gap-2 mb-3">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-none">
                 Pending Actions
@@ -336,6 +329,10 @@ export default async function DashboardPage() {
                 미결제 체크리스트
               </h2>
             </div>
+            <Check
+              className="h-8 w-8 text-primary shrink-0 opacity-90 stroke-[2.5]"
+              aria-hidden
+            />
           </div>
 
           <PendingActionsChecklist

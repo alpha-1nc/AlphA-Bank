@@ -14,7 +14,7 @@ function parseDateSafe(d: unknown): Date {
 }
 
 /** 근무일·주휴 귀속 월(KST) — 급여 요약과 동일한 월 구분 */
-function collectBudgetMonthsFromRecords(records: WorkRecord[]): Set<string> {
+function collectWorkMonthsFromRecords(records: WorkRecord[]): Set<string> {
   const months = new Set<string>();
   for (const r of records) {
     const dk = formatKstDateKey(parseDateSafe(r.date));
@@ -24,6 +24,40 @@ function collectBudgetMonthsFromRecords(records: WorkRecord[]): Set<string> {
     months.add(monthKeyFromDateKey(sun));
   }
   return months;
+}
+
+function addCalendarMonths(
+  y: number,
+  m: number,
+  delta: number
+): { y: number; m: number } {
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1 };
+}
+
+function ymKey(y: number, m: number): string {
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+/**
+ * 예산 수입 행이 붙는 달(지급·현금 유입 기준).
+ * 근무월 M의 실수령은 다음 달(M+1) 예산에 반영합니다.
+ */
+function collectBudgetMonthsForIncomeLines(
+  records: WorkRecord[],
+  existingBudgetMonths: string[]
+): Set<string> {
+  const out = new Set<string>();
+  for (const wm of Array.from(collectWorkMonthsFromRecords(records))) {
+    const [y, m] = wm.split("-").map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
+    const next = addCalendarMonths(y, m, 1);
+    out.add(ymKey(next.y, next.m));
+  }
+  for (const bm of existingBudgetMonths) {
+    out.add(bm);
+  }
+  return out;
 }
 
 async function ensureMonthlyBudget(month: string) {
@@ -37,8 +71,9 @@ async function ensureMonthlyBudget(month: string) {
 }
 
 /**
- * 한 근무지의 근무 기록을 기준으로, 급여 요약의 월별 실수령(net)과 동일하게
- * 월별 예산의 INCOME 한 줄(분류 수입 / 내역 근무지명)을 생성·갱신·삭제합니다.
+ * 한 근무지의 근무 기록을 기준으로, 급여 요약의 근무월별 실수령(net)을
+ * **다음 달** 월별 예산 INCOME 한 줄(분류 수입 / 내역 근무지명)에 반영합니다.
+ * (예: 3월 근무분 → 4월 예산 수입)
  * workplaceId가 없는 다른 수입 항목은 변경하지 않습니다.
  */
 async function applyWorkplaceIncomeBudgetLines(workplaceId: string): Promise<void> {
@@ -56,16 +91,15 @@ async function applyWorkplaceIncomeBudgetLines(workplaceId: string): Promise<voi
     include: { monthlyBudget: true },
   });
 
-  const months = collectBudgetMonthsFromRecords(records);
-  for (const link of existingLinks) {
-    months.add(link.monthlyBudget.month);
-  }
+  const existingBudgetMonths = existingLinks.map((l) => l.monthlyBudget.month);
+  const months = collectBudgetMonthsForIncomeLines(records, existingBudgetMonths);
 
   for (const monthKey of Array.from(months)) {
     const [y, m] = monthKey.split("-").map(Number);
     if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
 
-    const summary = computeMonthSalarySummary(records, y, m);
+    const { y: workY, m: workM } = addCalendarMonths(y, m, -1);
+    const summary = computeMonthSalarySummary(records, workY, workM);
     const net = Math.max(0, Math.round(summary.netPay));
 
     const budget = await ensureMonthlyBudget(monthKey);

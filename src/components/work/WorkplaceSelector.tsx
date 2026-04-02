@@ -256,10 +256,19 @@ export default function WorkplaceSelector({
                   : "border-slate-100 dark:border-white/10 bg-white/80 dark:bg-white/5 text-muted-foreground hover:bg-slate-50 dark:hover:bg-white/10 hover:text-foreground hover:border-primary/20 active:scale-[0.98]"
               )}
             >
-              <span
-                className="inline-block h-2 w-2 rounded-full mr-2 align-middle"
-                style={{ backgroundColor: w.color }}
-              />
+              <span className="relative inline-flex h-2.5 w-2.5 mr-2 align-middle shrink-0">
+                {isSel && (
+                  <span
+                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                    style={{ backgroundColor: w.color }}
+                    aria-hidden
+                  />
+                )}
+                <span
+                  className="relative inline-flex rounded-full h-2.5 w-2.5"
+                  style={{ backgroundColor: w.color }}
+                />
+              </span>
               {w.name}
             </button>
           );

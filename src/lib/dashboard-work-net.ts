@@ -1,41 +1,89 @@
 import { prisma } from "@/lib/prisma";
-import { getKstWideFetchRangeUtc } from "@/lib/kst-month-range";
+import { getKstMonthRangeUtc } from "@/lib/kst-month-range";
+import { getKstCalendarYearMonth } from "@/lib/kst-date-key";
 import { computeMonthSalarySummary } from "@/lib/work-salary-summary";
 import { ensureDefaultWorkUserId } from "@/lib/work-default-user";
+import { earliestUnpaidWorkMonth } from "@/lib/work-pay-schedule";
+import { WORKPLACE_DEFAULTS } from "@/lib/workplace-client";
 import type { WorkRecord } from "@/generated/prisma";
 
 export type DashboardWorkNetResult = {
   netPay: number;
   activeWorkplaces: number;
-  year: number;
-  month: number;
+  /** 카드에 표시하는 근무월 라벨 (근무지마다 월이 다를 수 있음) */
+  monthLabel: string;
 };
 
+function formatDashboardWorkMonthLabel(
+  segments: { year: number; month: number }[]
+): string {
+  if (segments.length === 0) return "";
+  const sorted = [...segments].sort((a, b) =>
+    a.year !== b.year ? a.year - b.year : a.month - b.month
+  );
+  const uniqMap = new Map<string, { year: number; month: number }>();
+  for (const s of sorted) {
+    uniqMap.set(`${s.year}-${s.month}`, s);
+  }
+  const uniq = Array.from(uniqMap.values());
+  if (uniq.length === 1) {
+    return `${uniq[0].year}년 ${uniq[0].month}월`;
+  }
+  const sameYear = uniq.every((u) => u.year === uniq[0].year);
+  if (sameYear) {
+    return `${uniq[0].year}년 ${uniq.map((u) => u.month).join("·")}월`;
+  }
+  return uniq.map((u) => `${u.year}년 ${u.month}월`).join("·");
+}
+
 /**
- * KST 달력 기준 해당 월의 알바 예상 실수령액(활성 근무지별 집계 합).
+ * 활성 근무지별로 ‘아직 받지 않은 가장 이른 근무월’ 실수령을 합산 (KST·월급일 반영).
  * 급여 화면과 동일하게 주휴·세금은 주 단위로 산출 후 월에 배분합니다.
  */
-export async function getDashboardWorkNetForKstMonth(
-  year: number,
-  month: number
-): Promise<DashboardWorkNetResult> {
+export async function getDashboardWorkNet(): Promise<DashboardWorkNetResult> {
   const userId = await ensureDefaultWorkUserId();
   const workplaces = await prisma.workplace.findMany({
     where: { userId, isActive: true },
-    select: { id: true },
+    select: { id: true, paydayOfMonth: true },
   });
 
+  const kst = getKstCalendarYearMonth();
+  const fallbackLabel = `${kst.year}년 ${kst.month}월`;
+
   if (workplaces.length === 0) {
-    return { netPay: 0, activeWorkplaces: 0, year, month };
+    return { netPay: 0, activeWorkplaces: 0, monthLabel: fallbackLabel };
   }
 
-  const { start, end } = getKstWideFetchRangeUtc(year, month);
+  const perWpMonth = workplaces.map((w) => ({
+    id: w.id,
+    ...earliestUnpaidWorkMonth(
+      w.paydayOfMonth ?? WORKPLACE_DEFAULTS.paydayOfMonth
+    ),
+  }));
+
+  let minY = perWpMonth[0].year;
+  let minM = perWpMonth[0].month;
+  let maxY = perWpMonth[0].year;
+  let maxM = perWpMonth[0].month;
+  for (const row of perWpMonth) {
+    if (row.year < minY || (row.year === minY && row.month < minM)) {
+      minY = row.year;
+      minM = row.month;
+    }
+    if (row.year > maxY || (row.year === maxY && row.month > maxM)) {
+      maxY = row.year;
+      maxM = row.month;
+    }
+  }
+
+  const { startInclusive } = getKstMonthRangeUtc(minY, minM);
+  const { endInclusive } = getKstMonthRangeUtc(maxY, maxM);
   const ids = workplaces.map((w) => w.id);
 
   const allRecords = await prisma.workRecord.findMany({
     where: {
       workplaceId: { in: ids },
-      date: { gte: start, lte: end },
+      date: { gte: startInclusive, lte: endInclusive },
     },
   });
 
@@ -47,15 +95,16 @@ export async function getDashboardWorkNetForKstMonth(
   }
 
   let netPay = 0;
-  for (const w of workplaces) {
-    const recs = byWorkplace.get(w.id) ?? [];
-    netPay += computeMonthSalarySummary(recs, year, month).netPay;
+  for (const row of perWpMonth) {
+    const recs = byWorkplace.get(row.id) ?? [];
+    netPay += computeMonthSalarySummary(recs, row.year, row.month).netPay;
   }
 
   return {
     netPay,
     activeWorkplaces: workplaces.length,
-    year,
-    month,
+    monthLabel: formatDashboardWorkMonthLabel(
+      perWpMonth.map(({ year, month }) => ({ year, month }))
+    ),
   };
 }

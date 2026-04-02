@@ -79,18 +79,61 @@ export function addMonths(
   return { year, month: month + 1 };
 }
 
+/** 근무월 W의 급여 지급일(다음 달 월급일)을 KST 달력 숫자로 비교하기 위한 키 */
+function paymentDateKeyForWorkMonth(
+  workYear: number,
+  workMonth: number,
+  paydayOfMonth: number
+): number {
+  const next = addMonths(workYear, workMonth, 1);
+  const d = effectivePaydayDay(next.year, next.month, paydayOfMonth);
+  return next.year * 10000 + next.month * 100 + d;
+}
+
+function todayKstComparable(): number {
+  const { y, m, d } = getKstYmd();
+  return y * 10000 + m * 100 + d;
+}
+
 /**
- * 월급일이 지난 뒤에는 달력 기본 월을 다음 달로 맞춤 (KST 기준).
+ * 아직 지급 전인 **가장 이른** 근무 달력월 (KST).
+ * 근무월 M분은 (M+1)월의 월급일에 지급된다고 보고, 오늘이 그 지급일 이전이면
+ * 해당 근무월이 ‘현재 예상 급여’에 해당합니다.
+ * (예: 월급일 10일 → 4/9까지는 3월 근무분, 4/10부터는 4월 근무분)
+ */
+export function earliestUnpaidWorkMonth(
+  paydayOfMonth: number
+): { year: number; month: number } {
+  const today = todayKstComparable();
+  const { y, m } = getKstYmd();
+  let W = addMonths(y, m, -1);
+  for (let guard = 0; guard < 24; guard++) {
+    const payK = paymentDateKeyForWorkMonth(W.year, W.month, paydayOfMonth);
+    if (today < payK) {
+      const prevW = addMonths(W.year, W.month, -1);
+      const prevPayK = paymentDateKeyForWorkMonth(
+        prevW.year,
+        prevW.month,
+        paydayOfMonth
+      );
+      if (today >= prevPayK) {
+        return W;
+      }
+      W = prevW;
+    } else {
+      W = addMonths(W.year, W.month, 1);
+    }
+  }
+  return addMonths(y, m, -1);
+}
+
+/**
+ * 급여 계산기 달력 기본 월 (KST). {@link earliestUnpaidWorkMonth}와 동일합니다.
  */
 export function getDefaultViewMonth(
   paydayOfMonth: number
 ): { year: number; month: number } {
-  const { y, m, d } = getKstYmd();
-  const eff = effectivePaydayDay(y, m, paydayOfMonth);
-  if (d > eff) {
-    return addMonths(y, m, 1);
-  }
-  return { year: y, month: m };
+  return earliestUnpaidWorkMonth(paydayOfMonth);
 }
 
 function fmtShort(y: number, m: number, d: number): string {
