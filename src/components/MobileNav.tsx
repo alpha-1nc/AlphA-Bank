@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, LayoutDashboard, Landmark, Wallet, RefreshCw, Star, Settings, Moon, Sun, Briefcase } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -14,18 +14,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { APP_NAV_ITEMS } from "@/lib/app-nav";
 
 const THEME_KEY = "alphabank-theme";
-
-const navItems = [
-  { href: "/", label: "대시보드", icon: LayoutDashboard },
-  { href: "/asset", label: "자산현황", icon: Landmark },
-  { href: "/budget", label: "월별 예산", icon: Wallet },
-  { href: "/work", label: "급여 계산기", icon: Briefcase },
-  { href: "/subscription", label: "구독 관리", icon: RefreshCw },
-  { href: "/bucket", label: "머니 버킷리스트", icon: Star },
-  { href: "/settings", label: "설정", icon: Settings },
-];
 
 export default function MobileNav() {
   const pathname = usePathname();
@@ -40,6 +31,10 @@ export default function MobileNav() {
     document.documentElement.classList.toggle("dark", dark);
   }, []);
 
+  if (pathname.startsWith("/select-profile")) {
+    return null;
+  }
+
   function toggleTheme() {
     const next = !isDark;
     setIsDark(next);
@@ -51,13 +46,18 @@ export default function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-accent md:hidden"
+        className={cn(
+          "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-card/95 text-foreground shadow-sm backdrop-blur-md",
+          "transition-colors md:hidden",
+          "active:scale-[0.98] touch-manipulation select-none",
+          "md:hover:bg-accent"
+        )}
         aria-label="메뉴 열기"
       >
         <Menu className="h-5 w-5" />
       </SheetTrigger>
-      <SheetContent side="left" className="w-60 p-0 bg-sidebar">
-        <SheetHeader className="flex h-14 flex-row items-center justify-start gap-0 pl-3 pr-4 py-0">
+      <SheetContent side="left" className="w-[min(18rem,calc(100vw-1.5rem))] p-0 bg-sidebar border-sidebar-border">
+        <SheetHeader className="flex h-14 flex-row items-center justify-start gap-0 pl-3 pr-4 py-0 border-b border-sidebar-border/60">
           <SheetTitle className="flex items-center">
             <Image
               src="/logo-full.svg"
@@ -68,9 +68,8 @@ export default function MobileNav() {
             />
           </SheetTitle>
         </SheetHeader>
-        <Separator />
-        <nav className="flex flex-col gap-0.5 p-3">
-          {navItems.map(({ href, label, icon: Icon }) => {
+        <nav className="flex flex-col gap-0.5 p-3 overflow-y-auto max-h-[calc(100vh-8rem)]" aria-label="앱 메뉴">
+          {APP_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -78,15 +77,15 @@ export default function MobileNav() {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors touch-manipulation select-none",
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                    : "text-sidebar-foreground/80 md:hover:bg-sidebar-accent/60 md:hover:text-sidebar-foreground active:bg-sidebar-accent/40"
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-4 w-4 shrink-0",
+                    "h-5 w-5 shrink-0",
                     active ? "text-sidebar-primary" : "text-current"
                   )}
                 />
@@ -94,17 +93,17 @@ export default function MobileNav() {
               </Link>
             );
           })}
-          <Separator className="my-2" />
+          <Separator className="my-2 bg-sidebar-border/60" />
           <button
             type="button"
             onClick={toggleTheme}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors w-full"
+            className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-sidebar-foreground/80 transition-colors md:hover:bg-sidebar-accent/60 active:bg-sidebar-accent/40 touch-manipulation select-none"
             aria-label={isDark ? "라이트 모드" : "다크 모드"}
           >
             {isDark ? (
-              <Sun className="h-4 w-4 shrink-0" />
+              <Sun className="h-5 w-5 shrink-0" />
             ) : (
-              <Moon className="h-4 w-4 shrink-0" />
+              <Moon className="h-5 w-5 shrink-0" />
             )}
             {isDark ? "라이트 모드" : "다크 모드"}
           </button>

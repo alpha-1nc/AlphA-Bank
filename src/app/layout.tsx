@@ -4,7 +4,7 @@ import { Manrope } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
-import BottomTabBar from "@/components/BottomTabBar";
+import MobileNav from "@/components/MobileNav";
 import MobileMainPad from "@/components/MobileMainPad";
 
 export const viewport: Viewport = {
@@ -78,8 +78,18 @@ export default function RootLayout({
 
           {/* 우측 메인 영역 */}
           <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+            <div
+              className="fixed z-[120] md:hidden pointer-events-none"
+              style={{
+                top: "max(0.75rem, env(safe-area-inset-top, 0px))",
+                left: "max(0.75rem, env(safe-area-inset-left, 0px))",
+              }}
+            >
+              <div className="pointer-events-auto">
+                <MobileNav />
+              </div>
+            </div>
             <MobileMainPad>{children}</MobileMainPad>
-            <BottomTabBar />
           </div>
         </div>
       </body>

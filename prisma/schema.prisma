@@ -14,7 +14,7 @@ datasource db {
 /// 앱 사용자 (JK / MY 고정 2인)
 model User {
   id            String         @id
-  name          String
+  name          String         @default("")
   createdAt     DateTime       @default(now())
   workplaces    Workplace[]
   accounts      Account[]
