@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 
 export interface AddBucketData {
   title: string;
@@ -11,8 +12,10 @@ export interface AddBucketData {
 }
 
 export async function addBucket(data: AddBucketData) {
+  const userId = await getCurrentUserId();
   await prisma.bucketList.create({
     data: {
+      userId,
       title: data.title.trim(),
       importance: data.importance,
       targetAmount: data.targetAmount,
@@ -24,28 +27,27 @@ export async function addBucket(data: AddBucketData) {
 }
 
 export async function addBucketFund(id: string, amount: number) {
-  const bucket = await prisma.bucketList.findUnique({
-    where: { id },
+  const userId = await getCurrentUserId();
+  const bucket = await prisma.bucketList.findFirst({
+    where: { id, userId },
   });
   if (!bucket) throw new Error("목표를 찾을 수 없습니다.");
 
   const newAmount = Math.max(0, bucket.currentAmount + amount);
   const isAchieved = newAmount >= bucket.targetAmount;
 
-  await prisma.bucketList.update({
-    where: { id },
-    data: {
-      currentAmount: newAmount,
-      isAchieved,
-    },
+  await prisma.bucketList.updateMany({
+    where: { id, userId },
+    data: { currentAmount: newAmount, isAchieved },
   });
   revalidatePath("/bucket");
   revalidatePath("/");
 }
 
 export async function deleteBucket(id: string) {
-  await prisma.bucketList.delete({
-    where: { id },
+  const userId = await getCurrentUserId();
+  await prisma.bucketList.deleteMany({
+    where: { id, userId },
   });
   revalidatePath("/bucket");
   revalidatePath("/");
@@ -60,7 +62,8 @@ export interface UpdateBucketData {
 }
 
 export async function updateBucket(id: string, data: UpdateBucketData) {
-  const existing = await prisma.bucketList.findUnique({ where: { id } });
+  const userId = await getCurrentUserId();
+  const existing = await prisma.bucketList.findFirst({ where: { id, userId } });
   if (!existing) throw new Error("목표를 찾을 수 없습니다.");
 
   const nextTarget =
@@ -71,8 +74,8 @@ export async function updateBucket(id: string, data: UpdateBucketData) {
       : existing.currentAmount;
   const isAchieved = nextCurrent >= nextTarget;
 
-  await prisma.bucketList.update({
-    where: { id },
+  await prisma.bucketList.updateMany({
+    where: { id, userId },
     data: {
       ...(data.title !== undefined && { title: data.title.trim() }),
       ...(data.importance !== undefined && { importance: data.importance }),
@@ -90,7 +93,8 @@ export async function updateBucket(id: string, data: UpdateBucketData) {
 
 /** YYYY-MM-DD — 달성일 저장 후 완료 처리 */
 export async function completeBucket(id: string, completedAtDate: string) {
-  const bucket = await prisma.bucketList.findUnique({ where: { id } });
+  const userId = await getCurrentUserId();
+  const bucket = await prisma.bucketList.findFirst({ where: { id, userId } });
   if (!bucket) throw new Error("목표를 찾을 수 없습니다.");
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(completedAtDate.trim());
   if (!m) throw new Error("날짜 형식이 올바르지 않습니다.");
@@ -100,8 +104,8 @@ export async function completeBucket(id: string, completedAtDate: string) {
   const completedAt = new Date(Date.UTC(y, mo - 1, d, 0, 0, 0, 0));
   if (Number.isNaN(completedAt.getTime())) throw new Error("날짜가 올바르지 않습니다.");
 
-  await prisma.bucketList.update({
-    where: { id },
+  await prisma.bucketList.updateMany({
+    where: { id, userId },
     data: { isCompleted: true, completedAt },
   });
   revalidatePath("/bucket");
@@ -109,10 +113,11 @@ export async function completeBucket(id: string, completedAtDate: string) {
 }
 
 export async function uncompleteBucket(id: string) {
-  const bucket = await prisma.bucketList.findUnique({ where: { id } });
+  const userId = await getCurrentUserId();
+  const bucket = await prisma.bucketList.findFirst({ where: { id, userId } });
   if (!bucket) throw new Error("목표를 찾을 수 없습니다.");
-  await prisma.bucketList.update({
-    where: { id },
+  await prisma.bucketList.updateMany({
+    where: { id, userId },
     data: { isCompleted: false, completedAt: null },
   });
   revalidatePath("/bucket");

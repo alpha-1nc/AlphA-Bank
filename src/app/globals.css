@@ -200,11 +200,6 @@
     background: rgba(24, 24, 27, 0.75);
   }
 
-  /* Logo fly overlay - premium transition */
-  --logo-card-bg: #ffffff;
-  .dark {
-    --logo-card-bg: #1e293b;
-  }
   @keyframes logo-zoom-overshoot {
     0% { transform: var(--logo-start) scale(var(--logo-start-scale)); }
     70% { transform: translate(-50%, -50%) scale(1.08); }

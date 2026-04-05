@@ -10,6 +10,8 @@ import {
   ShieldAlert,
   CheckCircle2,
   Loader2,
+  ChevronRight,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,17 +52,24 @@ function downloadCSV(content: string, filename: string) {
 interface SettingsClientProps {
   initialBudgetStartDate: number;
   initialWorkplaces: Workplace[];
+  currentUserId: string;
+  currentProfileName: string;
+  currentProfileInitial: string;
 }
 
 export default function SettingsClient({
   initialBudgetStartDate,
   initialWorkplaces,
+  currentUserId,
+  currentProfileName,
+  currentProfileInitial,
 }: SettingsClientProps) {
   const [budgetStartDate, setBudgetStartDate] = useState(initialBudgetStartDate);
   const [factoryResetOpen, setFactoryResetOpen] = useState(false);
   const [confirmInput, setConfirmInput] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -86,6 +95,18 @@ export default function SettingsClient({
       downloadCSV(combined, `alphabank-export-${timestamp}.csv`);
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  async function handleSwitchProfile() {
+    if (isSwitchingProfile) return;
+    setIsSwitchingProfile(true);
+    try {
+      const res = await fetch("/api/session/destroy", { method: "POST" });
+      if (!res.ok) return;
+      window.location.href = "/select-profile";
+    } finally {
+      setIsSwitchingProfile(false);
     }
   }
 
@@ -117,7 +138,7 @@ export default function SettingsClient({
   })();
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden">
+    <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
         <div>
@@ -125,7 +146,7 @@ export default function SettingsClient({
             <Settings className="h-8 w-8 text-primary shrink-0" />
             <span className="break-words">시스템 설정</span>
           </h1>
-          <p className="text-sm text-slate-400 font-medium">
+          <p className="hidden md:block text-sm text-slate-400 font-medium">
             재무 파라미터 및 인프라 통제 패널
           </p>
         </div>
@@ -135,7 +156,7 @@ export default function SettingsClient({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* ── Card 1: 재무 코어 파라미터 ─────────────────────────────────────── */}
-        <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 flex flex-col gap-6">
+        <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 flex flex-col gap-6">
           {/* Card header */}
           <div className="flex items-start gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20">
@@ -207,7 +228,7 @@ export default function SettingsClient({
         </div>
 
         {/* ── Card 2: 데이터 및 인프라 통제 ──────────────────────────────────── */}
-        <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 flex flex-col gap-6">
+        <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 flex flex-col gap-6">
           {/* Card header */}
           <div className="flex items-start gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/10">
@@ -278,6 +299,66 @@ export default function SettingsClient({
         </div>
 
         <WorkplaceSettingsCard initialWorkplaces={initialWorkplaces} />
+      </div>
+
+      {/* ── Current profile ─────────────────────────────────────────────────── */}
+      <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8">
+        <div className="flex items-start gap-4 mb-6">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20">
+            <User className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              현재 프로필
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              이 기기에서 사용 중인 프로필입니다
+            </p>
+          </div>
+        </div>
+
+        <div className="h-px bg-slate-100 dark:bg-white/5 mb-6" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03] px-5 py-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <span
+              className={[
+                "w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-black",
+                currentUserId === "user-jk"
+                  ? "bg-primary/15 text-primary"
+                  : "bg-secondary text-secondary-foreground",
+              ].join(" ")}
+              aria-hidden
+            >
+              {currentProfileInitial}
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                {currentProfileName}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                현재 사용 중인 프로필
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            className="rounded-2xl border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10 gap-1 shrink-0 self-end sm:self-center"
+            onClick={handleSwitchProfile}
+            disabled={isSwitchingProfile}
+          >
+            {isSwitchingProfile ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                전환
+                <ChevronRight className="h-4 w-4" />
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}

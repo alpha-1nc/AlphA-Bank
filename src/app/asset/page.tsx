@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import AssetBoardClient from "@/components/asset/AssetBoardClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AssetStatusPage() {
+  const userId = await getCurrentUserId();
   let accounts: Awaited<ReturnType<typeof prisma.account.findMany>> = [];
   try {
     accounts = await prisma.account.findMany({
+      where: { userId },
       orderBy: { createdAt: "asc" },
     });
   } catch (err) {

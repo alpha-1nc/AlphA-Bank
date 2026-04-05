@@ -320,52 +320,60 @@ function SubscriptionRow({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-4 transition-all duration-200 hover:shadow-md hover:border-primary/15 active:scale-[0.99]",
+        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-4 transition-all duration-200 md:hover:shadow-md md:hover:border-primary/15 active:scale-[0.99]",
         !sub.isActive && "opacity-50"
       )}
     >
-      <div className="flex items-start gap-3">
-        <div className="shrink-0 pt-0.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           <ToggleSubscriptionButton
             isActive={sub.isActive}
             isPending={isPendingToggle}
             onToggle={handleToggle}
           />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-slate-900 dark:text-slate-100 truncate">{sub.name}</span>
-                <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium", categoryColor)}>
-                  {sub.category}
-                </span>
-                {!sub.isActive && (
-                  <span className="text-xs text-slate-400 font-medium">일시정지</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate font-bold text-slate-900 dark:text-slate-100">
+                {sub.name}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex max-w-[45%] shrink-0 items-center truncate rounded-full px-2 py-0.5 text-xs font-medium",
+                  categoryColor
                 )}
-              </div>
-              <div className="flex items-center gap-3 mt-1.5 text-sm text-slate-500">
-                <span className="flex items-center gap-1">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {billingLabel}
-                </span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{formatKRW(sub.amount)}</span>
-              </div>
-              {sub.memo && <p className="text-xs text-slate-400 mt-1 truncate">{sub.memo}</p>}
+              >
+                {sub.category}
+              </span>
             </div>
-            <div className="flex items-center gap-0.5 shrink-0 self-start">
-              <SecondarySubscriptionActions
-                isReflected={isReflected}
-                isPendingDelete={isPendingDelete}
-                isPendingReflect={isPendingReflect}
-                onDelete={handleDelete}
-                onReflect={handleReflect}
-                onEdit={onEdit}
-              />
-            </div>
+            {!sub.isActive && (
+              <span className="mt-0.5 inline-block text-xs text-slate-400 font-medium">일시정지</span>
+            )}
           </div>
         </div>
       </div>
+
+      <p className="mt-3 text-2xl font-black tabular-nums tracking-tight text-slate-900 dark:text-slate-100">
+        {formatKRW(sub.amount)}
+      </p>
+
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-white/10">
+        <span className="flex min-w-0 items-center gap-1 text-sm text-slate-500">
+          <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="truncate">{billingLabel}</span>
+        </span>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <SecondarySubscriptionActions
+            isReflected={isReflected}
+            isPendingDelete={isPendingDelete}
+            isPendingReflect={isPendingReflect}
+            onDelete={handleDelete}
+            onReflect={handleReflect}
+            onEdit={onEdit}
+          />
+        </div>
+      </div>
+
+      {sub.memo && <p className="mt-2 truncate text-xs text-slate-400">{sub.memo}</p>}
     </div>
   );
 }

@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import { effectivePaydayDay } from "@/lib/work-pay-schedule";
-import { calculateDailyBasePay } from "@/utils/calculator";
+import { calculateDailyBasePay, getGrossWorkMinutes } from "@/utils/calculator";
 import type { WorkRecord } from "@/generated/prisma";
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -40,22 +40,23 @@ function buildDayStats(
     const dk = formatKstDateKey(parseDateSafe(r.date));
     const start = parseDateSafe(r.startTime);
     const end = parseDateSafe(r.endTime);
+    const gross = getGrossWorkMinutes({
+      startTime: start,
+      endTime: end,
+      breakTimeMinutes: r.breakTimeMinutes ?? 0,
+    });
     const base = calculateDailyBasePay({
       startTime: start,
       endTime: end,
-      breakTimeMinutes: r.breakTimeMinutes,
+      breakTimeMinutes: r.breakTimeMinutes ?? 0,
       hourlyWage: r.hourlyWage,
     });
-    const mins = Math.max(
-      0,
-      (end.getTime() - start.getTime()) / 60_000 - r.breakTimeMinutes
-    );
     const prev = map.get(dk) ?? {
       totalMinutes: 0,
       totalPay: 0,
       color: workplaceColor,
     };
-    prev.totalMinutes += mins;
+    prev.totalMinutes += gross;
     prev.totalPay += base;
     map.set(dk, prev);
   }
@@ -178,7 +179,7 @@ export default function WorkCalendar({
   }, [year, month]);
 
   return (
-    <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-4 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-3 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-stretch justify-between gap-2 sm:gap-3 mb-6 p-2 sm:p-3 rounded-2xl border border-slate-100/80 dark:border-white/10 bg-slate-50/40 dark:bg-white/[0.02]">
         <Button
           type="button"
@@ -280,12 +281,12 @@ export default function WorkCalendar({
         {payPeriodCaption}
       </p>
 
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1.5 text-center">
         {WEEK_LABELS.map((w, i) => (
           <div
             key={w}
             className={cn(
-              "text-[0.65rem] sm:text-xs font-semibold uppercase tracking-wider py-2",
+              "text-[0.6rem] sm:text-xs font-semibold uppercase tracking-wider py-1 sm:py-2",
               i === 0 && "text-rose-500/90",
               i === 6 && "text-primary/90"
             )}
@@ -299,7 +300,7 @@ export default function WorkCalendar({
             return (
               <div
                 key={cell.key}
-                className="min-h-[4.5rem] sm:min-h-[5.25rem] rounded-2xl bg-muted/20 dark:bg-white/[0.02]"
+                className="min-h-[2.75rem] sm:min-h-[5.25rem] rounded-xl sm:rounded-2xl bg-muted/20 dark:bg-white/[0.02]"
               />
             );
           }
@@ -319,8 +320,8 @@ export default function WorkCalendar({
               type="button"
               onClick={() => onDayClick(cell.date!)}
               className={cn(
-                "relative group flex min-h-[4.5rem] sm:min-h-[5.25rem] flex-col rounded-2xl border p-1.5 sm:p-2 text-left transition-all duration-200",
-                "border-slate-100/80 dark:border-white/10 hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-white/5 hover:shadow-sm active:scale-[0.98]",
+                "relative group flex min-h-[2.75rem] sm:min-h-[5.25rem] flex-col rounded-xl sm:rounded-2xl border p-1 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
+                "border-slate-100/80 dark:border-white/10 md:hover:border-primary/40 md:hover:bg-primary/5 md:hover:shadow-sm dark:md:hover:bg-white/5 active:scale-[0.98]",
                 isToday &&
                   "ring-2 ring-primary/40 ring-offset-2 ring-offset-background dark:ring-offset-[#18181B]",
                 isPayday &&
@@ -330,23 +331,33 @@ export default function WorkCalendar({
               <span className="flex items-start justify-between gap-1 w-full">
                 <span
                   className={cn(
-                    "text-sm font-semibold tabular-nums",
+                    "text-xs sm:text-sm font-semibold tabular-nums",
                     isToday ? "text-primary" : "text-foreground"
                   )}
                 >
                   {dayNum}
                 </span>
                 {isPayday && (
-                  <span className="shrink-0 rounded-md bg-amber-500/90 px-1 py-0.5 text-[0.55rem] font-bold text-white leading-none">
-                    월급
-                  </span>
+                  <>
+                    <span
+                      className="hidden sm:inline-flex shrink-0 rounded-md bg-amber-500/90 px-1 py-0.5 text-[0.55rem] font-bold text-white leading-none"
+                      aria-hidden
+                    >
+                      월급
+                    </span>
+                    <span
+                      className="sm:hidden h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 shadow-sm shadow-amber-500/40"
+                      title="월급일"
+                      aria-label="월급일"
+                    />
+                  </>
                 )}
               </span>
 
               {s && s.totalMinutes > 0 && (
-                <div className="mt-auto flex flex-col gap-0.5">
+                <div className="mt-auto flex flex-col gap-0.5 sm:gap-0.5 items-center sm:items-stretch">
                   <span
-                    className="inline-flex max-w-full items-center justify-center rounded-md px-1 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-semibold tabular-nums leading-none truncate border border-transparent"
+                    className="hidden sm:inline-flex max-w-full items-center justify-center rounded-md px-1 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none truncate border border-transparent"
                     style={{
                       backgroundColor: `${s.color}22`,
                       color: s.color,
@@ -356,7 +367,13 @@ export default function WorkCalendar({
                     {(s.totalMinutes / 60).toFixed(1)}h
                   </span>
                   <span
-                    className="text-[0.55rem] sm:text-[0.6rem] text-muted-foreground tabular-nums truncate text-center"
+                    className="sm:hidden h-1.5 w-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: s.color }}
+                    title={`${(s.totalMinutes / 60).toFixed(1)}시간 · ${s.totalPay.toLocaleString("ko-KR")}원`}
+                    aria-hidden
+                  />
+                  <span
+                    className="hidden sm:inline text-[0.6rem] text-muted-foreground tabular-nums truncate text-center"
                     title={`예상 일급 ${s.totalPay.toLocaleString("ko-KR")}원`}
                   >
                     {s.totalPay >= 10000
@@ -368,7 +385,7 @@ export default function WorkCalendar({
 
               {nSameDay > 1 && (
                 <span
-                  className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/90 px-1 text-[0.55rem] font-bold text-primary-foreground"
+                  className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3 min-w-3 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-primary/90 px-0.5 sm:px-1 text-[0.5rem] sm:text-[0.55rem] font-bold text-primary-foreground"
                   title={`같은 날 근무 ${nSameDay}건`}
                 >
                   {nSameDay}

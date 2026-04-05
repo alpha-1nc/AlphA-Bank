@@ -2,7 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { getKstMonthRangeUtc } from "@/lib/kst-month-range";
 import { getKstCalendarYearMonth } from "@/lib/kst-date-key";
 import { computeMonthSalarySummary } from "@/lib/work-salary-summary";
-import { ensureDefaultWorkUserId } from "@/lib/work-default-user";
+import { computeFulltimeMonthSalarySummary } from "@/lib/fulltime-salary-summary";
+import { isFulltimeWorkplace } from "@/lib/workplace-type";
 import { earliestUnpaidWorkMonth } from "@/lib/work-pay-schedule";
 import { WORKPLACE_DEFAULTS } from "@/lib/workplace-client";
 import type { WorkRecord } from "@/generated/prisma";
@@ -37,14 +38,19 @@ function formatDashboardWorkMonthLabel(
 }
 
 /**
- * 활성 근무지별로 ‘아직 받지 않은 가장 이른 근무월’ 실수령을 합산 (KST·월급일 반영).
- * 급여 화면과 동일하게 주휴·세금은 주 단위로 산출 후 월에 배분합니다.
+ * 활성 근무지별로 '아직 받지 않은 가장 이른 근무월' 실수령을 합산 (KST·월급일 반영).
  */
-export async function getDashboardWorkNet(): Promise<DashboardWorkNetResult> {
-  const userId = await ensureDefaultWorkUserId();
+export async function getDashboardWorkNet(userId: string): Promise<DashboardWorkNetResult> {
   const workplaces = await prisma.workplace.findMany({
     where: { userId, isActive: true },
-    select: { id: true, paydayOfMonth: true },
+    select: {
+      id: true,
+      paydayOfMonth: true,
+      type: true,
+      monthlyBaseSalary: true,
+      allowances: true,
+      taxDependents: true,
+    },
   });
 
   const kst = getKstCalendarYearMonth();
@@ -97,7 +103,13 @@ export async function getDashboardWorkNet(): Promise<DashboardWorkNetResult> {
   let netPay = 0;
   for (const row of perWpMonth) {
     const recs = byWorkplace.get(row.id) ?? [];
-    netPay += computeMonthSalarySummary(recs, row.year, row.month).netPay;
+    const wp = workplaces.find((w) => w.id === row.id);
+    if (wp && isFulltimeWorkplace(wp)) {
+      netPay += computeFulltimeMonthSalarySummary(recs, wp, row.year, row.month)
+        .netPay;
+    } else {
+      netPay += computeMonthSalarySummary(recs, row.year, row.month).netPay;
+    }
   }
 
   return {

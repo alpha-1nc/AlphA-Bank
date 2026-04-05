@@ -9,7 +9,7 @@ import {
   calculateDailyBasePay,
   calculateTaxDeduction,
   calculateWeeklyAllowanceForWeek,
-  getGrossWorkMinutes,
+  getGrossWorkMinutesOptional,
   type WorkRecordForWeeklyAllowance,
 } from "@/utils/calculator";
 
@@ -21,11 +21,12 @@ export function ymKey(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
 }
 
-function toWeeklyCalc(r: WorkRecord): WorkRecordForWeeklyAllowance {
+function toWeeklyCalc(r: WorkRecord): WorkRecordForWeeklyAllowance | null {
+  if (r.startTime == null || r.endTime == null) return null;
   return {
     startTime: parseDateSafe(r.startTime),
     endTime: parseDateSafe(r.endTime),
-    breakTimeMinutes: r.breakTimeMinutes,
+    breakTimeMinutes: r.breakTimeMinutes ?? 0,
     hourlyWage: r.hourlyWage,
     isWeeklyAllowanceActive: r.isWeeklyAllowanceActive,
   };
@@ -62,15 +63,17 @@ export function computeMonthSalarySummary(
     const dk = formatKstDateKey(parseDateSafe(r.date));
     if (monthKeyFromDateKey(dk) !== tKey) continue;
 
+    if (r.startTime == null || r.endTime == null) continue;
+
     const start = parseDateSafe(r.startTime);
     const end = parseDateSafe(r.endTime);
     basePay += calculateDailyBasePay({
       startTime: start,
       endTime: end,
-      breakTimeMinutes: r.breakTimeMinutes,
+      breakTimeMinutes: r.breakTimeMinutes ?? 0,
       hourlyWage: r.hourlyWage,
     });
-    totalWorkMinutes += getGrossWorkMinutes({
+    totalWorkMinutes += getGrossWorkMinutesOptional({
       startTime: start,
       endTime: end,
       breakTimeMinutes: r.breakTimeMinutes,
@@ -95,14 +98,17 @@ export function computeMonthSalarySummary(
       uniq.set(r.id, r);
     }
     const list = Array.from(uniq.values());
-    const calc = list.map(toWeeklyCalc);
+    const calc = list
+      .map(toWeeklyCalc)
+      .filter((x): x is WorkRecordForWeeklyAllowance => x != null);
     const wAllow = calculateWeeklyAllowanceForWeek(calc);
     let baseWeek = 0;
     for (const r of list) {
+      if (r.startTime == null || r.endTime == null) continue;
       baseWeek += calculateDailyBasePay({
         startTime: parseDateSafe(r.startTime),
         endTime: parseDateSafe(r.endTime),
-        breakTimeMinutes: r.breakTimeMinutes,
+        breakTimeMinutes: r.breakTimeMinutes ?? 0,
         hourlyWage: r.hourlyWage,
       });
     }

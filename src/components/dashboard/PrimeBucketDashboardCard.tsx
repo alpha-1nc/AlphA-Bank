@@ -28,7 +28,7 @@ export default function PrimeBucketDashboardCard({ bucket }: Props) {
   return (
     <div
       className={cn(
-        "md:col-span-2 rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden relative min-h-[320px] flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl",
+        "md:col-span-2 rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden relative min-h-[280px] md:min-h-[320px] flex flex-col transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]",
         showEmpty ? "justify-center bg-white dark:bg-[#18181B]" : "justify-end",
       )}
       style={

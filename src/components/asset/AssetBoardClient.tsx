@@ -694,7 +694,7 @@ export default function AssetBoardClient({
   const totalAccounts = allTypes.reduce((sum, t) => sum + (grouped[t]?.length ?? 0), 0);
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden">
+    <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
         <div>
@@ -702,9 +702,9 @@ export default function AssetBoardClient({
             <Landmark className="h-8 w-8 text-primary shrink-0" />
             <span className="break-words">자산 현황</span>
           </h1>
-          <p className="text-sm text-slate-400 font-medium">계좌 및 투자 자산 현황 관리</p>
+          <p className="hidden md:block text-sm text-slate-400 font-medium">계좌 및 투자 자산 현황 관리</p>
           {lastModifiedLabel && (
-            <p className="text-[11px] text-slate-400/80 mt-1.5 tabular-nums">
+            <p className="hidden md:block text-[11px] text-slate-400/80 mt-1.5 tabular-nums">
               마지막 수정 · {lastModifiedLabel}
             </p>
           )}
@@ -712,7 +712,7 @@ export default function AssetBoardClient({
       </div>
 
       {/* TOTAL NET WORTH + 새 자산 추가 */}
-      <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-6 md:gap-8 min-w-0 md:pl-2">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
             <Landmark className="h-6 w-6 text-primary" />

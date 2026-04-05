@@ -26,8 +26,8 @@ export default function WorkSalaryDashboardCard({
       className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-6 flex flex-col min-h-[200px]
-            transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
+            p-4 md:p-6 flex flex-col min-h-[200px]
+            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
     >
       <div>

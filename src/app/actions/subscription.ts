@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import { getOrCreateMonthlyBudget } from "./budget";
 
 function assertBillingDay(day: number): number | null {
@@ -21,12 +22,14 @@ export interface AddSubscriptionData {
 }
 
 export async function addSubscription(data: AddSubscriptionData) {
+  const userId = await getCurrentUserId();
   if (!Number.isFinite(data.amount) || data.amount < 0) return;
   const billingDay = assertBillingDay(data.billingDay);
   if (billingDay === null) return;
 
   await prisma.subscription.create({
     data: {
+      userId,
       name: data.name.trim(),
       amount: data.amount,
       billingDay,
@@ -49,6 +52,7 @@ export interface UpdateSubscriptionData {
 }
 
 export async function updateSubscription(id: string, data: UpdateSubscriptionData) {
+  const userId = await getCurrentUserId();
   const updateData: Record<string, unknown> = {};
 
   if (data.name !== undefined) {
@@ -74,24 +78,27 @@ export async function updateSubscription(id: string, data: UpdateSubscriptionDat
 
   if (Object.keys(updateData).length === 0) return;
 
-  await prisma.subscription.update({ where: { id }, data: updateData });
+  await prisma.subscription.updateMany({ where: { id, userId }, data: updateData });
   revalidatePath("/subscription", "page");
   revalidatePath("/", "page");
 }
 
 export async function deleteSubscription(id: string) {
-  await prisma.subscription.delete({ where: { id } });
+  const userId = await getCurrentUserId();
+  await prisma.subscription.deleteMany({ where: { id, userId } });
   revalidatePath("/subscription", "page");
   revalidatePath("/", "page");
 }
 
 export async function toggleSubscriptionActive(id: string) {
-  const sub = await prisma.subscription.findUniqueOrThrow({
-    where: { id },
+  const userId = await getCurrentUserId();
+  const sub = await prisma.subscription.findFirst({
+    where: { id, userId },
     select: { isActive: true },
   });
-  await prisma.subscription.update({
-    where: { id },
+  if (!sub) return;
+  await prisma.subscription.updateMany({
+    where: { id, userId },
     data: { isActive: !sub.isActive },
   });
   revalidatePath("/subscription", "page");
@@ -100,16 +107,18 @@ export async function toggleSubscriptionActive(id: string) {
 
 /**
  * 구독 하나를 현재월 예산의 고정지출(EXPENSE_FIXED)로 추가합니다.
- * 같은 월에 동일 서비스명이 이미 있으면 skip합니다.
  */
 export async function addSubscriptionToBudget(
   subscriptionId: string,
   month: string
 ): Promise<{ success: boolean; alreadyExists?: boolean }> {
-  const sub = await prisma.subscription.findUnique({ where: { id: subscriptionId } });
+  const userId = await getCurrentUserId();
+  const sub = await prisma.subscription.findFirst({
+    where: { id: subscriptionId, userId },
+  });
   if (!sub) return { success: false };
 
-  const budget = await getOrCreateMonthlyBudget(month);
+  const budget = await getOrCreateMonthlyBudget(month, userId);
 
   const existing = budget.transactions.find(
     (t) => t.type === "EXPENSE_FIXED" && t.title === sub.name
@@ -133,14 +142,15 @@ export async function addSubscriptionToBudget(
 }
 
 /**
- * 활성 구독 전체를 현재월 예산에 일괄 반영합니다. (이미 있는 항목은 skip)
+ * 활성 구독 전체를 현재월 예산에 일괄 반영합니다.
  */
 export async function addAllSubscriptionsToBudget(
   month: string
 ): Promise<{ added: number; skipped: number }> {
+  const userId = await getCurrentUserId();
   const [activeSubs, budget] = await Promise.all([
-    prisma.subscription.findMany({ where: { isActive: true } }),
-    getOrCreateMonthlyBudget(month),
+    prisma.subscription.findMany({ where: { userId, isActive: true } }),
+    getOrCreateMonthlyBudget(month, userId),
   ]);
 
   const existingTitles = new Set(

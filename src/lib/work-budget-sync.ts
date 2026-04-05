@@ -8,6 +8,8 @@ import {
   monthKeyFromDateKey,
 } from "@/lib/kst-week";
 import { computeMonthSalarySummary } from "@/lib/work-salary-summary";
+import { computeFulltimeMonthSalarySummary } from "@/lib/fulltime-salary-summary";
+import { isFulltimeWorkplace } from "@/lib/workplace-type";
 
 function parseDateSafe(d: unknown): Date {
   return d instanceof Date ? d : new Date(d as string);
@@ -39,10 +41,6 @@ function ymKey(y: number, m: number): string {
   return `${y}-${String(m).padStart(2, "0")}`;
 }
 
-/**
- * 예산 수입 행이 붙는 달(지급·현금 유입 기준).
- * 근무월 M의 실수령은 다음 달(M+1) 예산에 반영합니다.
- */
 function collectBudgetMonthsForIncomeLines(
   records: WorkRecord[],
   existingBudgetMonths: string[]
@@ -60,27 +58,27 @@ function collectBudgetMonthsForIncomeLines(
   return out;
 }
 
-async function ensureMonthlyBudget(month: string) {
-  const existing = await prisma.monthlyBudget.findUnique({
-    where: { month },
+async function ensureMonthlyBudget(month: string, userId: string) {
+  const existing = await prisma.monthlyBudget.findFirst({
+    where: { userId, month },
   });
   if (existing) return existing;
   return prisma.monthlyBudget.create({
-    data: { month, personalAllowance: 0 },
+    data: { userId, month, personalAllowance: 0 },
   });
 }
 
 /**
  * 한 근무지의 근무 기록을 기준으로, 급여 요약의 근무월별 실수령(net)을
- * **다음 달** 월별 예산 INCOME 한 줄(분류 수입 / 내역 근무지명)에 반영합니다.
- * (예: 3월 근무분 → 4월 예산 수입)
- * workplaceId가 없는 다른 수입 항목은 변경하지 않습니다.
+ * **다음 달** 월별 예산 INCOME 한 줄에 반영합니다.
  */
 async function applyWorkplaceIncomeBudgetLines(workplaceId: string): Promise<void> {
   const workplace = await prisma.workplace.findUnique({
     where: { id: workplaceId },
   });
   if (!workplace) return;
+
+  const userId = workplace.userId;
 
   const records = await prisma.workRecord.findMany({
     where: { workplaceId },
@@ -99,10 +97,12 @@ async function applyWorkplaceIncomeBudgetLines(workplaceId: string): Promise<voi
     if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
 
     const { y: workY, m: workM } = addCalendarMonths(y, m, -1);
-    const summary = computeMonthSalarySummary(records, workY, workM);
+    const summary = isFulltimeWorkplace(workplace)
+      ? computeFulltimeMonthSalarySummary(records, workplace, workY, workM)
+      : computeMonthSalarySummary(records, workY, workM);
     const net = Math.max(0, Math.round(summary.netPay));
 
-    const budget = await ensureMonthlyBudget(monthKey);
+    const budget = await ensureMonthlyBudget(monthKey, userId);
 
     const existing = await prisma.cashFlow.findFirst({
       where: { monthlyBudgetId: budget.id, workplaceId },
@@ -158,8 +158,6 @@ export async function syncWorkplaceIncomeBudgetLines(
 
 /**
  * 알바 화면 진입 시 기존 근무 데이터를 예산 수입에 한꺼번에 맞춥니다.
- * 서버 컴포넌트 렌더 중에 호출되므로 `revalidatePath`는 사용하지 않습니다.
- * (Next.js: revalidatePath는 Server Action / Route Handler에서만 허용)
  */
 export async function syncAllWorkplacesIncomeBudgetForUser(
   userId: string

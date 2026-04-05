@@ -27,6 +27,16 @@ export function getKstMonthRangeUtc(year: number, month: number): {
   return { startInclusive, endInclusive };
 }
 
+/** KST 기준 해당 연도 1월 1일 ~ 12월 31일 범위(UTC Date) */
+export function getKstYearRangeUtc(year: number): {
+  startInclusive: Date;
+  endInclusive: Date;
+} {
+  const { startInclusive } = getKstMonthRangeUtc(year, 1);
+  const { endInclusive } = getKstMonthRangeUtc(year, 12);
+  return { startInclusive, endInclusive };
+}
+
 /**
  * 근무일(`date`) 저장용: 입력 시각을 서울 달력 기준 "그 날짜"의 00:00:00 KST에 해당하는 UTC 순간으로 맞춥니다.
  * (클라이언트가 UTC 자정 등으로 보내 달력이 하루 밀리는 것을 방지)

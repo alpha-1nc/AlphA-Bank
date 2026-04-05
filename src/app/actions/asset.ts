@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import { type AccountType } from "@/lib/asset-constants";
 
 export interface AddAccountData {
@@ -14,8 +15,10 @@ export interface AddAccountData {
 }
 
 export async function addAccount(data: AddAccountData) {
+  const userId = await getCurrentUserId();
   await prisma.account.create({
     data: {
+      userId,
       name: data.name.trim(),
       type: data.type,
       bankName: data.bankName.trim() || null,
@@ -29,8 +32,9 @@ export async function addAccount(data: AddAccountData) {
 }
 
 export async function updateAccountBalance(id: string, amount: number) {
-  await prisma.account.update({
-    where: { id },
+  const userId = await getCurrentUserId();
+  await prisma.account.updateMany({
+    where: { id, userId },
     data: { initialBalance: amount },
   });
   revalidatePath("/asset");
@@ -38,8 +42,9 @@ export async function updateAccountBalance(id: string, amount: number) {
 }
 
 export async function deleteAccount(id: string) {
-  await prisma.account.delete({
-    where: { id },
+  const userId = await getCurrentUserId();
+  await prisma.account.deleteMany({
+    where: { id, userId },
   });
   revalidatePath("/asset");
   revalidatePath("/");

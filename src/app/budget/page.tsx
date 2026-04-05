@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getCurrentBudgetMonth } from "@/lib/budget-utils";
@@ -47,6 +48,7 @@ export default async function BudgetPage({
 }: {
   searchParams?: { month?: string | string[] };
 }) {
+  const userId = await getCurrentUserId();
   const systemSettings = await getSystemSettings();
   const defaultMonth = getCurrentBudgetMonth(systemSettings.budgetStartDate);
   const raw = searchParams?.month;
@@ -54,8 +56,8 @@ export default async function BudgetPage({
   const month = isValidMonth(rawMonth) ? rawMonth : defaultMonth;
 
   const [budget, accounts] = await Promise.all([
-    getOrCreateMonthlyBudget(month),
-    prisma.account.findMany({ orderBy: { name: "asc" } }),
+    getOrCreateMonthlyBudget(month, userId),
+    prisma.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
   ]);
 
   const { start, end } = getBudgetPeriodRange(month, systemSettings.budgetStartDate);
@@ -77,14 +79,14 @@ export default async function BudgetPage({
   const livingBalance = totalIncome - totalExpense - totalSaving;
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden">
+    <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2.5 min-w-0">
             <Wallet className="h-8 w-8 text-primary shrink-0" />
             <span className="break-words">월별 예산</span>
           </h1>
-          <p className="text-sm text-slate-400 font-medium">
+          <p className="hidden md:block text-sm text-slate-400 font-medium">
             월간 예산 수립, 집행 추적, 개인 용돈 관리
           </p>
         </div>
@@ -92,7 +94,10 @@ export default async function BudgetPage({
 
       <MonthNav currentMonth={month} />
 
-      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 mb-2">
+      <p className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 mb-2 break-words">
+        통제 기간 {periodLabel}
+      </p>
+      <p className="hidden md:block text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 mb-2">
         예산 통제 기간: {periodLabel}
       </p>
 
@@ -105,7 +110,7 @@ export default async function BudgetPage({
         budgetId={budget.id}
       />
 
-      <section className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <section className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 overflow-hidden transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
             새 내역 추가

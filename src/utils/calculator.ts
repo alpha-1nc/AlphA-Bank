@@ -19,6 +19,20 @@ export function getGrossWorkMinutes(input: {
   return Math.max(0, minutes);
 }
 
+/** 시작·종료가 없으면 0 (정규직 추가만 기록 등) */
+export function getGrossWorkMinutesOptional(input: {
+  startTime: Date | null | undefined;
+  endTime: Date | null | undefined;
+  breakTimeMinutes: number | null | undefined;
+}): number {
+  if (input.startTime == null || input.endTime == null) return 0;
+  return getGrossWorkMinutes({
+    startTime: input.startTime,
+    endTime: input.endTime,
+    breakTimeMinutes: input.breakTimeMinutes ?? 0,
+  });
+}
+
 export type DailyBasePayInput = {
   startTime: Date;
   endTime: Date;

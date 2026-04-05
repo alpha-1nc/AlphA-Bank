@@ -5,6 +5,11 @@ export const PAY_PERIOD_MODE = {
   ROLLING_BEFORE_PAYDAY: "ROLLING_BEFORE_PAYDAY",
 } as const;
 
+/** 당월 1일~말일 급여 기간 — DB에는 {@link PAY_PERIOD_MODE.CALENDAR_MONTH}와 동일 값으로 저장합니다. */
+export const SALARY_PERIOD_MODE = {
+  CURRENT_MONTH: PAY_PERIOD_MODE.CALENDAR_MONTH,
+} as const;
+
 export type PayPeriodMode =
   (typeof PAY_PERIOD_MODE)[keyof typeof PAY_PERIOD_MODE];
 

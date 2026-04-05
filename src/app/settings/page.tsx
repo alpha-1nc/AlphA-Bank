@@ -1,14 +1,16 @@
 import SettingsClient from "@/components/settings/SettingsClient";
 import { getSystemSettings } from "@/app/actions/settings";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultWorkUserId } from "@/lib/work-default-user";
+import { getCurrentUserId } from "@/lib/auth";
+import { getUserProfile } from "@/lib/user-profiles";
 import { normalizeWorkplacesForClient } from "@/lib/workplace-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const systemSettings = await getSystemSettings();
-  const userId = await ensureDefaultWorkUserId();
+  const userId = await getCurrentUserId();
+  const currentProfile = getUserProfile(userId)!;
   const workplaces = normalizeWorkplacesForClient(
     await prisma.workplace.findMany({
       where: { userId },
@@ -20,6 +22,9 @@ export default async function SettingsPage() {
     <SettingsClient
       initialBudgetStartDate={systemSettings.budgetStartDate}
       initialWorkplaces={JSON.parse(JSON.stringify(workplaces))}
+      currentUserId={userId}
+      currentProfileName={currentProfile.name}
+      currentProfileInitial={currentProfile.initial}
     />
   );
 }

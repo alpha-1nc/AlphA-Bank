@@ -28,6 +28,7 @@ import {
 } from "@/components/work/PayrollFormFields";
 import {
   PAY_PERIOD_MODE,
+  SALARY_PERIOD_MODE,
   payPeriodModeLabel,
 } from "@/lib/work-pay-schedule";
 
@@ -173,10 +174,8 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                       {w.name}
                     </p>
                     <p className="text-xs text-muted-foreground tabular-nums">
-                      시급{" "}
-                      {(w.hourlyWage ?? WORKPLACE_DEFAULTS.hourlyWage).toLocaleString()}
-                      원 · 매월 {w.paydayOfMonth ?? WORKPLACE_DEFAULTS.paydayOfMonth}
-                      일 월급
+                      시급 {(w.hourlyWage ?? WORKPLACE_DEFAULTS.hourlyWage).toLocaleString()}원
+                      · 매월 {w.paydayOfMonth ?? WORKPLACE_DEFAULTS.paydayOfMonth}일 월급
                       {w.isActive ? " · 재직" : " · 퇴사"}
                     </p>
                   </div>
@@ -241,6 +240,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                     workplaceId: editing.id,
                     name: name.trim(),
                     color,
+                    type: (editing.type ?? "PARTTIME") as "PARTTIME" | "FULLTIME",
                     hourlyWage: wageNum,
                     isWeeklyAllowanceActive: weeklyOn,
                     isTaxActive: taxOn,
@@ -325,7 +325,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                 </label>
                 <Select
                   value={payday}
-                  onValueChange={(v) => v && setPayday(v)}
+                  onValueChange={(v) => v != null && setPayday(v)}
                 >
                   <SelectTrigger className="rounded-xl w-full h-9 text-sm">
                     <SelectValue placeholder="일 선택" />
@@ -345,7 +345,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                 </label>
                 <Select
                   value={payMode}
-                  onValueChange={(v) => v && setPayMode(v)}
+                  onValueChange={(v) => v != null && setPayMode(v)}
                 >
                   <SelectTrigger className="rounded-xl w-full h-9 text-sm min-w-0">
                     <SelectValue placeholder="급여 기간 선택">
@@ -353,8 +353,8 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="rounded-xl max-w-[min(100vw-2rem,24rem)]">
-                    <SelectItem value={PAY_PERIOD_MODE.CALENDAR_MONTH}>
-                      {payPeriodModeLabel(PAY_PERIOD_MODE.CALENDAR_MONTH)}
+                    <SelectItem value={SALARY_PERIOD_MODE.CURRENT_MONTH}>
+                      {payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH)}
                     </SelectItem>
                     <SelectItem
                       value={PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY}

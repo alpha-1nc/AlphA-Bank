@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useLayoutEffect, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
-import { PAY_PERIOD_MODE, payPeriodModeLabel } from "@/lib/work-pay-schedule";
+import {
+  PAY_PERIOD_MODE,
+  SALARY_PERIOD_MODE,
+  payPeriodModeLabel,
+} from "@/lib/work-pay-schedule";
 import type { Workplace } from "@/generated/prisma";
 import { createWorkplace } from "@/actions/workplace.actions";
+import { WORKPLACE_TYPE } from "@/lib/workplace-type";
 import {
   FieldSwitch,
   HourlyWageField,
@@ -34,7 +40,6 @@ const PRESET_COLORS = [
 ];
 
 type Props = {
-  userId: string;
   workplaces: Workplace[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -42,7 +47,6 @@ type Props = {
 };
 
 export default function WorkplaceSelector({
-  userId,
   workplaces,
   selectedId,
   onSelect,
@@ -60,12 +64,47 @@ export default function WorkplaceSelector({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const [modalMount, setModalMount] = useState<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    setModalMount(document.body);
+  }, []);
+
   function resetPayrollForm() {
     setHourly("10030");
     setWeeklyOn(true);
     setTaxOn(true);
     setPayday("10");
     setPayMode(PAY_PERIOD_MODE.CALENDAR_MONTH);
+  }
+
+  function submitCreate() {
+    const wageNum = parseInt(hourly, 10);
+    if (Number.isNaN(wageNum) || wageNum < 0) {
+      setError("시급을 올바르게 입력해 주세요.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await createWorkplace({
+        name: name.trim(),
+        color,
+        type: WORKPLACE_TYPE.PARTTIME,
+        hourlyWage: wageNum,
+        isWeeklyAllowanceActive: weeklyOn,
+        isTaxActive: taxOn,
+        paydayOfMonth: parseInt(payday, 10),
+        payPeriodMode: payMode,
+      });
+      if (res.success) {
+        onWorkplaceCreated(res.data);
+        setCreating(false);
+        setName("");
+        setColor(PRESET_COLORS[0]);
+        resetPayrollForm();
+      } else {
+        setError(res.error);
+      }
+    });
   }
 
   if (active.length === 0 && !creating) {
@@ -94,32 +133,7 @@ export default function WorkplaceSelector({
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          const wageNum = parseInt(hourly, 10);
-          if (Number.isNaN(wageNum) || wageNum < 0) {
-            setError("시급을 올바르게 입력해 주세요.");
-            return;
-          }
-          startTransition(async () => {
-            const res = await createWorkplace({
-              userId,
-              name: name.trim(),
-              color,
-              hourlyWage: wageNum,
-              isWeeklyAllowanceActive: weeklyOn,
-              isTaxActive: taxOn,
-              paydayOfMonth: parseInt(payday, 10),
-              payPeriodMode: payMode,
-            });
-            if (res.success) {
-              onWorkplaceCreated(res.data);
-              setCreating(false);
-              setName("");
-              setColor(PRESET_COLORS[0]);
-              resetPayrollForm();
-            } else {
-              setError(res.error);
-            }
-          });
+          submitCreate();
         }}
       >
         <p className="text-sm font-medium text-foreground">새 근무지</p>
@@ -173,10 +187,10 @@ export default function WorkplaceSelector({
             </label>
             <Select
               value={payday}
-              onValueChange={(v) => v && setPayday(v)}
+              onValueChange={(v) => v != null && setPayday(v)}
             >
               <SelectTrigger className="rounded-xl w-full">
-                <SelectValue />
+                <SelectValue placeholder="일 선택" />
               </SelectTrigger>
               <SelectContent className="max-h-60 rounded-xl">
                 {PAYDAY_OPTIONS.map((d) => (
@@ -193,7 +207,7 @@ export default function WorkplaceSelector({
             </label>
             <Select
               value={payMode}
-              onValueChange={(v) => v && setPayMode(v)}
+              onValueChange={(v) => v != null && setPayMode(v)}
             >
               <SelectTrigger className="rounded-xl w-full min-w-0">
                 <SelectValue placeholder="급여 기간 선택">
@@ -201,8 +215,8 @@ export default function WorkplaceSelector({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="rounded-xl max-w-[min(100vw-2rem,24rem)]">
-                <SelectItem value={PAY_PERIOD_MODE.CALENDAR_MONTH}>
-                  {payPeriodModeLabel(PAY_PERIOD_MODE.CALENDAR_MONTH)}
+                <SelectItem value={SALARY_PERIOD_MODE.CURRENT_MONTH}>
+                  {payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH)}
                 </SelectItem>
                 <SelectItem value={PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY}>
                   {payPeriodModeLabel(
@@ -250,7 +264,7 @@ export default function WorkplaceSelector({
               type="button"
               onClick={() => onSelect(w.id)}
               className={cn(
-                "rounded-2xl px-4 py-2 text-sm font-medium transition-all duration-200 border",
+                "inline-flex max-w-full min-w-0 items-center rounded-2xl px-4 py-2 text-sm font-medium transition-all duration-200 border",
                 isSel
                   ? "border-primary/40 bg-primary/15 text-primary shadow-md scale-[1.02] ring-2 ring-primary/20"
                   : "border-slate-100 dark:border-white/10 bg-white/80 dark:bg-white/5 text-muted-foreground hover:bg-slate-50 dark:hover:bg-white/10 hover:text-foreground hover:border-primary/20 active:scale-[0.98]"
@@ -269,7 +283,7 @@ export default function WorkplaceSelector({
                   style={{ backgroundColor: w.color }}
                 />
               </span>
-              {w.name}
+              <span className="truncate">{w.name}</span>
             </button>
           );
         })}
@@ -284,39 +298,19 @@ export default function WorkplaceSelector({
         <Plus className="h-4 w-4 mr-1" />
         근무지 추가
       </Button>
-      {creating && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in-0">
-          <form
+      {creating &&
+        modalMount &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in-0"
+            role="presentation"
+          >
+            <form
             className="w-full max-w-sm max-h-[min(90vh,720px)] overflow-y-auto rounded-3xl border border-slate-100 dark:border-white/10 bg-background p-6 shadow-xl space-y-4 animate-in zoom-in-95"
             onSubmit={(e) => {
               e.preventDefault();
               setError(null);
-              const wageNum = parseInt(hourly, 10);
-              if (Number.isNaN(wageNum) || wageNum < 0) {
-                setError("시급을 올바르게 입력해 주세요.");
-                return;
-              }
-              startTransition(async () => {
-                const res = await createWorkplace({
-                  userId,
-                  name: name.trim(),
-                  color,
-                  hourlyWage: wageNum,
-                  isWeeklyAllowanceActive: weeklyOn,
-                  isTaxActive: taxOn,
-                  paydayOfMonth: parseInt(payday, 10),
-                  payPeriodMode: payMode,
-                });
-                if (res.success) {
-                  onWorkplaceCreated(res.data);
-                  setCreating(false);
-                  setName("");
-                  setColor(PRESET_COLORS[0]);
-                  resetPayrollForm();
-                } else {
-                  setError(res.error);
-                }
-              });
+              submitCreate();
             }}
           >
             <p className="text-sm font-semibold">새 근무지</p>
@@ -361,11 +355,11 @@ export default function WorkplaceSelector({
                 월급일 (매월)
               </label>
               <Select
-              value={payday}
-              onValueChange={(v) => v && setPayday(v)}
-            >
+                value={payday}
+                onValueChange={(v) => v != null && setPayday(v)}
+              >
                 <SelectTrigger className="rounded-xl w-full">
-                  <SelectValue />
+                  <SelectValue placeholder="일 선택" />
                 </SelectTrigger>
                 <SelectContent className="max-h-60 rounded-xl">
                   {PAYDAY_OPTIONS.map((d) => (
@@ -381,17 +375,17 @@ export default function WorkplaceSelector({
                 급여 기간
               </label>
               <Select
-              value={payMode}
-              onValueChange={(v) => v && setPayMode(v)}
-            >
+                value={payMode}
+                onValueChange={(v) => v != null && setPayMode(v)}
+              >
                 <SelectTrigger className="rounded-xl w-full min-w-0">
                   <SelectValue placeholder="급여 기간 선택">
                     {payPeriodModeLabel(payMode)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl max-w-[min(100vw-2rem,24rem)]">
-                  <SelectItem value={PAY_PERIOD_MODE.CALENDAR_MONTH}>
-                    {payPeriodModeLabel(PAY_PERIOD_MODE.CALENDAR_MONTH)}
+                  <SelectItem value={SALARY_PERIOD_MODE.CURRENT_MONTH}>
+                    {payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH)}
                   </SelectItem>
                   <SelectItem value={PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY}>
                     {payPeriodModeLabel(
@@ -420,8 +414,9 @@ export default function WorkplaceSelector({
               </Button>
             </div>
           </form>
-        </div>
-      )}
+          </div>,
+          modalMount
+        )}
     </div>
   );
 }

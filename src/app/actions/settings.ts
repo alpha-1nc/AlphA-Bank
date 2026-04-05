@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 
 export interface SystemSettingsData {
   id: string;
@@ -87,13 +88,15 @@ export interface ExportCSVResult {
 }
 
 export async function exportAllDataCSV(): Promise<ExportCSVResult> {
+  const userId = await getCurrentUserId();
   const [accounts, cashFlows, bucketList] = await Promise.all([
-    prisma.account.findMany({ orderBy: { name: "asc" } }),
+    prisma.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
     prisma.cashFlow.findMany({
+      where: { monthlyBudget: { userId } },
       include: { monthlyBudget: true },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.bucketList.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.bucketList.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
   ]);
 
   const accountHeaders = "id,name,type,bankName,accountNumber,description,initialBalance,createdAt";
@@ -165,12 +168,20 @@ export async function factoryReset(confirmText: string) {
     throw new Error("Invalid confirmation text.");
   }
 
-  await prisma.$transaction([
-    prisma.cashFlow.deleteMany(),
-    prisma.monthlyBudget.deleteMany(),
-    prisma.bucketList.deleteMany(),
-    prisma.account.deleteMany(),
-  ]);
+  const userId = await getCurrentUserId();
+
+  await prisma.$transaction(async (tx) => {
+    const budgets = await tx.monthlyBudget.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const budgetIds = budgets.map((b) => b.id);
+
+    await tx.cashFlow.deleteMany({ where: { monthlyBudgetId: { in: budgetIds } } });
+    await tx.monthlyBudget.deleteMany({ where: { userId } });
+    await tx.bucketList.deleteMany({ where: { userId } });
+    await tx.account.deleteMany({ where: { userId } });
+  });
 
   revalidatePath("/", "layout");
 }

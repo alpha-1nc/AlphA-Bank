@@ -53,7 +53,12 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-background p-4 text-sm ring-1 ring-foreground/10 duration-200 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed z-50 grid w-full gap-4 rounded-xl bg-background p-4 text-sm ring-1 ring-foreground/10 duration-200 outline-none",
+          "left-1/2 top-1/2 max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 sm:max-w-sm",
+          "max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:max-h-[90vh] max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-b-none max-md:rounded-t-2xl max-md:overflow-y-auto max-md:border-x-0 max-md:border-b-0",
+          "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+          "md:data-open:zoom-in-95 md:data-closed:zoom-out-95",
+          "max-md:data-open:slide-in-from-bottom-4 max-md:data-closed:slide-out-to-bottom-4 max-md:data-open:duration-300 max-md:data-closed:duration-200",
           className
         )}
         {...props}
@@ -65,7 +70,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-2 right-2"
+                className="absolute top-2 right-2 max-md:top-3 touch-manipulation select-none"
                 size="icon-sm"
               />
             }
@@ -102,7 +107,9 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex gap-2 rounded-b-xl border-t bg-muted/50 p-4",
+        "flex-col-reverse max-md:flex-row max-md:flex-nowrap max-md:justify-stretch max-md:[&_button]:min-h-12 max-md:[&_button]:flex-1 max-md:[&_button]:text-base",
+        "md:flex-row md:justify-end",
         className
       )}
       {...props}

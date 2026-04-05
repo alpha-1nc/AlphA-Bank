@@ -1,10 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
-import MobileNav from "@/components/MobileNav";
+import BottomTabBar from "@/components/BottomTabBar";
+import MobileMainPad from "@/components/MobileMainPad";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,7 +48,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={cn("font-sans", geistSans.variable, manrope.variable)} suppressHydrationWarning>
+    <html
+      lang="ko"
+      className={cn("font-sans overflow-x-hidden", geistSans.variable, manrope.variable)}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -58,28 +69,17 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased bg-background text-foreground">
-        <div className="flex h-screen overflow-hidden">
+      <body className="antialiased bg-background text-foreground overflow-x-hidden min-w-0">
+        <div className="flex h-screen overflow-hidden min-w-0">
           {/* 데스크탑 사이드바 */}
           <div className="relative z-[100] hidden md:flex md:shrink-0">
             <Sidebar />
           </div>
 
           {/* 우측 메인 영역 */}
-          <div className="flex flex-1 flex-col overflow-hidden relative">
-            {/* 모바일: 햄버거 메뉴 (좌상단 고정, safe-area 지원) */}
-            <div
-              className="fixed z-50 md:hidden"
-              style={{
-                top: "max(1rem, env(safe-area-inset-top, 0px))",
-                left: "max(1rem, env(safe-area-inset-left, 0px))",
-              }}
-            >
-              <MobileNav />
-            </div>
-            <main className="flex-1 overflow-y-auto pt-20 md:pt-0">
-              {children}
-            </main>
+          <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+            <MobileMainPad>{children}</MobileMainPad>
+            <BottomTabBar />
           </div>
         </div>
       </body>

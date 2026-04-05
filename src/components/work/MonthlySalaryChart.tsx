@@ -83,7 +83,7 @@ export default function MonthlySalaryChart({ data }: Props) {
 
   return (
     <section
-      className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl"
+      className="w-full min-w-0 rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]"
       aria-labelledby="work-chart-heading"
     >
       <h2

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import { type BudgetCashFlowType } from "@/lib/budget-constants";
 
 const SAVING_TYPE = "SAVING" as const;
@@ -17,9 +18,10 @@ export interface AddCashFlowData {
 /**
  * 월별 예산을 조회하거나 없으면 빈 예산안만 새로 생성해 반환합니다.
  */
-export async function getOrCreateMonthlyBudget(month: string) {
-  const existing = await prisma.monthlyBudget.findUnique({
-    where: { month },
+export async function getOrCreateMonthlyBudget(month: string, userId?: string) {
+  const uid = userId ?? (await getCurrentUserId());
+  const existing = await prisma.monthlyBudget.findFirst({
+    where: { userId: uid, month },
     include: {
       transactions: { orderBy: { createdAt: "asc" } },
     },
@@ -27,9 +29,9 @@ export async function getOrCreateMonthlyBudget(month: string) {
   if (existing) return existing;
 
   const budget = await prisma.monthlyBudget.create({
-    data: { month, personalAllowance: 0 },
+    data: { userId: uid, month, personalAllowance: 0 },
   });
-  return prisma.monthlyBudget.findUniqueOrThrow({
+  return prisma.monthlyBudget.findFirstOrThrow({
     where: { id: budget.id },
     include: { transactions: { orderBy: { createdAt: "asc" } } },
   });
@@ -39,6 +41,7 @@ export async function getOrCreateMonthlyBudget(month: string) {
  * 이전 달 고정지출을 현재 월로 수동 불러오기합니다.
  */
 export async function importPreviousFixedExpenses(currentMonth: string) {
+  const userId = await getCurrentUserId();
   const [yearStr, monthStr] = currentMonth.split("-");
   let year = parseInt(yearStr, 10);
   let month = parseInt(monthStr, 10);
@@ -51,8 +54,8 @@ export async function importPreviousFixedExpenses(currentMonth: string) {
   const prevMonthStr = `${year}-${String(month).padStart(2, "0")}`;
 
   const [prevBudget, currentBudget] = await Promise.all([
-    prisma.monthlyBudget.findUnique({
-      where: { month: prevMonthStr },
+    prisma.monthlyBudget.findFirst({
+      where: { userId, month: prevMonthStr },
       include: {
         transactions: {
           where: { type: "EXPENSE_FIXED" },
@@ -60,8 +63,8 @@ export async function importPreviousFixedExpenses(currentMonth: string) {
         },
       },
     }),
-    prisma.monthlyBudget.findUnique({
-      where: { month: currentMonth },
+    prisma.monthlyBudget.findFirst({
+      where: { userId, month: currentMonth },
     }),
   ]);
 
@@ -103,11 +106,13 @@ export interface UpdateCashFlowData {
  * 알바 근무지에서 동기화된 수입(workplaceId 있음)은 근무 기록에서만 갱신됩니다.
  */
 export async function updateCashFlow(id: string, data: UpdateCashFlowData) {
-  const linked = await prisma.cashFlow.findUnique({
-    where: { id },
+  const userId = await getCurrentUserId();
+  const linked = await prisma.cashFlow.findFirst({
+    where: { id, monthlyBudget: { userId } },
     select: { workplaceId: true },
   });
-  if (linked?.workplaceId) return;
+  if (!linked) return;
+  if (linked.workplaceId) return;
 
   const updateData: { title?: string; amount?: number; accountId?: string | null } = {};
 
@@ -137,6 +142,12 @@ export async function updateCashFlow(id: string, data: UpdateCashFlowData) {
 }
 
 export async function addCashFlow(data: AddCashFlowData) {
+  const userId = await getCurrentUserId();
+  const budget = await prisma.monthlyBudget.findFirst({
+    where: { id: data.monthlyBudgetId, userId },
+  });
+  if (!budget) return;
+
   await prisma.cashFlow.create({
     data: {
       type: data.type,
@@ -157,31 +168,39 @@ export async function toggleCashFlow(
   amount: number,
   type: string
 ) {
+  const userId = await getCurrentUserId();
   const newStatus = !currentStatus;
 
   if (type === SAVING_TYPE && accountId) {
     await prisma.$transaction(async (tx) => {
+      const flow = await tx.cashFlow.findFirst({
+        where: { id, monthlyBudget: { userId } },
+      });
+      if (!flow) return;
+
       await tx.cashFlow.update({
         where: { id },
         data: { isCompleted: newStatus },
       });
 
-      const account = await tx.account.findUnique({
-        where: { id: accountId },
+      const account = await tx.account.findFirst({
+        where: { id: accountId, userId },
         select: { initialBalance: true },
       });
 
       if (!account) return;
 
       const delta = newStatus ? amount : -amount;
-      await tx.account.update({
-        where: { id: accountId },
-        data: {
-          initialBalance: account.initialBalance + delta,
-        },
+      await tx.account.updateMany({
+        where: { id: accountId, userId },
+        data: { initialBalance: account.initialBalance + delta },
       });
     });
   } else {
+    const flow = await prisma.cashFlow.findFirst({
+      where: { id, monthlyBudget: { userId } },
+    });
+    if (!flow) return;
     await prisma.cashFlow.update({
       where: { id },
       data: { isCompleted: newStatus },
@@ -194,20 +213,21 @@ export async function toggleCashFlow(
 }
 
 export async function deleteCashFlow(id: string) {
-  const row = await prisma.cashFlow.findUnique({ where: { id } });
-  if (row?.workplaceId) {
-    return;
-  }
-  await prisma.cashFlow.delete({
-    where: { id },
+  const userId = await getCurrentUserId();
+  const row = await prisma.cashFlow.findFirst({
+    where: { id, monthlyBudget: { userId } },
   });
+  if (!row) return;
+  if (row.workplaceId) return;
+  await prisma.cashFlow.delete({ where: { id } });
   revalidatePath("/budget");
   revalidatePath("/");
 }
 
 export async function updatePersonalAllowance(id: string, amount: number) {
-  await prisma.monthlyBudget.update({
-    where: { id },
+  const userId = await getCurrentUserId();
+  await prisma.monthlyBudget.updateMany({
+    where: { id, userId },
     data: { personalAllowance: amount },
   });
   revalidatePath("/budget");

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
 import { Check, LayoutDashboard } from "lucide-react";
@@ -51,6 +52,7 @@ const ACCOUNT_TYPE_LABEL: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
+  const userId = await getCurrentUserId();
   const currentMonth = getCurrentMonth();
   const past6Months = getPast6Months();
 
@@ -72,31 +74,31 @@ export default async function DashboardPage() {
   // ── Data fetching ──────────────────────────────────────────────────────────
   const [accounts, monthlyBudgets, primeBucket, workNet] = await Promise.all([
     // a) All accounts for total net worth + donut chart
-    prisma.account.findMany({ select: { type: true, initialBalance: true } }),
+    prisma.account.findMany({ where: { userId }, select: { type: true, initialBalance: true } }),
 
     // b) Last 6 months of budgets with cash flows for bar chart
     prisma.monthlyBudget.findMany({
-      where: { month: { in: past6Months } },
+      where: { userId, month: { in: past6Months } },
       include: { transactions: true },
     }),
 
     // c) Prime bucket: 미완료·미달성 중 중요도 최상위 (완료 시 자동으로 다음 순위)
     prisma.bucketList.findFirst({
-      where: { isAchieved: false, isCompleted: false },
+      where: { userId, isAchieved: false, isCompleted: false },
       orderBy: [{ importance: "desc" }, { createdAt: "asc" }],
     }),
 
     // d) KST·근무지 월급일 기준 미지급 근무월 알바 예상 실수령 (활성 근무지 합산)
-    getDashboardWorkNet(),
+    getDashboardWorkNet(userId),
   ]);
   const currentBudget =
     currentBudgetMonth === currentMonth
       ? monthlyBudgets.find((b) => b.month === currentBudgetMonth)
-      : await getOrCreateMonthlyBudget(currentBudgetMonth);
+      : await getOrCreateMonthlyBudget(currentBudgetMonth, userId);
   const currentBudgetResolved =
     typeof currentBudget === "object" && "transactions" in currentBudget
       ? currentBudget
-      : await getOrCreateMonthlyBudget(currentBudgetMonth);
+      : await getOrCreateMonthlyBudget(currentBudgetMonth, userId);
 
   // ── a) Total net worth & donut data ────────────────────────────────────────
   const totalNetWorth = accounts.reduce((s, a) => s + a.initialBalance, 0);
@@ -153,20 +155,20 @@ export default async function DashboardPage() {
     : null;
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden">
+    <div className="px-4 py-6 md:p-8 lg:p-10 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
       {/* ── Hero Section ──────────────────────────────────────────────────── */}
-      <header className="mb-10">
+      <header className="mb-6 md:mb-10">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2.5 min-w-0">
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 md:mb-1.5 flex items-center gap-2.5 min-w-0">
               <LayoutDashboard className="h-8 w-8 text-primary shrink-0" />
               <span className="break-words">대시보드</span>
             </h1>
-            <p className="text-sm text-slate-400 font-medium">
+            <p className="hidden md:block text-sm text-slate-400 font-medium">
               자산, 예산, 머니 버킷리스트 종합 현황
             </p>
           </div>
-          <p className="text-sm text-slate-400 font-medium shrink-0">
+          <p className="hidden md:block text-sm text-slate-400 font-medium shrink-0">
             {new Date().toLocaleDateString("ko-KR", {
               year: "numeric",
               month: "long",
@@ -184,8 +186,8 @@ export default async function DashboardPage() {
           className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-6 flex flex-col
-            transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
+            p-4 md:p-6 flex flex-col
+            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
         >
           <div className="mb-4">
@@ -244,8 +246,8 @@ export default async function DashboardPage() {
           className="
             md:col-span-2 bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-6 flex flex-col
-            transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
+            p-4 md:p-6 flex flex-col
+            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
         >
           <div className="mb-4">
@@ -257,7 +259,7 @@ export default async function DashboardPage() {
             </h2>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 w-full min-w-0">
             <CashFlowBarChart data={barData} />
           </div>
 
@@ -316,8 +318,8 @@ export default async function DashboardPage() {
           className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-6 flex flex-col min-h-[200px]
-            transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl
+            p-4 md:p-6 flex flex-col min-h-[200px]
+            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
         >
           <div className="flex items-start justify-between gap-2 mb-3">

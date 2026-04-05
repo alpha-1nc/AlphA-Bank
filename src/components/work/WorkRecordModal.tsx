@@ -107,7 +107,7 @@ function toWeeklyCalc(r: WorkRecord): WorkRecordForWeeklyAllowance {
   return {
     startTime: parseDateSafe(r.startTime),
     endTime: parseDateSafe(r.endTime),
-    breakTimeMinutes: r.breakTimeMinutes,
+    breakTimeMinutes: r.breakTimeMinutes ?? 0,
     hourlyWage: r.hourlyWage,
     isWeeklyAllowanceActive: r.isWeeklyAllowanceActive,
   };
@@ -199,7 +199,7 @@ export default function WorkRecordModal({
     if (!rec) return;
     setStartTime(toTimeInput(parseDateSafe(rec.startTime)));
     setEndTime(toTimeInput(parseDateSafe(rec.endTime)));
-    setBreakM(rec.breakTimeMinutes);
+    setBreakM(rec.breakTimeMinutes ?? 30);
   }, [editId, recordsOnDay]);
 
   const estimate = useMemo(() => {
@@ -321,6 +321,12 @@ export default function WorkRecordModal({
             hourlyWage: wageNum,
             isWeeklyAllowanceActive: payroll.isWeeklyAllowanceActive,
             isTaxActive: payroll.isTaxActive,
+            overtimeMinutes: null,
+            nightMinutes: null,
+            holidayMinutes: null,
+            bonusAmount: null,
+            isBonusTaxable: null,
+            leaveUsed: null,
           };
         });
         const res = await createWorkRecordsBatch(payloads);
@@ -345,6 +351,12 @@ export default function WorkRecordModal({
           hourlyWage: wageNum,
           isWeeklyAllowanceActive: payroll.isWeeklyAllowanceActive,
           isTaxActive: payroll.isTaxActive,
+          overtimeMinutes: null,
+          nightMinutes: null,
+          holidayMinutes: null,
+          bonusAmount: null,
+          isBonusTaxable: null,
+          leaveUsed: null,
         });
         if (res.success) {
           onSuccess();
@@ -384,7 +396,10 @@ export default function WorkRecordModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-slate-100 dark:border-white/10">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-slate-100 dark:border-white/10 max-md:rounded-t-3xl">
+        <div className="md:hidden -mx-1 mb-1 flex shrink-0 justify-center" aria-hidden>
+          <div className="h-1 w-11 rounded-full bg-muted" />
+        </div>
         <DialogHeader>
           <DialogTitle className="text-lg font-bold tracking-tight">
             {editId
@@ -416,7 +431,7 @@ export default function WorkRecordModal({
                     if (rec) {
                       setStartTime(toTimeInput(parseDateSafe(rec.startTime)));
                       setEndTime(toTimeInput(parseDateSafe(rec.endTime)));
-                      setBreakM(rec.breakTimeMinutes);
+                      setBreakM(rec.breakTimeMinutes ?? 30);
                     }
                   }
                 }}
@@ -614,12 +629,12 @@ export default function WorkRecordModal({
             </p>
           )}
 
-          <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+          <div className="flex flex-col gap-2 pt-2">
             {editId && (
               <Button
                 type="button"
                 variant="destructive"
-                className="rounded-2xl sm:mr-auto"
+                className="w-full rounded-2xl md:w-auto md:mr-auto"
                 onClick={handleDelete}
                 disabled={pending}
               >
@@ -627,31 +642,33 @@ export default function WorkRecordModal({
                 삭제
               </Button>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-2xl"
-              onClick={() => onOpenChange(false)}
-              disabled={pending}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              className="rounded-2xl flex-1"
-              onClick={handleSubmit}
-              disabled={pending || (!editId && bulkSelectedKeys.size === 0)}
-            >
-              {pending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : editId ? (
-                "저장"
-              ) : bulkSelectedKeys.size > 1 ? (
-                `선택한 ${bulkSelectedKeys.size}일에 등록`
-              ) : (
-                "등록"
-              )}
-            </Button>
+            <div className="flex flex-row gap-2 w-full [&>button]:flex-1 max-md:[&>button]:min-h-12">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                onClick={() => onOpenChange(false)}
+                disabled={pending}
+              >
+                취소
+              </Button>
+              <Button
+                type="button"
+                className="rounded-2xl"
+                onClick={handleSubmit}
+                disabled={pending || (!editId && bulkSelectedKeys.size === 0)}
+              >
+                {pending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : editId ? (
+                  "저장"
+                ) : bulkSelectedKeys.size > 1 ? (
+                  `선택한 ${bulkSelectedKeys.size}일에 등록`
+                ) : (
+                  "등록"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

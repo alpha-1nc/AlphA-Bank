@@ -1,12 +1,9 @@
-import path from "path";
 import { PrismaClient } from "@/generated/prisma";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { resolveDatabaseUrl } from "@/lib/resolve-database-url";
 
 function createPrismaClient() {
-  const url =
-    process.env.DATABASE_URL ??
-    `file:${path.join(process.cwd(), "prisma", "dev.db")}`;
-
+  const url = resolveDatabaseUrl();
   const adapter = new PrismaLibSql({ url });
   return new PrismaClient({ adapter });
 }

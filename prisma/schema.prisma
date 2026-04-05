@@ -11,16 +11,22 @@ datasource db {
   provider = "sqlite"
 }
 
-/// 앱 사용자 (근무지/급여 데이터의 소유자). 인증 연동 시 이 모델과 매핑하면 됩니다.
+/// 앱 사용자 (JK / MY 고정 2인)
 model User {
-  id          String       @id @default(uuid())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  workplaces  Workplace[]
+  id            String         @id
+  name          String
+  createdAt     DateTime       @default(now())
+  workplaces    Workplace[]
+  accounts      Account[]
+  monthlyBudgets MonthlyBudget[]
+  bucketLists   BucketList[]
+  subscriptions Subscription[]
 }
 
 model Account {
   id             String     @id @default(uuid())
+  userId         String     @default("user-jk")
+  user           User       @relation(fields: [userId], references: [id])
   name           String     // 계좌명
   type           String     // 입출금, 금고, 저축, 증권, 연금
   bankName       String?    // 은행/증권사 명
@@ -35,11 +41,15 @@ model Account {
 
 model MonthlyBudget {
   id                String     @id @default(uuid())
-  month             String     @unique // "YYYY-MM" 포맷
+  userId            String     @default("user-jk")
+  user              User       @relation(fields: [userId], references: [id])
+  month             String     // "YYYY-MM" 포맷
   personalAllowance Int        @default(0) // 전월 이월된 개인 용돈
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   transactions      CashFlow[]
+
+  @@unique([userId, month])
 }
 
 model CashFlow {
@@ -62,6 +72,8 @@ model CashFlow {
 
 model BucketList {
   id            String   @id @default(uuid())
+  userId        String   @default("user-jk")
+  user          User     @relation(fields: [userId], references: [id])
   title         String
   importance    Int      @default(3) // 중요도
   targetAmount  Int
@@ -81,6 +93,8 @@ model SystemSettings {
 
 model Subscription {
   id         String   @id @default(uuid())
+  userId     String   @default("user-jk")
+  user       User     @relation(fields: [userId], references: [id])
   name       String
   amount     Int
   billingDay Int      @default(1)
@@ -93,7 +107,7 @@ model Subscription {
   updatedAt  DateTime @default(now()) @updatedAt
 }
 
-/// 아르바이트 근무지 (사용자당 다수)
+/// 아르바이트·정규직 근무지 (사용자당 다수)
 model Workplace {
   id                        String       @id @default(uuid())
   userId                    String
@@ -101,13 +115,25 @@ model Workplace {
   name                      String
   color                     String       // UI 구분용 색상 코드 (예: #RRGGBB)
   isActive                  Boolean      @default(true) // 퇴사/미사용 구분
-  hourlyWage                Int          @default(10030) // 시급(원) — 근무 기록에 복사·동기화
+  /// PARTTIME | FULLTIME
+  type                      String       @default("PARTTIME")
+  hourlyWage                Int          @default(10030) // 시급(원) — 근무 기록에 복사·동기화 (정규직은 통상시급 등으로 동기화)
   isWeeklyAllowanceActive   Boolean      @default(true) // 주휴수당 적용
   isTaxActive               Boolean      @default(true) // 3.3% 세금 적용
   /// 매월 급여 지급일 (1~31, 해당 월 말일이 더 짧으면 말일로 처리)
   paydayOfMonth             Int          @default(10)
   /// CALENDAR_MONTH: 당월 1일~말일 근무 → 익월 payday 지급 / ROLLING_BEFORE_PAYDAY: 전 월급일~이번 월급 전날 근무 → 이번 월급일 지급
   payPeriodMode             String       @default("CALENDAR_MONTH")
+  /// 정규직 전용: 월 기본급(원)
+  monthlyBaseSalary         Int?
+  /// 정규직 전용: 수당 JSON 배열 [{ id, name, amount, isTaxExempt }]
+  allowances                Json?
+  /// 정규직 전용: 부양가족 수 (간이세액표, 1~11)
+  taxDependents             Int?
+  /// 정규직 전용: 입사일 YYYY-MM-DD
+  hireDate                  String?
+  /// 정규직 전용: 연간 발생 연차 일수
+  annualLeaveTotal          Float?
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt
   workRecords               WorkRecord[]
@@ -122,12 +148,25 @@ model WorkRecord {
   workplaceId               String
   workplace                 Workplace @relation(fields: [workplaceId], references: [id], onDelete: Cascade)
   date                      DateTime  // 근무일 (일자 기준 조회·주차 계산에 사용)
-  startTime                 DateTime  // 근무 시작 시각
-  endTime                   DateTime  // 근무 종료 시각
-  breakTimeMinutes          Int       @default(0) // 휴게(분)
+  /// 알바: 필수. 정규직 추가만 기록 시 null
+  startTime                 DateTime?
+  endTime                   DateTime?
+  breakTimeMinutes          Int? // 휴게(분); 추가만 기록 시 null
   hourlyWage                Int       // 시급(원)
   isWeeklyAllowanceActive   Boolean   @default(true) // 주휴수당 적용 여부(수동)
   isTaxActive               Boolean   @default(true) // 3.3% 세금 적용 여부(수동)
+  /// 정규직 전용: 연장근무 분
+  overtimeMinutes           Int?
+  /// 정규직 전용: 야간근무 분 (22~06)
+  nightMinutes              Int?
+  /// 정규직 전용: 휴일근무 분
+  holidayMinutes            Int?
+  /// 정규직 전용: 해당 일 상여·일시금(원)
+  bonusAmount               Int?
+  /// 정규직 전용: 상여 과세 여부
+  isBonusTaxable            Boolean?
+  /// 정규직 전용: 연차 사용 일수 (1 / 0.5 / 0.25)
+  leaveUsed                 Float?
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
 

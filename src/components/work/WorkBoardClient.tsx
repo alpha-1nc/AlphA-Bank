@@ -8,7 +8,7 @@ import WorkRecordModal from "@/components/work/WorkRecordModal";
 import WorkSummaryBoard from "@/components/work/WorkSummaryBoard";
 import MonthlySalaryChart from "@/components/work/MonthlySalaryChart";
 import { getWorkRecordsByDateRange } from "@/actions/workRecord.actions";
-import { runWorkBudgetSyncForUser } from "@/actions/workBudgetSync.actions";
+import { runWorkBudgetSync } from "@/actions/workBudgetSync.actions";
 import { getKstWideFetchRangeUtc } from "@/lib/kst-month-range";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import { monthKeyFromDateKey } from "@/lib/kst-week";
@@ -30,11 +30,10 @@ function parseDateSafe(d: unknown): Date {
 }
 
 type Props = {
-  userId: string;
   initialWorkplaces: Workplace[];
 };
 
-export default function WorkBoardClient({ userId, initialWorkplaces }: Props) {
+export default function WorkBoardClient({ initialWorkplaces }: Props) {
   const [workplaces, setWorkplaces] = useState<Workplace[]>(initialWorkplaces);
 
   useEffect(() => {
@@ -43,8 +42,8 @@ export default function WorkBoardClient({ userId, initialWorkplaces }: Props) {
 
   /** 예산 수입 동기화는 Server Action에서만 수행 (SSR에서 revalidatePath 금지·청크 오류 방지) */
   useEffect(() => {
-    void runWorkBudgetSyncForUser(userId);
-  }, [userId]);
+    void runWorkBudgetSync();
+  }, []);
   const active = useMemo(
     () => workplaces.filter((w) => w.isActive),
     [workplaces]
@@ -134,15 +133,15 @@ export default function WorkBoardClient({ userId, initialWorkplaces }: Props) {
     );
   }, [wideRecords, year, month]);
 
-  const summary = useMemo(
+  const summaryPart = useMemo(
     () => computeMonthSalarySummary(wideRecords, year, month),
     [wideRecords, year, month]
   );
 
-  const chartSeries = useMemo(
-    () => computeSixMonthNetSeries(wideRecords, year, month),
-    [wideRecords, year, month]
-  );
+  const chartSeries = useMemo(() => {
+    if (!selected) return [];
+    return computeSixMonthNetSeries(wideRecords, year, month);
+  }, [wideRecords, year, month, selected]);
 
   const recordsOnModalDay = useMemo(() => {
     if (!modalDay) return [];
@@ -186,21 +185,20 @@ export default function WorkBoardClient({ userId, initialWorkplaces }: Props) {
   }
 
   return (
-    <div className="p-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-hidden transition-opacity duration-300">
+    <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden transition-opacity duration-300">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2.5 min-w-0">
-            <Briefcase className="h-8 w-8 text-primary shrink-0 transition-transform duration-300 hover:scale-105" />
+            <Briefcase className="h-8 w-8 text-primary shrink-0 transition-transform duration-300 md:hover:scale-105" />
             <span className="break-words">급여 계산기</span>
           </h1>
-          <p className="text-sm text-slate-400 font-medium">
+          <p className="hidden md:block text-sm text-slate-400 font-medium">
             근무지별 시급·근무 기록으로 실수령액과 월별 추이를 확인합니다
           </p>
         </div>
       </header>
 
       <WorkplaceSelector
-        userId={userId}
         workplaces={workplaces}
         selectedId={selectedId}
         onSelect={(id) => {
@@ -224,8 +222,8 @@ export default function WorkBoardClient({ userId, initialWorkplaces }: Props) {
 
       {selected && (
         <>
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <WorkSummaryBoard year={year} month={month} summary={summary} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <WorkSummaryBoard year={year} month={month} summary={summaryPart} />
             <MonthlySalaryChart data={chartSeries} />
           </div>
 

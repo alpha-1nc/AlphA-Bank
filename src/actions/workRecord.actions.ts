@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUserId } from "@/lib/auth";
 import type { ActionResult } from "@/actions/action-types";
 import {
   getKstMonthRangeUtc,
+  getKstYearRangeUtc,
   normalizeKstCalendarDateUtc,
 } from "@/lib/kst-month-range";
 import type { WorkRecord } from "@/generated/prisma";
@@ -26,11 +28,13 @@ export async function getWorkRecordsByMonth(
   month: number
 ): Promise<ActionResult<WorkRecord[]>> {
   try {
+    const userId = await getCurrentUserId();
     const { startInclusive, endInclusive } = getKstMonthRangeUtc(year, month);
 
     const rows = await prisma.workRecord.findMany({
       where: {
         workplaceId,
+        workplace: { userId },
         date: {
           gte: startInclusive,
           lte: endInclusive,
@@ -52,9 +56,11 @@ export async function getWorkRecordsByDateRange(
   endInclusive: Date
 ): Promise<ActionResult<WorkRecord[]>> {
   try {
+    const userId = await getCurrentUserId();
     const rows = await prisma.workRecord.findMany({
       where: {
         workplaceId,
+        workplace: { userId },
         date: {
           gte: startInclusive,
           lte: endInclusive,
@@ -86,17 +92,29 @@ export async function createWorkRecordsBatch(
   if (records.some((r) => r.workplaceId !== workplaceId)) {
     return { success: false, error: "근무지가 일치하지 않습니다." };
   }
+
   try {
+    const userId = await getCurrentUserId();
+    const wp = await prisma.workplace.findFirst({ where: { id: workplaceId, userId } });
+    if (!wp) return { success: false, error: "근무지를 찾을 수 없습니다." };
+
     await prisma.workRecord.createMany({
       data: records.map((data) => ({
         workplaceId: data.workplaceId,
         date: normalizeKstCalendarDateUtc(new Date(data.date)),
-        startTime: new Date(data.startTime),
-        endTime: new Date(data.endTime),
-        breakTimeMinutes: data.breakTimeMinutes,
+        startTime:
+          data.startTime != null ? new Date(data.startTime) : null,
+        endTime: data.endTime != null ? new Date(data.endTime) : null,
+        breakTimeMinutes: data.breakTimeMinutes ?? null,
         hourlyWage: data.hourlyWage,
         isWeeklyAllowanceActive: data.isWeeklyAllowanceActive,
         isTaxActive: data.isTaxActive,
+        overtimeMinutes: data.overtimeMinutes ?? null,
+        nightMinutes: data.nightMinutes ?? null,
+        holidayMinutes: data.holidayMinutes ?? null,
+        bonusAmount: data.bonusAmount ?? null,
+        isBonusTaxable: data.isBonusTaxable ?? null,
+        leaveUsed: data.leaveUsed ?? null,
       })),
     });
     await syncWorkplaceIncomeBudgetLines(workplaceId);
@@ -112,20 +130,29 @@ export async function createWorkRecord(
   data: CreateWorkRecordInput
 ): Promise<ActionResult<WorkRecord>> {
   try {
+    const userId = await getCurrentUserId();
+    const wp = await prisma.workplace.findFirst({ where: { id: data.workplaceId, userId } });
+    if (!wp) return { success: false, error: "근무지를 찾을 수 없습니다." };
+
     const dateNorm = normalizeKstCalendarDateUtc(new Date(data.date));
-    const startTime = new Date(data.startTime);
-    const endTime = new Date(data.endTime);
 
     const created = await prisma.workRecord.create({
       data: {
         workplaceId: data.workplaceId,
         date: dateNorm,
-        startTime,
-        endTime,
-        breakTimeMinutes: data.breakTimeMinutes,
+        startTime:
+          data.startTime != null ? new Date(data.startTime) : null,
+        endTime: data.endTime != null ? new Date(data.endTime) : null,
+        breakTimeMinutes: data.breakTimeMinutes ?? null,
         hourlyWage: data.hourlyWage,
         isWeeklyAllowanceActive: data.isWeeklyAllowanceActive,
         isTaxActive: data.isTaxActive,
+        overtimeMinutes: data.overtimeMinutes ?? null,
+        nightMinutes: data.nightMinutes ?? null,
+        holidayMinutes: data.holidayMinutes ?? null,
+        bonusAmount: data.bonusAmount ?? null,
+        isBonusTaxable: data.isBonusTaxable ?? null,
+        leaveUsed: data.leaveUsed ?? null,
       },
     });
     await syncWorkplaceIncomeBudgetLines(data.workplaceId);
@@ -142,7 +169,10 @@ export async function updateWorkRecord(
   data: Partial<WorkRecord>
 ): Promise<ActionResult<WorkRecord>> {
   try {
-    const before = await prisma.workRecord.findUnique({ where: { id } });
+    const userId = await getCurrentUserId();
+    const before = await prisma.workRecord.findFirst({
+      where: { id, workplace: { userId } },
+    });
     if (!before) {
       return { success: false, error: "근무 기록을 찾을 수 없습니다." };
     }
@@ -161,10 +191,15 @@ export async function updateWorkRecord(
       payload.date = normalizeKstCalendarDateUtc(new Date(rest.date));
     }
     if (rest.startTime !== undefined) {
-      payload.startTime = new Date(rest.startTime);
+      payload.startTime =
+        rest.startTime != null ? new Date(rest.startTime) : null;
     }
     if (rest.endTime !== undefined) {
-      payload.endTime = new Date(rest.endTime);
+      payload.endTime =
+        rest.endTime != null ? new Date(rest.endTime) : null;
+    }
+    if (rest.breakTimeMinutes !== undefined) {
+      payload.breakTimeMinutes = rest.breakTimeMinutes ?? null;
     }
 
     const updated = await prisma.workRecord.update({
@@ -183,17 +218,41 @@ export async function updateWorkRecord(
   }
 }
 
+export async function sumLeaveUsedForYear(
+  workplaceId: string,
+  year: number
+): Promise<ActionResult<number>> {
+  try {
+    const userId = await getCurrentUserId();
+    const { startInclusive, endInclusive } = getKstYearRangeUtc(year);
+    const agg = await prisma.workRecord.aggregate({
+      where: {
+        workplaceId,
+        workplace: { userId },
+        date: { gte: startInclusive, lte: endInclusive },
+      },
+      _sum: { leaveUsed: true },
+    });
+    const v = agg._sum.leaveUsed;
+    return { success: true, data: v != null ? Number(v) : 0 };
+  } catch (error) {
+    return { success: false, error: toErrorMessage(error) };
+  }
+}
+
 export async function deleteWorkRecord(
   id: string
 ): Promise<ActionResult<void>> {
   try {
-    const row = await prisma.workRecord.findUnique({ where: { id } });
-    await prisma.workRecord.delete({
-      where: { id },
+    const userId = await getCurrentUserId();
+    const row = await prisma.workRecord.findFirst({
+      where: { id, workplace: { userId } },
     });
-    if (row) {
-      await syncWorkplaceIncomeBudgetLines(row.workplaceId);
+    if (!row) {
+      return { success: false, error: "근무 기록을 찾을 수 없습니다." };
     }
+    await prisma.workRecord.delete({ where: { id } });
+    await syncWorkplaceIncomeBudgetLines(row.workplaceId);
     revalidatePath("/work");
     revalidatePath("/", "page");
     return { success: true, data: undefined };
