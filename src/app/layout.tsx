@@ -1,11 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Manrope } from "next/font/google";
+import { cookies } from "next/headers";
+import { getIronSession } from "iron-session";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
-import MobileNav from "@/components/MobileNav";
+import MobileHeader from "@/components/MobileHeader";
 import MobileMainPad from "@/components/MobileMainPad";
+import { type SessionData, sessionOptions } from "@/lib/session";
+import { getUserProfile, isValidUserId } from "@/lib/user-profiles";
+
+async function getSessionProfileLabel(): Promise<string | null> {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  const uid = session.userId;
+  if (!uid || !isValidUserId(uid)) return null;
+  return getUserProfile(uid)?.name ?? null;
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -42,11 +53,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profileLabel = await getSessionProfileLabel();
+
   return (
     <html
       lang="ko"
@@ -78,17 +91,7 @@ export default function RootLayout({
 
           {/* 우측 메인 영역 */}
           <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
-            <div
-              className="fixed z-[120] md:hidden pointer-events-none"
-              style={{
-                top: "max(0.75rem, env(safe-area-inset-top, 0px))",
-                left: "max(0.75rem, env(safe-area-inset-left, 0px))",
-              }}
-            >
-              <div className="pointer-events-auto">
-                <MobileNav />
-              </div>
-            </div>
+            <MobileHeader profileLabel={profileLabel} />
             <MobileMainPad>{children}</MobileMainPad>
           </div>
         </div>

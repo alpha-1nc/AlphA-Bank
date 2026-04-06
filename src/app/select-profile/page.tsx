@@ -3,16 +3,15 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useLogoEntranceAnimation } from "@/components/LogoEntranceAnimation";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { JK_USER_ID, USER_PROFILES } from "@/lib/user-profiles";
 
 export default function SelectProfilePage() {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const { start, overlay, isAnimating } = useLogoEntranceAnimation();
 
   async function handleSelect(userId: string) {
-    if (loadingId || isAnimating) return;
+    if (loadingId !== null) return;
     setLoadingId(userId);
     try {
       const res = await fetch("/api/session/create", {
@@ -24,20 +23,18 @@ export default function SelectProfilePage() {
         setLoadingId(null);
         return;
       }
-      start(() => {
-        router.push("/");
-        router.refresh();
-      });
+      router.push("/");
+      router.refresh();
     } catch {
       setLoadingId(null);
     }
   }
 
-  const busy = loadingId !== null || isAnimating;
+  const busy = loadingId !== null;
 
   return (
     <>
-      {overlay}
+      {busy ? <LoadingSpinner mode="overlay" /> : null}
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 py-12">
       <div className="w-full max-w-lg flex flex-col items-center">
         <div className="mb-8 flex justify-center">
@@ -51,7 +48,7 @@ export default function SelectProfilePage() {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center sm:justify-center">
+        <div className="grid w-full max-w-md grid-cols-2 gap-3 sm:gap-4 mx-auto">
           {USER_PROFILES.map((profile) => {
             const isJk = profile.id === JK_USER_ID;
             const avatarClass = isJk
@@ -65,8 +62,8 @@ export default function SelectProfilePage() {
                 disabled={busy}
                 onClick={() => handleSelect(profile.id)}
                 className="
-                  group flex flex-1 min-w-[140px] max-w-[220px] mx-auto sm:mx-0
-                  flex-col items-center gap-4 p-6 rounded-3xl
+                  group flex w-full min-w-0
+                  flex-col items-center gap-3 sm:gap-4 p-4 sm:p-6 rounded-3xl
                   bg-card border border-border
                   shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)]
                   hover:border-primary/40 hover:-translate-y-1

@@ -35,6 +35,7 @@ import {
   factoryReset,
 } from "@/app/actions/settings";
 import type { Workplace } from "@/generated/prisma";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { JK_USER_ID } from "@/lib/user-profiles";
 import WorkplaceSettingsCard from "@/components/settings/WorkplaceSettingsCard";
 
@@ -104,9 +105,12 @@ export default function SettingsClient({
     setIsSwitchingProfile(true);
     try {
       const res = await fetch("/api/session/destroy", { method: "POST" });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setIsSwitchingProfile(false);
+        return;
+      }
       window.location.href = "/select-profile";
-    } finally {
+    } catch {
       setIsSwitchingProfile(false);
     }
   }
@@ -140,10 +144,11 @@ export default function SettingsClient({
 
   return (
     <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
+      {isSwitchingProfile ? <LoadingSpinner mode="overlay" /> : null}
       {/* ── Page Header ─────────────────────────────────────────────────────── */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2.5 min-w-0">
+          <h1 className="hidden md:flex text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 items-center gap-2.5 min-w-0">
             <Settings className="h-8 w-8 text-primary shrink-0" />
             <span className="break-words">시스템 설정</span>
           </h1>
@@ -351,7 +356,7 @@ export default function SettingsClient({
             disabled={isSwitchingProfile}
           >
             {isSwitchingProfile ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              "전환 중…"
             ) : (
               <>
                 전환

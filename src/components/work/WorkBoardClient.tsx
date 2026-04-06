@@ -188,7 +188,7 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
     <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden transition-opacity duration-300">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2.5 min-w-0">
+          <h1 className="hidden md:flex text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 items-center gap-2.5 min-w-0">
             <Briefcase className="h-8 w-8 text-primary shrink-0 transition-transform duration-300 md:hover:scale-105" />
             <span className="break-words">급여 계산기</span>
           </h1>

@@ -11,7 +11,8 @@ export default function MobileMainPad({ children }: { children: React.ReactNode 
     <main
       className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden min-w-0",
-        showMobileHeaderOffset && "pt-[max(5rem,calc(env(safe-area-inset-top,0px)+3.5rem))] md:pt-0"
+        showMobileHeaderOffset &&
+          "pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] md:pt-0"
       )}
     >
       {children}
