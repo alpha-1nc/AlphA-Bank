@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import type { WorkRecord } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { ensureUserRowExists } from "@/lib/ensure-user";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import {
   getKstMondayKeyFromDateKey,
@@ -59,6 +60,7 @@ function collectBudgetMonthsForIncomeLines(
 }
 
 async function ensureMonthlyBudget(month: string, userId: string) {
+  await ensureUserRowExists(userId);
   const existing = await prisma.monthlyBudget.findFirst({
     where: { userId, month },
   });

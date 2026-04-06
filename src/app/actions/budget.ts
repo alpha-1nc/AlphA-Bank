@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
+import { ensureUserRowExists } from "@/lib/ensure-user";
 import { type BudgetCashFlowType } from "@/lib/budget-constants";
 
 const SAVING_TYPE = "SAVING" as const;
@@ -20,6 +21,7 @@ export interface AddCashFlowData {
  */
 export async function getOrCreateMonthlyBudget(month: string, userId?: string) {
   const uid = userId ?? (await getCurrentUserId());
+  await ensureUserRowExists(uid);
   const existing = await prisma.monthlyBudget.findFirst({
     where: { userId: uid, month },
     include: {
