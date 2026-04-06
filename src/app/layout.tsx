@@ -7,6 +7,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
+import MobileFirstVisitLogoIntro from "@/components/MobileFirstVisitLogoIntro";
 import MobileMainPad from "@/components/MobileMainPad";
 import { type SessionData, sessionOptions } from "@/lib/session";
 import { getUserProfile, isValidUserId } from "@/lib/user-profiles";
@@ -91,6 +92,7 @@ export default async function RootLayout({
 
           {/* 우측 메인 영역 */}
           <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+            <MobileFirstVisitLogoIntro />
             <MobileHeader profileLabel={profileLabel} />
             <MobileMainPad>{children}</MobileMainPad>
           </div>

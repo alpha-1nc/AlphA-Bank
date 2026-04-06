@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { useLogoEntranceAnimation } from "@/components/LogoEntranceAnimation";
 
 type AnimatedLogoLinkProps = {
   /** "header" = 풀 로고 (logo-full), "sidebar" = 아이콘 로고 (logo-alpha) */
@@ -11,16 +12,21 @@ type AnimatedLogoLinkProps = {
 
 export default function AnimatedLogoLink({ variant = "header" }: AnimatedLogoLinkProps) {
   const router = useRouter();
+  const { start, overlay, isAnimating } = useLogoEntranceAnimation();
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      router.push("/");
+      if (isAnimating) return;
+      start(() => {
+        router.push("/");
+      });
     },
-    [router]
+    [isAnimating, router, start]
   );
 
   return (
+    <>
     <button
       type="button"
       onClick={handleClick}
@@ -44,5 +50,7 @@ export default function AnimatedLogoLink({ variant = "header" }: AnimatedLogoLin
         }
       />
     </button>
+    {overlay}
+    </>
   );
 }
