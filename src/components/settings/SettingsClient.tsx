@@ -35,6 +35,7 @@ import {
   factoryReset,
 } from "@/app/actions/settings";
 import type { Workplace } from "@/generated/prisma";
+import { JK_USER_ID } from "@/lib/user-profiles";
 import WorkplaceSettingsCard from "@/components/settings/WorkplaceSettingsCard";
 
 const CONFIRM_TEXT = "AlphA Inc.";
@@ -324,7 +325,7 @@ export default function SettingsClient({
             <span
               className={[
                 "w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-black",
-                currentUserId === "user-jk"
+                currentUserId === JK_USER_ID
                   ? "bg-primary/15 text-primary"
                   : "bg-secondary text-secondary-foreground",
               ].join(" ")}

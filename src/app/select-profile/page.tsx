@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLogoEntranceAnimation } from "@/components/LogoEntranceAnimation";
-import { USER_PROFILES } from "@/lib/user-profiles";
+import { JK_USER_ID, USER_PROFILES } from "@/lib/user-profiles";
 
 export default function SelectProfilePage() {
   const router = useRouter();
@@ -53,7 +53,7 @@ export default function SelectProfilePage() {
 
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center sm:justify-center">
           {USER_PROFILES.map((profile) => {
-            const isJk = profile.id === "user-jk";
+            const isJk = profile.id === JK_USER_ID;
             const avatarClass = isJk
               ? "bg-primary/15 text-primary"
               : "bg-secondary text-secondary-foreground";
