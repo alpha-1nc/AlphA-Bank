@@ -27,17 +27,22 @@ export const APP_NAV_ITEMS: readonly AppNavItem[] = [
   { href: "/settings", label: "설정", shortLabel: "설정", icon: Settings },
 ];
 
-/** 모바일 상단바 등에 표시할 현재 페이지명 (사이드바 메뉴 라벨과 동일) */
-export function getPageTitleForPathname(pathname: string): string {
+/** 현재 경로에 해당하는 앱 메뉴 항목 (아이콘·라벨). 매칭 없으면 null */
+export function getNavItemForPathname(pathname: string): AppNavItem | null {
   const normalized = pathname.split("?")[0] || "/";
   for (const item of APP_NAV_ITEMS) {
     if (item.href === "/") {
-      if (normalized === "/") return item.label;
+      if (normalized === "/") return item;
       continue;
     }
     if (normalized === item.href || normalized.startsWith(`${item.href}/`)) {
-      return item.label;
+      return item;
     }
   }
-  return "AlphA Bank";
+  return null;
+}
+
+/** 모바일 상단바 등에 표시할 현재 페이지명 (사이드바 메뉴 라벨과 동일) */
+export function getPageTitleForPathname(pathname: string): string {
+  return getNavItemForPathname(pathname)?.label ?? "AlphA Bank";
 }

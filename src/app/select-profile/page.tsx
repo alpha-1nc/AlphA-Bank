@@ -48,7 +48,7 @@ export default function SelectProfilePage() {
           />
         </div>
 
-        <div className="grid w-full max-w-md grid-cols-2 gap-3 sm:gap-4 mx-auto">
+        <div className="flex w-full max-w-md flex-row flex-nowrap items-stretch justify-center gap-3 sm:gap-4 mx-auto">
           {USER_PROFILES.map((profile) => {
             const isJk = profile.id === JK_USER_ID;
             const avatarClass = isJk
@@ -62,7 +62,7 @@ export default function SelectProfilePage() {
                 disabled={busy}
                 onClick={() => handleSelect(profile.id)}
                 className="
-                  group flex w-full min-w-0
+                  group flex min-w-0 flex-1 basis-0
                   flex-col items-center gap-3 sm:gap-4 p-4 sm:p-6 rounded-3xl
                   bg-card border border-border
                   shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)]
