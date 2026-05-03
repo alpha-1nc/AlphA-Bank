@@ -86,6 +86,50 @@ function formatKRW(amount: number): string {
   }).format(amount);
 }
 
+/** 모바일/데스크톱 높이에 맞추고, 접두 ₩ 오버레이 대신 플렉스로 배치해 숫자와 겹치지 않게 함 */
+function KrwAmountField({
+  id,
+  value,
+  onChange,
+  tintClassName,
+}: {
+  id?: string;
+  value: string;
+  onChange: (v: string) => void;
+  tintClassName?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-11 h-11 w-full items-stretch rounded-xl border border-slate-100 bg-slate-50 dark:border-white/10 dark:bg-white/5",
+        "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
+        "md:h-11 md:min-h-11"
+      )}
+    >
+      <label
+        htmlFor={id}
+        className="flex shrink-0 cursor-text select-none items-center border-r border-slate-100 px-4 text-base font-semibold tabular-nums text-slate-400 dark:border-white/10"
+      >
+        ₩
+      </label>
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="금액"
+        className={cn(
+          "min-h-0 h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 py-0 text-base font-black tracking-tighter shadow-none",
+          "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+          "focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-slate-100 md:h-full md:text-base",
+          tintClassName
+        )}
+      />
+    </div>
+  );
+}
+
 interface CashFlowBoardProps {
   monthlyBudgetId: string;
   transactions: CashFlowItem[];
@@ -191,7 +235,7 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
     <div className="space-y-6">
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"
+        className="grid grid-cols-1 gap-4 md:grid-cols-4 md:items-start"
       >
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">분류</label>
@@ -200,7 +244,7 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
             onValueChange={(v) => setType(v as BudgetCashFlowType)}
             items={TYPE_LABELS}
           >
-            <SelectTrigger className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100">
+            <SelectTrigger className="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11">
               <SelectValue placeholder="분류 선택">
                 {(value: string | null) => (value && value in TYPE_LABELS ? TYPE_LABELS[value as BudgetCashFlowType] : null)}
               </SelectValue>
@@ -217,7 +261,7 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
             <>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1 block mt-3">입금 계좌</label>
               <Select value={accountId ?? ""} onValueChange={(v) => setAccountId(v || null)}>
-                <SelectTrigger className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100">
+                <SelectTrigger className="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11">
                   <SelectValue placeholder="입금 계좌 선택">
                     {(value: string | null) => {
                       const acc = accounts.find((a) => a.id === value);
@@ -242,27 +286,27 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100"
+            className="h-11 min-h-11 rounded-xl border border-slate-100 bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base"
           />
         </div>
 
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">금액 (원)</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₩</span>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className={cn(
-                "bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 pl-8 font-black tracking-tighter dark:text-slate-100",
-                type && TYPE_COLORS[type]
-              )}
-            />
-          </div>
+          <KrwAmountField
+            id="budget-add-amount"
+            value={amount}
+            onChange={setAmount}
+            tintClassName={type ? TYPE_COLORS[type] : undefined}
+          />
         </div>
 
-        <div>
+        <div className="space-y-2">
+          <label
+            className="pointer-events-none invisible ml-1 hidden md:block select-none text-xs font-semibold uppercase tracking-widest text-slate-400"
+            aria-hidden
+          >
+            추가
+          </label>
           <Button
             type="submit"
             disabled={isPending || !type || !title.trim() || !amount.trim()}
@@ -487,21 +531,17 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">금액 (원)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₩</span>
-                  <Input
-                  type="number"
-                  value={editAmount}
-                  onChange={(e) => setEditAmount(e.target.value)}
-                  className="pl-8 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 font-black tracking-tighter dark:text-slate-100"
-                />
-              </div>
+              <KrwAmountField
+                id="budget-edit-amount"
+                value={editAmount}
+                onChange={setEditAmount}
+              />
             </div>
             {editingItem?.type === "SAVING" && (
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">입금 계좌</label>
                 <Select value={editAccountId ?? ""} onValueChange={(v) => setEditAccountId(v || null)}>
-                  <SelectTrigger className="w-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl h-11 dark:text-slate-100">
+                  <SelectTrigger className="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11">
                     <SelectValue placeholder="입금 계좌 선택">
                       {(value: string | null) => {
                         const acc = accounts.find((a) => a.id === value);
