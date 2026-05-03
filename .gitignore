@@ -48,3 +48,7 @@ dev.db
 .env
 .env.local
 .env.*.local
+
+# Serwist (생성되는 서비스 워커)
+public/sw*
+public/swe-worker*

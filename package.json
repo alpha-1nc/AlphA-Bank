@@ -17,6 +17,8 @@
     "@libsql/client": "^0.8.1",
     "@prisma/adapter-libsql": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@serwist/next": "^9.5.11",
+    "@serwist/window": "^9.5.11",
     "@tailwindcss/postcss": "^4.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -38,6 +40,7 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "prisma": "^7.5.0",
+    "serwist": "^9.5.11",
     "tailwindcss": "^4.2.1",
     "typescript": "^5",
     "vitest": "^4.1.2"

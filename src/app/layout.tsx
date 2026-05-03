@@ -9,6 +9,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import MobileFirstVisitLogoIntro from "@/components/MobileFirstVisitLogoIntro";
 import MobileMainPad from "@/components/MobileMainPad";
+import { AppSerwistProvider } from "@/components/AppSerwistProvider";
 import { type SessionData, sessionOptions } from "@/lib/session";
 import { getUserProfile, isValidUserId } from "@/lib/user-profiles";
 
@@ -23,6 +24,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#3498DB",
 };
 
 const geistSans = localFont({
@@ -38,9 +40,18 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  applicationName: "AlphA Bank",
   title: "AlphA Bank",
   description: "AlphA Bank — Personal Finance Dashboard",
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "AlphA Bank",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -84,19 +95,21 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased bg-background text-foreground overflow-x-hidden min-w-0">
-        <div className="flex h-screen overflow-hidden min-w-0">
-          {/* 데스크탑 사이드바 */}
-          <div className="relative z-[100] hidden md:flex md:shrink-0">
-            <Sidebar />
-          </div>
+        <AppSerwistProvider>
+          <div className="flex h-screen overflow-hidden min-w-0">
+            {/* 데스크탑 사이드바 */}
+            <div className="relative z-[100] hidden md:flex md:shrink-0">
+              <Sidebar />
+            </div>
 
-          {/* 우측 메인 영역 */}
-          <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
-            <MobileFirstVisitLogoIntro />
-            <MobileHeader profileLabel={profileLabel} />
-            <MobileMainPad>{children}</MobileMainPad>
+            {/* 우측 메인 영역 */}
+            <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+              <MobileFirstVisitLogoIntro />
+              <MobileHeader profileLabel={profileLabel} />
+              <MobileMainPad>{children}</MobileMainPad>
+            </div>
           </div>
-        </div>
+        </AppSerwistProvider>
       </body>
     </html>
   );

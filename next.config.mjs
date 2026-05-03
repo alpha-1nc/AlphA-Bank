@@ -1,5 +1,20 @@
 import os from "os";
 import path from "path";
+import { spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import withSerwistInit from "@serwist/next";
+
+/** 오프라인 폴백 페이지 precache 무효화용 (커밋 해시 또는 임시 ID) */
+const revision =
+  spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ||
+  randomUUID();
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+  additionalPrecacheEntries: [{ url: "/~offline", revision }],
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -30,4 +45,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

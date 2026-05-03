@@ -8,11 +8,14 @@ const PUBLIC_API_PREFIX = "/api/session";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 정적 파일 제외
+  // 정적 파일 / PWA 리소스 (세션 없이 제공 — SW·매니페스트 로드 필요)
   if (
     pathname.startsWith("/_next/static") ||
     pathname.startsWith("/_next/image") ||
-    pathname === "/favicon.ico"
+    pathname === "/favicon.ico" ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname.startsWith("/~offline")
   ) {
     return NextResponse.next();
   }
