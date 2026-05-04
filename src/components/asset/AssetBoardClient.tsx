@@ -310,10 +310,10 @@ function EditBalanceDialog({ account }: { account: Account }) {
         render={
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.98] transition-transform duration-150"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground active:scale-[0.97] transition-transform duration-150 touch-manipulation"
             aria-label="잔액 수정"
           >
-            <Pencil className="h-3 w-3" />
+            <Pencil className="h-3.5 w-3.5" />
           </button>
         }
       />
@@ -368,10 +368,10 @@ function DeleteButton({ id }: { id: string }) {
           await deleteAccount(id);
         });
       }}
-      className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-[0.98] transition-transform duration-150 disabled:opacity-40"
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 touch-manipulation"
       aria-label="삭제"
     >
-      <Trash2 className="h-3 w-3" />
+      <Trash2 className="h-3.5 w-3.5" />
     </button>
   );
 }
@@ -384,40 +384,40 @@ function AccountCard({ account }: { account: Account }) {
   const logoPath = getBankLogoPath(account.bankName);
 
   return (
-    <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 flex flex-col min-h-[132px] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl">
-      {/* 상단: 로고(36px) + 은행명 + 액션 — 컴팩트 */}
+    <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 flex flex-col min-h-[152px] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99]">
+      {/* 상단: 로고(40px) + 은행명 + 액션 */}
       <div className="flex items-center gap-2 min-w-0 shrink-0">
         {logoPath ? (
-          <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg bg-slate-50 dark:bg-white/5 overflow-hidden border border-slate-100 dark:border-white/10">
+          <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-white/5 overflow-hidden border border-slate-100 dark:border-white/10">
             <Image
               src={logoPath}
               alt=""
-              width={36}
-              height={36}
-              className="h-9 w-9 object-contain"
+              width={40}
+              height={40}
+              className="h-10 w-10 object-contain"
             />
           </div>
         ) : (
-          <div className={`h-9 w-9 shrink-0 flex items-center justify-center rounded-lg ${meta.bg}`}>
-            <Icon className={`h-4 w-4 ${meta.color}`} />
+          <div className={`h-10 w-10 shrink-0 flex items-center justify-center rounded-xl ${meta.bg}`}>
+            <Icon className={`h-5 w-5 ${meta.color}`} />
           </div>
         )}
         <span className="text-xs font-medium text-slate-400 truncate flex-1 min-w-0">
           {account.bankName ?? "—"}
         </span>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <EditBalanceDialog account={account} />
           <DeleteButton id={account.id} />
         </div>
       </div>
 
       {/* 계좌명 — 전체 폭 */}
-      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate mt-2">
+      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate mt-2.5">
         {account.name}
       </p>
 
       {/* 금액(강조) + 계좌번호 — 하단 고정 */}
-      <div className="flex flex-col gap-1 mt-auto pt-2">
+      <div className="flex flex-col gap-1 mt-auto pt-3">
         <p className={`text-xl font-black tracking-tighter leading-tight ${meta.color}`}>
           {formatKRW(account.initialBalance)}
         </p>
@@ -712,13 +712,13 @@ export default function AssetBoardClient({
       </div>
 
       {/* TOTAL NET WORTH + 새 자산 추가 */}
-      <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-6 md:gap-8 min-w-0 md:pl-2">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-            <Landmark className="h-6 w-6 text-primary" />
+      <div className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-5 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-5 md:gap-8 min-w-0 md:pl-2">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+            <Landmark className="h-7 w-7 text-primary" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
               Total Net Worth
             </p>
             <p className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 tabular-nums">
@@ -727,7 +727,7 @@ export default function AssetBoardClient({
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <Badge className="rounded-full bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-bold">
+          <Badge className="rounded-full bg-primary/10 text-primary border-0 px-4 py-2 text-sm font-bold">
             {totalAccounts}개 계좌
           </Badge>
           <AddAccountDialog />
@@ -738,7 +738,7 @@ export default function AssetBoardClient({
       <AssetBreakdownChart grouped={grouped} totalNetWorth={totalNetWorth} />
 
       {/* Board View */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 md:gap-6 lg:gap-8">
         {allTypes.map((type) => (
           <BoardColumn
             key={type}

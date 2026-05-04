@@ -26,29 +26,29 @@ export default function WorkSalaryDashboardCard({
       className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-4 md:p-6 flex flex-col min-h-[200px]
+            p-5 md:p-6 flex flex-col min-h-[230px]
             transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
     >
       <div>
-        <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-start justify-between gap-2 mb-4">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
               Expected net pay
             </p>
-            <h2 className="text-lg font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
               예상 실수령
             </h2>
           </div>
-          <Briefcase className="h-8 w-8 text-primary shrink-0 opacity-90" aria-hidden />
+          <Briefcase className="h-9 w-9 text-primary shrink-0 opacity-90" aria-hidden />
         </div>
-        <p className="text-xs text-slate-400 font-medium mb-2">{monthLabel} 기준</p>
+        <p className="text-sm text-slate-400 font-medium mb-2.5">{monthLabel} 기준</p>
         {hasWorkplaces ? (
           <>
-            <p className="text-2xl sm:text-3xl font-black tracking-tighter text-primary tabular-nums">
+            <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">
               {formatKRW(netPay)}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
               활성 근무지 {activeWorkplaces}곳 합산
             </p>
           </>

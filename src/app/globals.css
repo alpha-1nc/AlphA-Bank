@@ -279,5 +279,15 @@
       word-break: keep-all;
       overflow-wrap: break-word;
     }
+    /* iOS 입력 필드 자동 줌(font-size < 16px) 방지 */
+    input,
+    select,
+    textarea {
+      font-size: max(1rem, 16px) !important;
+    }
+    /* 모바일 카드 터치 피드백 강화 */
+    button:active:not(:disabled) {
+      -webkit-tap-highlight-color: transparent;
+    }
   }
 }

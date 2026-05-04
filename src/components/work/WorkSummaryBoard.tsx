@@ -30,7 +30,7 @@ export default function WorkSummaryBoard({ year, month, summary }: Props) {
 
   return (
     <section
-      className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 space-y-6 transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] group/summary"
+      className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-5 md:p-8 space-y-6 transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] group/summary"
       aria-labelledby="work-summary-heading"
     >
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
@@ -44,21 +44,21 @@ export default function WorkSummaryBoard({ year, month, summary }: Props) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-slate-100/80 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-4 py-3.5 transition-colors group-hover/summary:bg-muted/50 dark:group-hover/summary:bg-white/[0.05]">
-          <p className="text-xs font-medium text-muted-foreground mb-1">지급 합계</p>
-          <p className="text-lg font-black tabular-nums tracking-tight text-foreground">
+        <div className="rounded-2xl border border-slate-100/80 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-5 py-4 transition-colors group-hover/summary:bg-muted/50 dark:group-hover/summary:bg-white/[0.05]">
+          <p className="text-xs font-medium text-muted-foreground mb-1.5">지급 합계</p>
+          <p className="text-xl font-black tabular-nums tracking-tight text-foreground">
             {formatKRW(summary.paymentGross)}
           </p>
-          <p className="text-[0.7rem] text-muted-foreground mt-1.5 leading-relaxed">
+          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
             기본 {formatKRW(summary.basePay)} + 주휴 {formatKRW(summary.weeklyPay)}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-100/80 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-4 py-3.5 transition-colors group-hover/summary:bg-muted/50 dark:group-hover/summary:bg-white/[0.05]">
-          <p className="text-xs font-medium text-muted-foreground mb-1">공제 합계</p>
-          <p className="text-lg font-black tabular-nums tracking-tight text-foreground">
+        <div className="rounded-2xl border border-slate-100/80 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-5 py-4 transition-colors group-hover/summary:bg-muted/50 dark:group-hover/summary:bg-white/[0.05]">
+          <p className="text-xs font-medium text-muted-foreground mb-1.5">공제 합계</p>
+          <p className="text-xl font-black tabular-nums tracking-tight text-foreground">
             {formatKRW(summary.deductionTax)}
           </p>
-          <p className="text-[0.7rem] text-muted-foreground mt-1.5">3.3% 세금 (주 단위 산정)</p>
+          <p className="text-xs text-muted-foreground mt-1.5">3.3% 세금 (주 단위 산정)</p>
         </div>
       </div>
 

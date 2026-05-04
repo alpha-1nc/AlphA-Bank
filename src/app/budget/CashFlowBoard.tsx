@@ -324,8 +324,8 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
             className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300"
             style={{ animationDelay: `${TYPE_GROUPS.indexOf(groupType) * 75}ms` } as React.CSSProperties}
           >
-            <div className="px-6 md:px-8 py-4 border-b border-slate-50 dark:border-white/5 flex justify-between items-center gap-3">
-              <h3 className="text-sm font-black tracking-tighter text-slate-800 dark:text-slate-200">{label}</h3>
+            <div className="px-5 md:px-8 py-4 border-b border-slate-50 dark:border-white/5 flex justify-between items-center gap-3">
+              <h3 className="text-base font-black tracking-tighter text-slate-800 dark:text-slate-200">{label}</h3>
               {groupType === "EXPENSE_FIXED" && (
                 <ImportPreviousFixedButton currentMonth={currentMonth} />
               )}
@@ -339,12 +339,12 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
             ) : (
               <>
                 {/* 모바일: 카드 레이아웃 (가로 스크롤 없음) */}
-                <div className="md:hidden space-y-2 p-4">
+                <div className="md:hidden space-y-2.5 p-4">
                   {items.map((item) => (
                     <div
                       key={item.id}
                       className={cn(
-                        "flex items-center justify-between gap-3 rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-3",
+                        "flex items-center justify-between gap-3 rounded-xl border border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 p-4",
                         item.isCompleted && "opacity-70",
                         togglePending && "opacity-70"
                       )}
@@ -354,12 +354,12 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                           checked={item.isCompleted}
                           onCheckedChange={() => handleToggle(item)}
                           aria-label={`집행 완료: ${item.title}`}
-                          className="rounded-md border-slate-300 shrink-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                          className="h-5 w-5 rounded-md border-slate-300 shrink-0 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                         />
                         <div className="flex items-center gap-2 min-w-0">
                           <p
                             className={cn(
-                              "text-sm font-semibold truncate",
+                              "text-[15px] font-semibold truncate",
                               item.isCompleted ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300"
                             )}
                             title={item.title}
@@ -367,16 +367,16 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                             {item.title}
                           </p>
                           {item.workplaceId && (
-                            <Badge variant="secondary" className="shrink-0 text-[0.65rem] px-1.5 py-0">
+                            <Badge variant="secondary" className="shrink-0 text-xs px-2 py-0.5">
                               알바
                             </Badge>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <span
                           className={cn(
-                            "text-sm font-black tracking-tighter tabular-nums",
+                            "text-[15px] font-black tracking-tighter tabular-nums",
                             TYPE_COLORS[groupType as BudgetCashFlowType],
                             item.isCompleted && "line-through opacity-50"
                           )}
@@ -384,26 +384,26 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
                           {groupType === "INCOME" ? "+" : "-"}
                           {formatKRW(item.amount)}
                         </span>
-                        <div className="flex gap-1">
+                        <div className="flex gap-0.5">
                           {!item.workplaceId && (
                             <>
                               <button
                                 type="button"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                                className="h-9 w-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors touch-manipulation"
                                 onClick={() => handleEdit(item)}
                                 disabled={togglePending}
                                 aria-label={`수정: ${item.title}`}
                               >
-                                <Pencil className="h-3.5 w-3.5" />
+                                <Pencil className="h-4 w-4" />
                               </button>
                               <button
                                 type="button"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors"
+                                className="h-9 w-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-destructive hover:bg-destructive/5 transition-colors touch-manipulation"
                                 onClick={() => handleDelete(item.id)}
                                 disabled={togglePending}
                                 aria-label={`삭제: ${item.title}`}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </>
                           )}

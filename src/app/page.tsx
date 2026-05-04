@@ -180,13 +180,13 @@ export default async function DashboardPage() {
       </header>
 
       {/* ── Grid Row 1: Charts ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mt-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Donut Chart Card */}
         <div
           className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-4 md:p-6 flex flex-col
+            p-5 md:p-6 flex flex-col
             transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
         >
@@ -194,7 +194,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
               Asset Breakdown
             </p>
-            <h2 className="text-lg font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
               자산 구성
             </h2>
           </div>
@@ -202,7 +202,7 @@ export default async function DashboardPage() {
           <AssetDonutChart data={donutData} totalNetWorth={totalNetWorth} />
 
           {/* Legend */}
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-5 space-y-3">
             {donutData.map((d, i) => {
               const colors = [
                 "#3b82f6",
@@ -218,23 +218,23 @@ export default async function DashboardPage() {
                   ? ((d.value / totalNetWorth) * 100).toFixed(1)
                   : "0";
               return (
-                <li key={d.name} className="flex items-center gap-2 text-sm">
+                <li key={d.name} className="flex items-center gap-2.5 text-[15px]">
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    className="w-3 h-3 rounded-full shrink-0"
                     style={{ background: colors[i % colors.length] }}
                   />
                   <span className="text-slate-600 font-medium flex-1">
                     {d.name}
                   </span>
                   <span className="text-slate-400 font-medium">{pct}%</span>
-                  <span className="text-slate-800 font-semibold">
+                  <span className="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">
                     {formatKRW(d.value)}
                   </span>
                 </li>
               );
             })}
             {donutData.length === 0 && (
-              <li className="text-sm text-slate-400 text-center py-4">
+              <li className="text-[15px] text-slate-400 text-center py-4">
                 등록된 계좌가 없습니다
               </li>
             )}
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
           className="
             md:col-span-2 bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-4 md:p-6 flex flex-col
+            p-5 md:p-6 flex flex-col
             transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
         >
@@ -254,7 +254,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
               Cash Flow
             </p>
-            <h2 className="text-lg font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
               월별 수입 · 지출 · 저축
             </h2>
           </div>
@@ -265,7 +265,7 @@ export default async function DashboardPage() {
 
           {/* Summary row - 설정 기준일 기준 현재 예산 월 */}
           {currentBudgetResolved && (
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3 pt-4 border-t border-slate-50 dark:border-white/5">
+            <div className="mt-5 grid grid-cols-3 gap-3 pt-4 border-t border-slate-50 dark:border-white/5">
               {[
                 {
                   label: "이번달 수입",
@@ -294,7 +294,7 @@ export default async function DashboardPage() {
                     {item.label}
                   </p>
                   <p
-                    className={`text-xs sm:text-base font-black tracking-tighter ${item.color} mt-0.5 truncate`}
+                    className={`text-sm sm:text-base font-black tracking-tighter ${item.color} mt-0.5 truncate`}
                   >
                     {formatKRW(item.value)}
                   </p>
@@ -306,7 +306,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Grid Row 2: 알바 실수령 · Actions & Bucket ─────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-6 mt-5 md:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
         <WorkSalaryDashboardCard
           netPay={workNet.netPay}
           activeWorkplaces={workNet.activeWorkplaces}
@@ -318,16 +318,16 @@ export default async function DashboardPage() {
           className="
             bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
             shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-4 md:p-6 flex flex-col min-h-[200px]
+            p-5 md:p-6 flex flex-col min-h-[230px]
             transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
           "
         >
-          <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-start justify-between gap-2 mb-4">
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-none">
                 Pending Actions
               </p>
-              <h2 className="text-lg font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5 leading-none">
+              <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5 leading-none">
                 미결제 체크리스트
               </h2>
             </div>

@@ -151,7 +151,7 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
             aria-selected={categoryFilter === cat}
             onClick={() => setCategoryFilter(cat)}
             className={cn(
-              "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95",
+              "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 active:scale-95 touch-manipulation",
               categoryFilter === cat
                 ? "bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]"
                 : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/18 hover:scale-[1.02]"
@@ -320,7 +320,7 @@ function SubscriptionRow({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-4 transition-all duration-200 md:hover:shadow-md md:hover:border-primary/15 active:scale-[0.99]",
+        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-5 transition-all duration-200 md:hover:shadow-md md:hover:border-primary/15 active:scale-[0.99]",
         !sub.isActive && "opacity-50"
       )}
     >
@@ -483,7 +483,7 @@ function SubscriptionTableRow({
 }
 
 const secondaryActionIconClass =
-  "h-9 w-9 text-slate-400 hover:text-primary";
+  "h-11 w-11 text-slate-400 hover:text-primary";
 
 function ToggleSubscriptionButton({
   isActive,

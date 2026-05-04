@@ -152,31 +152,31 @@ export default function BucketCard({ bucket }: Props) {
           )}
 
           {/* 수정 · 완료 토글 — 이미지 상단 */}
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10 max-w-[55%] justify-end">
+          <div className="absolute top-3 right-3 flex items-center gap-2 z-10 max-w-[60%] justify-end">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/55 active:scale-[0.98] transition-transform duration-150"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/55 active:scale-[0.97] transition-transform duration-150 touch-manipulation"
               aria-label="목표 수정"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={handleCompleteClick}
               disabled={pending}
               title={bucket.isCompleted ? "탭하면 진행 중으로 되돌립니다" : "탭하면 완료로 표시합니다"}
-              className="flex min-h-8 items-center justify-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold tracking-tight shadow-lg backdrop-blur-sm border border-white/35 bg-black/35 text-white hover:bg-black/55 active:scale-[0.98] transition-transform duration-150 disabled:opacity-45 disabled:pointer-events-none"
+              className="flex min-h-10 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-tight shadow-lg backdrop-blur-sm border border-white/35 bg-black/35 text-white hover:bg-black/55 active:scale-[0.97] transition-transform duration-150 disabled:opacity-45 disabled:pointer-events-none touch-manipulation"
               aria-label={bucket.isCompleted ? "완료 해제" : "완료로 표시"}
             >
               {bucket.isCompleted ? (
                 <>
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
                   <span className="whitespace-nowrap">완료됨</span>
                 </>
               ) : (
                 <>
-                  <Circle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <Circle className="h-4 w-4 shrink-0" aria-hidden />
                   <span className="whitespace-nowrap">완료하기</span>
                 </>
               )}
@@ -225,7 +225,7 @@ export default function BucketCard({ bucket }: Props) {
         {/* 하단: 미완료는 납입+삭제, 완료는 달성 문구+삭제 (동일 min-height로 카드 길이 맞춤) */}
         <div
           className={cn(
-            "px-4 py-3 flex items-center gap-2 min-h-[56px] box-border",
+            "px-4 py-3 flex items-center gap-2 min-h-[64px] box-border",
             bucket.isCompleted
               ? "justify-between border-t border-emerald-100 bg-emerald-50/90 dark:border-emerald-900/50 dark:bg-emerald-950/35"
               : "bg-white dark:bg-[#18181B]",
@@ -249,10 +249,10 @@ export default function BucketCard({ bucket }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={handleDelete}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl text-emerald-700/70 hover:bg-red-50 hover:text-destructive dark:text-emerald-300/80 dark:hover:bg-red-950/40 active:scale-[0.98] transition-transform duration-150 disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-emerald-700/70 hover:bg-red-50 hover:text-destructive dark:text-emerald-300/80 dark:hover:bg-red-950/40 active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 touch-manipulation"
                 aria-label="삭제"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </>
           ) : (
@@ -263,10 +263,10 @@ export default function BucketCard({ bucket }: Props) {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-8 text-xs rounded-2xl gap-1 border-slate-100 hover:bg-slate-50 flex-1 font-semibold"
+                      className="h-10 text-sm rounded-2xl gap-1.5 border-slate-100 hover:bg-slate-50 flex-1 font-semibold touch-manipulation"
                       disabled={pending || bucket.isAchieved}
                     >
-                      <Plus className="h-3 w-3" />
+                      <Plus className="h-4 w-4" />
                       납입
                     </Button>
                   }
@@ -314,10 +314,10 @@ export default function BucketCard({ bucket }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={handleDelete}
-                className="flex h-8 w-8 items-center justify-center rounded-2xl text-slate-400 hover:bg-red-50 hover:text-destructive active:scale-[0.98] transition-transform duration-150 disabled:opacity-40 shrink-0"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 hover:bg-red-50 hover:text-destructive active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 shrink-0 touch-manipulation"
                 aria-label="삭제"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </>
           )}

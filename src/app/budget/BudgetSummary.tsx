@@ -69,7 +69,7 @@ export function BudgetSummary({
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {cards.map(({ key, label, icon: Icon, color, bg }) => {
         const isAllowance = key === "allowance";
         const value = values[key];
@@ -77,20 +77,20 @@ export function BudgetSummary({
         return (
           <Card
             key={key}
-            className={`rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl ${isAllowance ? "cursor-pointer" : ""}`}
+            className={`rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl ${isAllowance ? "cursor-pointer col-span-2 lg:col-span-1" : ""}`}
             onClick={isAllowance && !editingAllowance ? () => setEditingAllowance(true) : undefined}
           >
-            <CardHeader className={`py-3 px-5 ${bg}`}>
+            <CardHeader className={`py-4 px-4 ${bg}`}>
               <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${bg} ${color}`}>
-                  <Icon className="h-4 w-4" />
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg} ${color}`}>
+                  <Icon className="h-[18px] w-[18px]" />
                 </div>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
                   {label}
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="py-4 px-5">
+            <CardContent className="py-4 px-4">
               {isAllowance && editingAllowance ? (
                 <form onSubmit={handleAllowanceSubmit} onClick={(e) => e.stopPropagation()} className="flex gap-2">
                   <Input
@@ -107,15 +107,15 @@ export function BudgetSummary({
                       setEditingAllowance(false);
                     }}
                     autoFocus
-                    className="h-9 text-base font-black tracking-tighter rounded-xl flex-1 dark:bg-[#09090B] dark:text-slate-100 dark:border-white/10"
+                    className="h-11 text-base font-black tracking-tighter rounded-xl flex-1 dark:bg-[#09090B] dark:text-slate-100 dark:border-white/10"
                     disabled={isPending}
                   />
-                  <Button type="submit" size="sm" disabled={isPending} className="shrink-0 rounded-xl">
+                  <Button type="submit" size="sm" disabled={isPending} className="shrink-0 rounded-xl h-11">
                     저장
                   </Button>
                 </form>
               ) : (
-                <p className={`text-xl font-black tracking-tighter ${color}`}>
+                <p className={`text-xl lg:text-2xl font-black tracking-tighter ${color}`}>
                   {formatKRW(value)}
                 </p>
               )}

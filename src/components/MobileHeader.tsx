@@ -117,15 +117,15 @@ export default function MobileHeader({ profileLabel }: Props) {
 
       <div className="relative z-[2]">
         <header className="pointer-events-auto border-b border-border/80 bg-card/95 text-foreground shadow-sm backdrop-blur-md">
-          <div className="relative flex h-14 items-stretch">
-            <div className="relative z-[2] flex w-14 shrink-0 items-center justify-center">
+          <div className="relative flex h-16 items-stretch">
+            <div className="relative z-[2] flex w-16 shrink-0 items-center justify-center">
               <button
                 type="button"
                 onClick={toggleMenu}
                 className={cn(
-                  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border shadow-sm",
+                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-sm",
                   "border-primary/40 bg-primary/12 text-primary",
-                  "transition-colors active:scale-[0.98] touch-manipulation select-none",
+                  "transition-colors active:scale-[0.97] touch-manipulation select-none",
                   "hover:bg-primary/18 hover:border-primary/50",
                   open && !exiting && "bg-primary/20 border-primary/55 ring-2 ring-primary/25"
                 )}
@@ -133,32 +133,32 @@ export default function MobileHeader({ profileLabel }: Props) {
                 aria-haspopup="true"
                 aria-label={open && !exiting ? "메뉴 닫기" : "메뉴 열기"}
               >
-                <Menu className="h-5 w-5" aria-hidden />
+                <Menu className="h-6 w-6" aria-hidden />
               </button>
             </div>
 
-            <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center px-14">
-              <div className="flex min-w-0 max-w-full items-center justify-center gap-2.5">
+            <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center px-16">
+              <div className="flex min-w-0 max-w-full items-center justify-center gap-3">
                 <PageIcon
-                  className="h-8 w-8 shrink-0 text-primary"
+                  className="h-[1.625rem] w-[1.625rem] shrink-0 text-primary"
                   aria-hidden
                 />
-                <p className="min-w-0 truncate text-base font-bold tracking-tight text-foreground">
+                <p className="min-w-0 truncate text-[1.0625rem] font-bold tracking-tight text-foreground">
                   {pageTitle}
                 </p>
               </div>
             </div>
 
-            <div className="relative z-[2] ml-auto flex w-14 shrink-0 items-center justify-center">
+            <div className="relative z-[2] ml-auto flex w-16 shrink-0 items-center justify-center">
               {profileLabel ? (
                 <span
-                  className="inline-flex h-9 min-w-9 max-w-[4rem] shrink-0 items-center justify-center rounded-full bg-primary/15 px-2 text-xs font-bold tabular-nums text-primary shadow-sm"
+                  className="inline-flex h-10 min-w-10 max-w-[4.5rem] shrink-0 items-center justify-center rounded-full bg-primary/15 px-2.5 text-sm font-bold tabular-nums text-primary shadow-sm"
                   aria-label={`현재 프로필 ${profileLabel}`}
                 >
                   {profileLabel}
                 </span>
               ) : (
-                <span className="inline-block h-9 w-9 shrink-0" aria-hidden />
+                <span className="inline-block h-10 w-10 shrink-0" aria-hidden />
               )}
             </div>
           </div>
@@ -167,8 +167,8 @@ export default function MobileHeader({ profileLabel }: Props) {
         {open && (
           <nav
             className={cn(
-              "absolute left-2 right-2 top-full z-[3] mt-1 max-h-[min(72vh,calc(100dvh-5rem))] overflow-y-auto overflow-x-hidden",
-              "rounded-2xl border border-border/80 bg-card/95 py-2 shadow-[0_16px_50px_-12px_rgba(15,23,42,0.18)] backdrop-blur-md",
+              "absolute left-2 right-2 top-full z-[3] mt-1.5 max-h-[min(72vh,calc(100dvh-5rem))] overflow-y-auto overflow-x-hidden",
+              "rounded-2xl border border-border/80 bg-card/95 py-2.5 shadow-[0_16px_50px_-12px_rgba(15,23,42,0.18)] backdrop-blur-md",
               "dark:shadow-[0_16px_50px_-12px_rgba(0,0,0,0.55)]"
             )}
             aria-label="앱 메뉴"
@@ -190,7 +190,7 @@ export default function MobileHeader({ profileLabel }: Props) {
                     animationDelay: exiting ? `${delayOut}ms` : `${delayIn}ms`,
                   }}
                   className={cn(
-                    "flex min-h-11 w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors touch-manipulation select-none",
+                    "flex min-h-[3.5rem] w-full items-center gap-4 rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-colors touch-manipulation select-none",
                     exiting ? "mobile-nav-item-stagger-out" : "mobile-nav-item-stagger",
                     active
                       ? "bg-primary/12 text-primary"
@@ -199,7 +199,7 @@ export default function MobileHeader({ profileLabel }: Props) {
                 >
                   <Icon
                     className={cn(
-                      "h-5 w-5 shrink-0",
+                      "h-[22px] w-[22px] shrink-0",
                       active ? "text-primary" : "text-muted-foreground"
                     )}
                     aria-hidden
@@ -211,7 +211,7 @@ export default function MobileHeader({ profileLabel }: Props) {
 
             <div
               className={cn(
-                "mx-3 my-2 h-px bg-border/80",
+                "mx-4 my-2 h-px bg-border/80",
                 exiting ? "mobile-nav-item-stagger-out" : "mobile-nav-item-stagger"
               )}
               style={{
@@ -234,15 +234,15 @@ export default function MobileHeader({ profileLabel }: Props) {
                   : `${themeIndex * STAGGER_MS}ms`,
               }}
               className={cn(
-                "flex min-h-11 w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium text-foreground/90 transition-colors active:bg-accent/80 touch-manipulation select-none",
+                "flex min-h-[3.5rem] w-full items-center gap-4 px-5 py-3.5 text-left text-[15px] font-semibold text-foreground/90 transition-colors active:bg-accent/80 touch-manipulation select-none rounded-xl",
                 exiting ? "mobile-nav-item-stagger-out" : "mobile-nav-item-stagger"
               )}
               aria-label={isDark ? "라이트 모드" : "다크 모드"}
             >
               {isDark ? (
-                <Sun className="h-5 w-5 shrink-0 text-amber-500" />
+                <Sun className="h-[22px] w-[22px] shrink-0 text-amber-500" />
               ) : (
-                <Moon className="h-5 w-5 shrink-0 text-primary/80" />
+                <Moon className="h-[22px] w-[22px] shrink-0 text-primary/80" />
               )}
               {isDark ? "라이트 모드" : "다크 모드"}
             </button>

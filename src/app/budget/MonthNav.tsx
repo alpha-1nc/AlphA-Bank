@@ -92,14 +92,14 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 mb-8 p-3 rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+    <div className="flex items-center justify-between gap-4 mb-8 p-3 md:p-4 rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
       <Button
         variant="outline"
-        size="sm"
+        size="default"
         onClick={() => goTo(prevMonth(currentMonth))}
-        className="rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10"
+        className="rounded-2xl shrink-0 h-12 w-12 px-0 border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 touch-manipulation"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-5 w-5" />
       </Button>
 
       <div className="relative shrink-0">
@@ -108,13 +108,13 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
           type="button"
           onClick={() => setOpen((o) => !o)}
           className={cn(
-            "flex items-center justify-center gap-1.5 text-lg font-black tracking-tighter text-slate-900 dark:text-slate-100 min-w-[160px] py-1.5 px-3 rounded-2xl transition-colors",
+            "flex items-center justify-center gap-2 text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 min-w-[170px] py-2 px-4 rounded-2xl transition-colors touch-manipulation",
             "hover:bg-slate-50 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           )}
         >
           {formatMonthLabel(currentMonth)}
           <ChevronDown
-            className={cn("h-4 w-4 text-slate-400 transition-transform", open && "rotate-180")}
+            className={cn("h-5 w-5 text-slate-400 transition-transform", open && "rotate-180")}
           />
         </button>
 
@@ -171,11 +171,11 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
 
       <Button
         variant="outline"
-        size="sm"
+        size="default"
         onClick={() => goTo(nextMonth(currentMonth))}
-        className="rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10"
+        className="rounded-2xl shrink-0 h-12 w-12 px-0 border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 touch-manipulation"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-5 w-5" />
       </Button>
     </div>
   );

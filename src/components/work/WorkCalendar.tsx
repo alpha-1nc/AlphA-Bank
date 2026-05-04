@@ -180,15 +180,15 @@ export default function WorkCalendar({
 
   return (
     <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-3 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-stretch justify-between gap-2 sm:gap-3 mb-6 p-2 sm:p-3 rounded-2xl border border-slate-100/80 dark:border-white/10 bg-slate-50/40 dark:bg-white/[0.02]">
+      <div className="flex items-stretch justify-between gap-2 sm:gap-3 mb-6 p-2.5 sm:p-3 rounded-2xl border border-slate-100/80 dark:border-white/10 bg-slate-50/40 dark:bg-white/[0.02]">
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size="default"
           onClick={onPrevMonth}
-          className="rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-95"
+          className="h-11 w-11 px-0 rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-95 touch-manipulation"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="relative flex-1 flex items-center justify-center min-w-0">
           {onJumpToMonth ? (
@@ -269,11 +269,11 @@ export default function WorkCalendar({
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size="default"
           onClick={onNextMonth}
-          className="rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-95"
+          className="h-11 w-11 px-0 rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-95 touch-manipulation"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
 
@@ -281,12 +281,12 @@ export default function WorkCalendar({
         {payPeriodCaption}
       </p>
 
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1.5 text-center">
+      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center">
         {WEEK_LABELS.map((w, i) => (
           <div
             key={w}
             className={cn(
-              "text-[0.6rem] sm:text-xs font-semibold uppercase tracking-wider py-1 sm:py-2",
+              "text-xs font-semibold uppercase tracking-wider py-1.5 sm:py-2",
               i === 0 && "text-rose-500/90",
               i === 6 && "text-primary/90"
             )}
@@ -300,7 +300,7 @@ export default function WorkCalendar({
             return (
               <div
                 key={cell.key}
-                className="min-h-[2.75rem] sm:min-h-[5.25rem] rounded-xl sm:rounded-2xl bg-muted/20 dark:bg-white/[0.02]"
+                className="min-h-[3.5rem] sm:min-h-[5.25rem] rounded-xl sm:rounded-2xl bg-muted/20 dark:bg-white/[0.02]"
               />
             );
           }
@@ -320,7 +320,7 @@ export default function WorkCalendar({
               type="button"
               onClick={() => onDayClick(cell.date!)}
               className={cn(
-                "relative group flex min-h-[2.75rem] sm:min-h-[5.25rem] flex-col rounded-xl sm:rounded-2xl border p-1 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
+                "relative group flex min-h-[3.5rem] sm:min-h-[5.25rem] flex-col rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
                 "border-slate-100/80 dark:border-white/10 md:hover:border-primary/40 md:hover:bg-primary/5 md:hover:shadow-sm dark:md:hover:bg-white/5 active:scale-[0.98]",
                 isToday &&
                   "ring-2 ring-primary/40 ring-offset-2 ring-offset-background dark:ring-offset-[#18181B]",
@@ -331,7 +331,7 @@ export default function WorkCalendar({
               <span className="flex items-start justify-between gap-1 w-full">
                 <span
                   className={cn(
-                    "text-xs sm:text-sm font-semibold tabular-nums",
+                    "text-sm font-bold tabular-nums",
                     isToday ? "text-primary" : "text-foreground"
                   )}
                 >
@@ -367,7 +367,7 @@ export default function WorkCalendar({
                     {(s.totalMinutes / 60).toFixed(1)}h
                   </span>
                   <span
-                    className="sm:hidden h-1.5 w-1.5 rounded-full shrink-0"
+                    className="sm:hidden h-2 w-2 rounded-full shrink-0"
                     style={{ backgroundColor: s.color }}
                     title={`${(s.totalMinutes / 60).toFixed(1)}시간 · ${s.totalPay.toLocaleString("ko-KR")}원`}
                     aria-hidden
