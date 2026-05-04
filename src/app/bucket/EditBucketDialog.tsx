@@ -11,13 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { updateBucket } from "@/app/actions/bucket";
 import { compressImageForUpload } from "@/lib/compress-image";
 import type { BucketItem } from "@/components/BucketCard";
@@ -170,21 +164,16 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
             <label className="text-xs font-medium text-muted-foreground">
               중요도 *
             </label>
-            <Select
+            <ResponsiveSelect
               value={String(importance)}
               onValueChange={(v) => setImportance(Number(v))}
-            >
-              <SelectTrigger className="rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {IMPORTANCE_OPTIONS.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={IMPORTANCE_OPTIONS.map((n) => ({
+                value: String(n),
+                label: String(n),
+              }))}
+              triggerClassName="rounded-xl"
+              contentClassName="rounded-xl"
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">

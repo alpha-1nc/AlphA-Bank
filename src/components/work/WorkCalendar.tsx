@@ -4,13 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { cn } from "@/lib/utils";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import { effectivePaydayDay } from "@/lib/work-pay-schedule";
@@ -237,21 +231,14 @@ export default function WorkCalendar({
                       <label className="text-sm font-medium text-muted-foreground shrink-0">
                         월
                       </label>
-                      <Select
+                      <ResponsiveSelect
                         value={monthInput}
                         onValueChange={(v) => v && setMonthInput(v)}
-                      >
-                        <SelectTrigger size="sm" className="h-8 flex-1">
-                          <SelectValue placeholder="월 선택" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MONTHS.map((mo) => (
-                            <SelectItem key={mo.value} value={mo.value}>
-                              {mo.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        options={MONTHS.map((mo) => ({ value: mo.value, label: mo.label }))}
+                        placeholder="월 선택"
+                        size="sm"
+                        triggerClassName="h-8 flex-1"
+                      />
                     </div>
                     <Button size="sm" className="w-full rounded-xl" onClick={applyMonthJump}>
                       해당 월로 이동

@@ -10,13 +10,7 @@ import {
 } from "@/app/actions/budget";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -239,44 +233,31 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
       >
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">분류</label>
-          <Select
+          <ResponsiveSelect
             value={type ?? ""}
             onValueChange={(v) => setType(v as BudgetCashFlowType)}
-            items={TYPE_LABELS}
-          >
-            <SelectTrigger className="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11">
-              <SelectValue placeholder="분류 선택">
-                {(value: string | null) => (value && value in TYPE_LABELS ? TYPE_LABELS[value as BudgetCashFlowType] : null)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              {ADDABLE_TYPES.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {TYPE_LABELS[opt]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={ADDABLE_TYPES.map((opt) => ({
+              value: opt,
+              label: TYPE_LABELS[opt],
+            }))}
+            placeholder="분류 선택"
+            triggerClassName="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11"
+            contentClassName="rounded-2xl"
+          />
           {type === "SAVING" && (
             <>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1 block mt-3">입금 계좌</label>
-              <Select value={accountId ?? ""} onValueChange={(v) => setAccountId(v || null)}>
-                <SelectTrigger className="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11">
-                  <SelectValue placeholder="입금 계좌 선택">
-                    {(value: string | null) => {
-                      const acc = accounts.find((a) => a.id === value);
-                      return acc ? `${acc.name} (${acc.type})` : null;
-                    }}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  {accounts.map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id}>
-                      {acc.name} ({acc.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ResponsiveSelect
+                value={accountId ?? ""}
+                onValueChange={(v) => setAccountId(v || null)}
+                options={accounts.map((a) => ({
+                  value: a.id,
+                  label: `${a.name} (${a.type})`,
+                }))}
+                placeholder="입금 계좌 선택"
+                triggerClassName="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11"
+                contentClassName="rounded-2xl"
+              />
             </>
           )}
         </div>
@@ -540,23 +521,17 @@ export function CashFlowBoard({ monthlyBudgetId, transactions, accounts, current
             {editingItem?.type === "SAVING" && (
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest ml-1">입금 계좌</label>
-                <Select value={editAccountId ?? ""} onValueChange={(v) => setEditAccountId(v || null)}>
-                  <SelectTrigger className="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11">
-                    <SelectValue placeholder="입금 계좌 선택">
-                      {(value: string | null) => {
-                        const acc = accounts.find((a) => a.id === value);
-                        return acc ? `${acc.name} (${acc.type})` : null;
-                      }}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    {accounts.map((acc) => (
-                      <SelectItem key={acc.id} value={acc.id}>
-                        {acc.name} ({acc.type})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ResponsiveSelect
+                  value={editAccountId ?? ""}
+                  onValueChange={(v) => setEditAccountId(v || null)}
+                  options={accounts.map((a) => ({
+                    value: a.id,
+                    label: `${a.name} (${a.type})`,
+                  }))}
+                  placeholder="입금 계좌 선택"
+                  triggerClassName="h-11 min-h-11 w-full rounded-xl border border-slate-100 bg-slate-50 text-base dark:border-white/10 dark:bg-white/5 dark:text-slate-100 md:h-11 md:min-h-11 md:text-base md:data-[size=default]:h-11 md:data-[size=default]:min-h-11"
+                  contentClassName="rounded-2xl"
+                />
               </div>
             )}
             <DialogFooter showCloseButton={false}>

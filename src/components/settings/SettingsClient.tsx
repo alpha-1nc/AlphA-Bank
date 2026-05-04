@@ -15,13 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import {
   Dialog,
   DialogContent,
@@ -188,21 +182,14 @@ export default function SettingsClient({
                 월간 예산 기준일 (Budget Cycle Start Date)
               </label>
               <div className="flex items-center gap-3">
-                <Select
+                <ResponsiveSelect
                   value={String(budgetStartDate)}
                   onValueChange={(v) => v && handleBudgetStartChange(v)}
-                >
-                  <SelectTrigger className="w-[160px] rounded-2xl border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 h-11">
-                    <SelectValue placeholder="기준일 선택" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    {dayOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={dayOptions}
+                  placeholder="기준일 선택"
+                  triggerClassName="w-[160px] rounded-2xl border-slate-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 h-11"
+                  contentClassName="rounded-2xl"
+                />
 
                 {saveSuccess && (
                   <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-500 animate-in fade-in slide-in-from-left-2 duration-300">

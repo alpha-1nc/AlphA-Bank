@@ -4,13 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -141,21 +135,14 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
               </div>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-muted-foreground shrink-0">월</label>
-                <Select
+                <ResponsiveSelect
                   value={monthInput}
                   onValueChange={(v) => v && setMonthInput(v)}
-                >
-                  <SelectTrigger size="sm" className="h-8 flex-1">
-                    <SelectValue placeholder="월 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((mo) => (
-                      <SelectItem key={mo.value} value={mo.value}>
-                        {mo.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={MONTHS.map((mo) => ({ value: mo.value, label: mo.label }))}
+                  placeholder="월 선택"
+                  size="sm"
+                  triggerClassName="h-8 flex-1"
+                />
               </div>
               <Button
                 size="sm"

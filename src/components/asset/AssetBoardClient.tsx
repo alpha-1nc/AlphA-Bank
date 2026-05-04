@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
+import { useIsDesktopMd } from "@/hooks/use-is-desktop-md";
 import {
   Select,
   SelectContent,
@@ -30,6 +32,7 @@ import {
   TrendingUp,
   ShieldCheck,
   Vault,
+  ChevronDown,
 } from "lucide-react";
 import Image from "next/image";
 import { addAccount, updateAccountBalance, deleteAccount } from "@/app/actions/asset";
@@ -126,6 +129,7 @@ function getMeta(type: string) {
 function AddAccountDialog() {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const isDesktop = useIsDesktopMd();
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("입출금");
   const [bankName, setBankName] = useState("");
@@ -190,47 +194,69 @@ function AddAccountDialog() {
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">분류 *</label>
-            <Select value={type} onValueChange={(v) => handleTypeChange(v as AccountType)}>
-              <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder="분류를 먼저 선택하세요" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {ACCOUNT_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ResponsiveSelect
+              value={type}
+              onValueChange={(v) => handleTypeChange(v as AccountType)}
+              options={ACCOUNT_TYPES.map((t) => ({ value: t, label: t }))}
+              placeholder="분류를 먼저 선택하세요"
+              triggerClassName="rounded-xl"
+              contentClassName="rounded-xl"
+            />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">금융기관명 *</label>
-            <Select
-              value={bankName}
-              onValueChange={(v) => v != null && setBankName(v)}
-              required
-              disabled={bankOptions.length === 0}
-            >
-              <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder={bankOptions.length === 0 ? "분류를 먼저 선택하세요" : "금융기관 선택"} />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {bankOptions.map((b) => (
-                  <SelectItem key={b.value} value={b.value}>
-                    <span className="flex items-center gap-2">
-                      <Image
-                        src={`/bank_logos/${b.logoFile}`}
-                        alt=""
-                        width={20}
-                        height={20}
-                        className="h-5 w-5 shrink-0 object-contain"
-                      />
+            {isDesktop ? (
+              <Select
+                value={bankName}
+                onValueChange={(v) => v != null && setBankName(v)}
+                required
+                disabled={bankOptions.length === 0}
+              >
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder={bankOptions.length === 0 ? "분류를 먼저 선택하세요" : "금융기관 선택"} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {bankOptions.map((b) => (
+                    <SelectItem key={b.value} value={b.value}>
+                      <span className="flex items-center gap-2">
+                        <Image
+                          src={`/bank_logos/${b.logoFile}`}
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="h-5 w-5 shrink-0 object-contain"
+                        />
+                        {b.displayName}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="relative w-full">
+                <select
+                  required
+                  disabled={bankOptions.length === 0}
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="flex h-11 w-full appearance-none rounded-xl border border-input bg-transparent py-2 pl-3 pr-10 text-base shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30"
+                  aria-label="금융기관 선택"
+                >
+                  <option value="" disabled>
+                    {bankOptions.length === 0 ? "분류를 먼저 선택하세요" : "금융기관 선택"}
+                  </option>
+                  {bankOptions.map((b) => (
+                    <option key={b.value} value={b.value}>
                       {b.displayName}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">계좌명 *</label>

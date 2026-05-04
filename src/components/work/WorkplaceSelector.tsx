@@ -5,13 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { Plus, Loader2 } from "lucide-react";
 import {
   PAY_PERIOD_MODE,
@@ -27,6 +21,22 @@ import {
 } from "@/components/work/PayrollFormFields";
 
 const PAYDAY_OPTIONS = Array.from({ length: 31 }, (_, i) => i + 1);
+
+const PAYDAY_SELECT_OPTIONS = PAYDAY_OPTIONS.map((d) => ({
+  value: String(d),
+  label: `매월 ${d}일`,
+}));
+
+const PAY_PERIOD_SELECT_OPTIONS = [
+  {
+    value: SALARY_PERIOD_MODE.CURRENT_MONTH,
+    label: payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH),
+  },
+  {
+    value: PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY,
+    label: payPeriodModeLabel(PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY),
+  },
+];
 
 const PRESET_COLORS = [
   "#3498db",
@@ -185,46 +195,30 @@ export default function WorkplaceSelector({
             <label className="text-xs font-medium text-muted-foreground">
               월급일 (매월)
             </label>
-            <Select
+            <ResponsiveSelect
               value={payday}
               onValueChange={(v) => v != null && setPayday(v)}
-            >
-              <SelectTrigger className="rounded-xl w-full">
-                <SelectValue placeholder="일 선택" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60 rounded-xl">
-                {PAYDAY_OPTIONS.map((d) => (
-                  <SelectItem key={d} value={String(d)}>
-                    매월 {d}일
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={PAYDAY_SELECT_OPTIONS}
+              placeholder="일 선택"
+              triggerClassName="rounded-xl w-full"
+              contentClassName="max-h-60 rounded-xl"
+            />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">
               급여 기간
             </label>
-            <Select
+            <ResponsiveSelect
               value={payMode}
               onValueChange={(v) => v != null && setPayMode(v)}
-            >
-              <SelectTrigger className="rounded-xl w-full min-w-0">
-                <SelectValue placeholder="급여 기간 선택">
-                  {payPeriodModeLabel(payMode)}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="rounded-xl max-w-[min(100vw-2rem,24rem)]">
-                <SelectItem value={SALARY_PERIOD_MODE.CURRENT_MONTH}>
-                  {payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH)}
-                </SelectItem>
-                <SelectItem value={PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY}>
-                  {payPeriodModeLabel(
-                    PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY
-                  )}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              options={PAY_PERIOD_SELECT_OPTIONS}
+              placeholder="급여 기간 선택"
+              triggerClassName="rounded-xl w-full min-w-0"
+              contentClassName="rounded-xl max-w-[min(100vw-2rem,24rem)]"
+              renderValue={(v) =>
+                v != null && v !== "" ? payPeriodModeLabel(v) : null
+              }
+            />
           </div>
         </div>
         {error && (
@@ -354,46 +348,30 @@ export default function WorkplaceSelector({
               <label className="text-xs font-medium text-muted-foreground">
                 월급일 (매월)
               </label>
-              <Select
+              <ResponsiveSelect
                 value={payday}
                 onValueChange={(v) => v != null && setPayday(v)}
-              >
-                <SelectTrigger className="rounded-xl w-full">
-                  <SelectValue placeholder="일 선택" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 rounded-xl">
-                  {PAYDAY_OPTIONS.map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      매월 {d}일
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={PAYDAY_SELECT_OPTIONS}
+                placeholder="일 선택"
+                triggerClassName="rounded-xl w-full"
+                contentClassName="max-h-60 rounded-xl"
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">
                 급여 기간
               </label>
-              <Select
+              <ResponsiveSelect
                 value={payMode}
                 onValueChange={(v) => v != null && setPayMode(v)}
-              >
-                <SelectTrigger className="rounded-xl w-full min-w-0">
-                  <SelectValue placeholder="급여 기간 선택">
-                    {payPeriodModeLabel(payMode)}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="rounded-xl max-w-[min(100vw-2rem,24rem)]">
-                  <SelectItem value={SALARY_PERIOD_MODE.CURRENT_MONTH}>
-                    {payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH)}
-                  </SelectItem>
-                  <SelectItem value={PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY}>
-                    {payPeriodModeLabel(
-                      PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY
-                    )}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                options={PAY_PERIOD_SELECT_OPTIONS}
+                placeholder="급여 기간 선택"
+                triggerClassName="rounded-xl w-full min-w-0"
+                contentClassName="rounded-xl max-w-[min(100vw-2rem,24rem)]"
+                renderValue={(v) =>
+                  v != null && v !== "" ? payPeriodModeLabel(v) : null
+                }
+              />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2">

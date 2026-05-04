@@ -9,13 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { CalendarDays, Loader2, Trash2 } from "lucide-react";
 import { Popover } from "@base-ui/react/popover";
 import { cn } from "@/lib/utils";
@@ -382,6 +376,19 @@ export default function WorkRecordModal({
     });
   }
 
+  const sameDaySelectOptions = useMemo(() => {
+    return [
+      { value: "__new__", label: "새 근무 등록" },
+      ...recordsOnDay.map((r, i) => ({
+        value: r.id,
+        label:
+          recordsOnDay.length > 1
+            ? `${i + 1}번째 · ${formatSameDayRecordLabel(r)}`
+            : formatSameDayRecordLabel(r),
+      })),
+    ];
+  }, [recordsOnDay]);
+
   const dateLabel = useMemo(
     () =>
       new Intl.DateTimeFormat("ko-KR", {
@@ -417,7 +424,7 @@ export default function WorkRecordModal({
               <label className="text-xs font-medium text-muted-foreground">
                 같은 날 근무 추가
               </label>
-              <Select
+              <ResponsiveSelect
                 value={editId ?? "__new__"}
                 onValueChange={(v) => {
                   if (v === "__new__") {
@@ -435,28 +442,15 @@ export default function WorkRecordModal({
                     }
                   }
                 }}
-              >
-                <SelectTrigger className="rounded-2xl w-full">
-                  <SelectValue placeholder="선택">
-                    {editId
-                      ? (() => {
-                          const rec = recordsOnDay.find((r) => r.id === editId);
-                          return rec ? formatSameDayRecordLabel(rec) : "선택";
-                        })()
-                      : "새 근무 등록"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__new__">새 근무 등록</SelectItem>
-                  {recordsOnDay.map((r, i) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {recordsOnDay.length > 1
-                        ? `${i + 1}번째 · ${formatSameDayRecordLabel(r)}`
-                        : formatSameDayRecordLabel(r)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={sameDaySelectOptions}
+                placeholder="선택"
+                triggerClassName="rounded-2xl w-full"
+                renderValue={(v) => {
+                  if (!v || v === "__new__") return "새 근무 등록";
+                  const rec = recordsOnDay.find((r) => r.id === v);
+                  return rec ? formatSameDayRecordLabel(rec) : "선택";
+                }}
+              />
             </div>
           )}
 
@@ -568,23 +562,17 @@ export default function WorkRecordModal({
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">휴게</label>
-            <Select
+            <ResponsiveSelect
               value={String(breakM)}
               onValueChange={(v) => {
                 if (v != null && v !== "") setBreakM(parseInt(v, 10));
               }}
-            >
-              <SelectTrigger className="rounded-xl w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {BREAK_OPTIONS.map((m) => (
-                  <SelectItem key={m} value={String(m)}>
-                    {m}분
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={BREAK_OPTIONS.map((m) => ({
+                value: String(m),
+                label: `${m}분`,
+              }))}
+              triggerClassName="rounded-xl w-full"
+            />
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed">
