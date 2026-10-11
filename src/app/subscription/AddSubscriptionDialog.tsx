@@ -13,24 +13,16 @@ import { Input } from "@/components/ui/input";
 import { addSubscription } from "@/app/actions/subscription";
 import { SUBSCRIPTION_CATEGORIES } from "@/lib/subscription-constants";
 
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-}
-
 interface Props {
   trigger: React.ReactElement;
-  accounts: Account[];
 }
 
-export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
+export default function AddSubscriptionDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [billingDay, setBillingDay] = useState("1");
   const [category, setCategory] = useState(SUBSCRIPTION_CATEGORIES[0]);
-  const [accountId, setAccountId] = useState("");
   const [memo, setMemo] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -39,7 +31,6 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
     setAmount("");
     setBillingDay("1");
     setCategory(SUBSCRIPTION_CATEGORIES[0]);
-    setAccountId("");
     setMemo("");
   }
 
@@ -56,7 +47,6 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
         amount: parsedAmount,
         billingDay: parsedDay,
         category,
-        accountId: accountId || null,
         memo: memo || null,
       });
       reset();
@@ -67,14 +57,15 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger render={trigger} />
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-card">
         <DialogHeader>
-          <DialogTitle>새 구독 추가</DialogTitle>
+          <DialogTitle className="t5 font-bold text-foreground">새 구독 추가</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">서비스명 *</label>
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">서비스명 *</label>
             <Input
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
               placeholder="예: Netflix, Spotify"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -83,9 +74,10 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">월 결제금액 (원) *</label>
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">월 결제금액 (원) *</label>
               <Input
+                className="t6 h-11 rounded-control border-0 bg-background text-foreground"
                 type="number"
                 min="0"
                 placeholder="예: 17000"
@@ -94,9 +86,10 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
                 required
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">결제일 *</label>
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">결제일 *</label>
               <Input
+                className="t6 h-11 rounded-control border-0 bg-background text-foreground"
                 type="number"
                 min="1"
                 max="31"
@@ -108,12 +101,12 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">카테고리 *</label>
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">카테고리 *</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as typeof category)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="t6 h-11 w-full rounded-control border-0 bg-background px-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               {SUBSCRIPTION_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -121,23 +114,10 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">결제 계좌 (선택)</label>
-            <select
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="">계좌 없음</option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">메모 (선택)</label>
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">메모 (선택)</label>
             <Input
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
               placeholder="메모를 입력하세요"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
@@ -148,7 +128,7 @@ export default function AddSubscriptionDialog({ trigger, accounts }: Props) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
               취소
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" className="rounded-control bg-primary font-bold text-primary-foreground" disabled={isPending}>
               {isPending ? "추가 중..." : "추가"}
             </Button>
           </div>

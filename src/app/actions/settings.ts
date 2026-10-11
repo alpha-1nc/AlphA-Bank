@@ -99,7 +99,7 @@ export async function exportAllDataCSV(): Promise<ExportCSVResult> {
     prisma.bucketList.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
   ]);
 
-  const accountHeaders = "id,name,type,bankName,accountNumber,description,initialBalance,createdAt";
+  const accountHeaders = "id,name,type,bankName,accountNumber,description,createdAt";
   const accountCSV = [
     accountHeaders,
     ...accounts.map((a) =>
@@ -110,24 +110,24 @@ export async function exportAllDataCSV(): Promise<ExportCSVResult> {
         escapeCSV(a.bankName ?? ""),
         escapeCSV(a.accountNumber ?? ""),
         escapeCSV(a.description ?? ""),
-        a.initialBalance,
         a.createdAt.toISOString(),
       ].join(",")
     ),
   ].join("\n");
 
-  const cashFlowHeaders = "id,type,title,amount,isCompleted,month,accountId,createdAt";
+  const cashFlowHeaders = "id,type,category,emoji,title,amount,isCompleted,month,createdAt";
   const cashFlowCSV = [
     cashFlowHeaders,
     ...cashFlows.map((c) =>
       [
         c.id,
         escapeCSV(c.type),
+        escapeCSV(c.category ?? ""),
+        escapeCSV(c.emoji ?? ""),
         escapeCSV(c.title),
         c.amount,
         c.isCompleted,
         escapeCSV(c.monthlyBudget.month),
-        c.accountId ?? "",
         c.createdAt.toISOString(),
       ].join(",")
     ),

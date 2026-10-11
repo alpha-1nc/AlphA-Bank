@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useChartColors } from "@/hooks/useChartColors";
+import { getThemeTokens } from "@/lib/design-tokens";
+import { formatWon } from "@/lib/format-money";
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
@@ -22,20 +22,14 @@ interface MonthlyData {
 
 interface Props {
   data: MonthlyData[];
+  /** 차트 높이(px 또는 "100%"). 기본 260 */
+  height?: number | `${number}%`;
 }
 
 function formatYAxis(value: number): string {
   if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
   if (value >= 10_000) return `${(value / 10_000).toFixed(0)}만`;
   return String(value);
-}
-
-function formatKRWFull(amount: number): string {
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(amount);
 }
 
 function useIsDarkMode() {
@@ -70,22 +64,13 @@ const CustomTooltip = ({
       saving: "저축",
     };
     return (
-      <div className="bg-white dark:bg-[#18181B] border border-slate-100 dark:border-white/10 rounded-xl px-4 py-3 shadow-lg dark:shadow-black/40 text-sm space-y-1.5">
-        <p className="font-black tracking-tighter text-slate-800 dark:text-slate-100 mb-2">
-          {label}
-        </p>
+      <div className="rounded-control bg-card border border-divider px-4 py-3 space-y-1">
+        <p className="t7 font-bold text-foreground mb-2">{label}</p>
         {payload.map((p) => (
-          <div key={p.name} className="flex items-center gap-2">
-            <span
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: p.color }}
-            />
-            <span className="text-slate-500 dark:text-slate-400 font-medium">
-              {labelMap[p.name] ?? p.name}
-            </span>
-            <span className="font-semibold text-slate-800 dark:text-slate-100 ml-auto pl-4">
-              {formatKRWFull(p.value)}
-            </span>
+          <div key={p.name} className="t7 flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
+            <span className="text-fg-secondary">{labelMap[p.name] ?? p.name}</span>
+            <span className="numeric ml-auto pl-4 font-semibold text-foreground">{formatWon(p.value)}</span>
           </div>
         ))}
       </div>
@@ -94,43 +79,36 @@ const CustomTooltip = ({
   return null;
 };
 
-export default function CashFlowBarChart({ data }: Props) {
-  const { income, expense, saving } = useChartColors();
+export default function CashFlowBarChart({ data, height = 260 }: Props) {
   const isDark = useIsDarkMode();
-  const mutedTick = isDark ? "#a1a1aa" : "#94a3b8";
-  const gridStroke = isDark ? "rgba(255,255,255,0.08)" : "#f1f5f9";
-  const cursorFill = isDark ? "rgba(255,255,255,0.06)" : "#f8fafc";
+  const t = getThemeTokens(isDark);
+  // 값 3개가 모두 0인 달은 막대를 그리지 않고 월 라벨만 남김
+  const chartData = data.map((d) =>
+    d.income === 0 && d.expense === 0 && d.saving === 0
+      ? { month: d.month, income: null, expense: null, saving: null }
+      : d
+  );
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <BarChart
-        data={data}
-        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-        barCategoryGap="28%"
-        barGap={3}
-      >
-        <CartesianGrid
-          strokeDasharray="3 3"
-          stroke={gridStroke}
-          vertical={false}
-        />
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={4}>
         <XAxis
           dataKey="month"
-          tick={{ fontSize: 11, fill: mutedTick, fontWeight: 600 }}
+          tick={{ fontSize: 12, fill: t.tertiaryFg, fontWeight: 500 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           tickFormatter={formatYAxis}
-          tick={{ fontSize: 11, fill: mutedTick, fontWeight: 500 }}
+          tick={{ fontSize: 12, fill: t.tertiaryFg, fontWeight: 400 }}
           axisLine={false}
           tickLine={false}
           width={44}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: cursorFill }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: t.divider }} />
         <Legend
           iconType="circle"
-          iconSize={7}
+          iconSize={8}
           formatter={(value) => {
             const map: Record<string, string> = {
               income: "수입",
@@ -138,17 +116,15 @@ export default function CashFlowBarChart({ data }: Props) {
               saving: "저축",
             };
             return (
-              <span
-                style={{ fontSize: 11, color: mutedTick, fontWeight: 600 }}
-              >
+              <span style={{ fontSize: 12, color: t.tertiaryFg, fontWeight: 500 }}>
                 {map[value] ?? value}
               </span>
             );
           }}
         />
-        <Bar dataKey="income" fill={income} radius={[4, 4, 0, 0]} />
-        <Bar dataKey="expense" fill={expense} radius={[4, 4, 0, 0]} />
-        <Bar dataKey="saving" fill={saving} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="income" fill={t.accent} barSize={22} radius={[5, 5, 0, 0]} />
+        <Bar dataKey="expense" fill={t.negative} barSize={22} radius={[5, 5, 0, 0]} />
+        <Bar dataKey="saving" fill={t.positive} barSize={22} radius={[5, 5, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

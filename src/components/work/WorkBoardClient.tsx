@@ -185,14 +185,14 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
   }
 
   return (
-    <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden transition-opacity duration-300">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden transition-opacity duration-300">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div>
-          <h1 className="hidden md:flex text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 items-center gap-2.5 min-w-0">
-            <Briefcase className="h-8 w-8 text-primary shrink-0 transition-transform duration-300 md:hover:scale-105" />
+          <h1 className="t3 hidden md:flex font-bold text-foreground mb-1 items-center gap-2 min-w-0">
+            <Briefcase className="h-6 w-6 text-primary shrink-0" />
             <span className="break-words">급여 계산기</span>
           </h1>
-          <p className="hidden md:block text-sm text-slate-400 font-medium">
+          <p className="t7 hidden md:block text-fg-tertiary">
             근무지별 시급·근무 기록으로 실수령액과 월별 추이를 확인합니다
           </p>
         </div>
@@ -213,7 +213,7 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
 
       {loadError && (
         <p
-          className="text-sm text-destructive rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 animate-in fade-in zoom-in-95 duration-300"
+          className="t7 text-negative rounded-control bg-divider px-4 py-3 animate-in fade-in zoom-in-95 duration-300"
           role="alert"
         >
           {loadError}
@@ -231,7 +231,6 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
             year={year}
             month={month}
             records={calendarRecords}
-            workplaceColor={selected.color}
             paydayOfMonth={selected.paydayOfMonth}
             payPeriodCaption={payPeriodCaption(
               year,

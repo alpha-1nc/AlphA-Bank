@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import type { Workplace } from "@/generated/prisma";
 import { WORKPLACE_DEFAULTS } from "@/lib/workplace-client";
 import { deleteWorkplace, updateWorkplace } from "@/actions/workplace.actions";
@@ -44,17 +43,6 @@ const PAY_PERIOD_SELECT_OPTIONS = [
   },
 ];
 
-const PRESET_COLORS = [
-  "#3498db",
-  "#e74c3c",
-  "#2ecc71",
-  "#9b59b6",
-  "#f39c12",
-  "#1abc9c",
-  "#e91e63",
-  "#607d8b",
-];
-
 type Props = {
   initialWorkplaces: Workplace[];
 };
@@ -64,7 +52,6 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
   const [workplaces, setWorkplaces] = useState(initialWorkplaces);
   const [editing, setEditing] = useState<Workplace | null>(null);
   const [name, setName] = useState("");
-  const [color, setColor] = useState(PRESET_COLORS[0]);
   const [hourly, setHourly] = useState(String(WORKPLACE_DEFAULTS.hourlyWage));
   const [weeklyOn, setWeeklyOn] = useState(true);
   const [taxOn, setTaxOn] = useState(true);
@@ -81,7 +68,6 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
   function openEdit(w: Workplace) {
     setEditing(w);
     setName(w.name);
-    setColor(w.color);
     setHourly(String(w.hourlyWage ?? WORKPLACE_DEFAULTS.hourlyWage));
     setWeeklyOn(w.isWeeklyAllowanceActive ?? WORKPLACE_DEFAULTS.isWeeklyAllowanceActive);
     setTaxOn(w.isTaxActive ?? WORKPLACE_DEFAULTS.isTaxActive);
@@ -138,32 +124,32 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
 
   return (
     <>
-      <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 flex flex-col gap-6 md:col-span-2">
+      <div className="rounded-card bg-card p-6 md:p-7 flex flex-col gap-6 md:col-span-2">
         <div className="flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20">
-            <Briefcase className="h-5 w-5 text-primary" />
+          <div className="flex h-11 w-6 shrink-0 items-center justify-center">
+            <Briefcase className="h-5 w-5 text-fg-tertiary" />
           </div>
           <div>
-            <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <h2 className="t5 font-bold text-foreground">
               근무지
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+            <p className="t7 text-fg-tertiary mt-1">
               시급·세금·주휴·월급일·급여 기간·재직 여부를 관리합니다. 시급/세금/주휴
               저장 시 해당 근무지의 모든 근무 기록에도 동일하게 반영됩니다.
             </p>
           </div>
         </div>
 
-        <div className="h-px bg-slate-100 dark:bg-white/5" />
+        <div className="h-px bg-divider" />
 
         {error && !editing && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="t7 text-negative" role="alert">
             {error}
           </p>
         )}
 
         {workplaces.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="t7 text-fg-tertiary">
             등록된 근무지가 없습니다. 아르바이트 급여 화면에서 근무지를 추가해
             주세요.
           </p>
@@ -172,18 +158,14 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
             {workplaces.map((w) => (
               <li
                 key={w.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-slate-100 dark:border-white/10 bg-muted/20 dark:bg-white/[0.02] px-4 py-3"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-control bg-background px-4 py-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span
-                    className="h-3 w-3 rounded-full shrink-0 ring-2 ring-white dark:ring-zinc-800"
-                    style={{ backgroundColor: w.color }}
-                  />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
+                    <p className="t6 font-bold text-foreground truncate">
                       {w.name}
                     </p>
-                    <p className="text-xs text-muted-foreground tabular-nums">
+                    <p className="t7 numeric text-fg-tertiary">
                       시급 {(w.hourlyWage ?? WORKPLACE_DEFAULTS.hourlyWage).toLocaleString()}원
                       · 매월 {w.paydayOfMonth ?? WORKPLACE_DEFAULTS.paydayOfMonth}일 월급
                       {w.isActive ? " · 재직" : " · 퇴사"}
@@ -195,21 +177,21 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="rounded-2xl border-slate-200 dark:border-white/10"
+                    className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
                     onClick={() => openEdit(w)}
                   >
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                    <Pencil className="h-4 w-4 mr-1" />
                     수정
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="rounded-2xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                    className="rounded-control border-0 bg-transparent text-negative hover:bg-divider"
                     onClick={() => handleDeleteWorkplace(w)}
                     disabled={pending}
                   >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    <Trash2 className="h-4 w-4 mr-1" />
                     삭제
                   </Button>
                 </div>
@@ -220,16 +202,16 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
       </div>
 
       <Dialog open={editing !== null} onOpenChange={(o) => !o && closeEdit()}>
-        <DialogContent className="sm:max-w-lg max-h-none overflow-hidden rounded-3xl border-slate-100 dark:border-white/10 p-4 sm:p-5 gap-0">
+        <DialogContent className="sm:max-w-lg max-h-none overflow-hidden rounded-card p-4 sm:p-5 gap-0">
           <DialogHeader className="pb-3 space-y-0">
-            <DialogTitle className="text-base sm:text-lg font-bold tracking-tight">
+            <DialogTitle className="t5 font-bold text-foreground">
               근무지 수정
             </DialogTitle>
           </DialogHeader>
 
           {editing && (
             <form
-              className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2.5 pt-0"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3 pt-0"
               onSubmit={(e) => {
                 e.preventDefault();
                 setError(null);
@@ -249,7 +231,6 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                   const res = await updateWorkplace({
                     workplaceId: editing.id,
                     name: name.trim(),
-                    color,
                     type: (editing.type ?? "PARTTIME") as "PARTTIME" | "FULLTIME",
                     hourlyWage: wageNum,
                     isWeeklyAllowanceActive: weeklyOn,
@@ -271,36 +252,15 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
               }}
             >
               <div className="sm:col-span-2 space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label className="t7 font-medium text-fg-tertiary">
                   이름
                 </label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="rounded-xl h-9"
+                  className="t6 h-9 rounded-control border-0 bg-background text-foreground"
                   required
                 />
-              </div>
-
-              <div className="sm:col-span-2 space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
-                  색상
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={cn(
-                        "h-7 w-7 rounded-full ring-2 ring-offset-2 ring-offset-background",
-                        color === c ? "ring-primary" : "ring-transparent"
-                      )}
-                      style={{ backgroundColor: c }}
-                      onClick={() => setColor(c)}
-                      aria-label={`색 ${c}`}
-                    />
-                  ))}
-                </div>
               </div>
 
               <div className="sm:col-span-2 [&_label]:text-xs [&_input]:h-9">
@@ -311,7 +271,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                 />
               </div>
 
-              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2 [&>div]:rounded-xl [&>div]:py-1.5 [&>div]:px-2.5 [&>div>span]:text-xs">
+              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2 [&>div]:rounded-control [&>div]:py-2 [&>div]:px-3 [&>div>span]:text-xs">
                 <FieldSwitch
                   label="주휴수당 적용"
                   checked={weeklyOn}
@@ -330,7 +290,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label className="t7 font-medium text-fg-tertiary">
                   월급일 (매월)
                 </label>
                 <ResponsiveSelect
@@ -339,12 +299,12 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                   options={PAYDAY_SELECT_OPTIONS}
                   placeholder="일 선택"
                   size="sm"
-                  triggerClassName="rounded-xl w-full h-9 text-sm"
-                  contentClassName="max-h-60 rounded-xl"
+                  triggerClassName="t6 rounded-control border-0 bg-background w-full h-9"
+                  contentClassName="max-h-60 rounded-control"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label className="t7 font-medium text-fg-tertiary">
                   급여 기간
                 </label>
                 <ResponsiveSelect
@@ -353,8 +313,8 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                   options={PAY_PERIOD_SELECT_OPTIONS}
                   placeholder="급여 기간 선택"
                   size="sm"
-                  triggerClassName="rounded-xl w-full h-9 text-sm min-w-0"
-                  contentClassName="rounded-xl max-w-[min(100vw-2rem,24rem)]"
+                  triggerClassName="t6 rounded-control border-0 bg-background w-full h-9 min-w-0"
+                  contentClassName="rounded-control max-w-[min(100vw-2rem,24rem)]"
                   renderValue={(v) =>
                     v != null && v !== "" ? payPeriodModeLabel(v) : null
                   }
@@ -363,7 +323,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
 
               {error && (
                 <p
-                  className="text-sm text-destructive sm:col-span-2"
+                  className="t7 text-negative sm:col-span-2"
                   role="alert"
                 >
                   {error}
@@ -374,17 +334,17 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-2xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 sm:mr-auto"
+                  className="rounded-control border-0 bg-transparent text-negative hover:bg-divider sm:mr-auto"
                   onClick={() => editing && handleDeleteWorkplace(editing)}
                   disabled={pending}
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  <Trash2 className="h-4 w-4 mr-1" />
                   근무지 삭제
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-2xl flex-1"
+                  className="rounded-control border-0 bg-divider text-foreground hover:bg-divider flex-1"
                   onClick={closeEdit}
                   disabled={pending}
                 >
@@ -392,7 +352,7 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                 </Button>
                 <Button
                   type="submit"
-                  className="rounded-2xl flex-1"
+                  className="rounded-control flex-1 bg-primary font-bold text-primary-foreground"
                   disabled={pending}
                 >
                   {pending ? (

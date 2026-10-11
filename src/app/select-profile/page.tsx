@@ -65,7 +65,7 @@ export default function SelectProfilePage() {
                   group flex min-w-0 flex-1 basis-0
                   flex-col items-center gap-3 sm:gap-4 p-4 sm:p-6 rounded-3xl
                   bg-card border border-border
-                  shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)]
+                   
                   hover:border-primary/40 hover:-translate-y-1
                   transition-all duration-200 cursor-pointer
                   disabled:opacity-60 disabled:pointer-events-none disabled:hover:translate-y-0

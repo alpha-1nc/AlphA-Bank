@@ -1,41 +1,26 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { updatePersonalAllowance } from "@/app/actions/budget";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, PiggyBank, Wallet, Banknote } from "lucide-react";
-
-function formatKRW(amount: number): string {
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+import { TrendingUp, TrendingDown, PiggyBank, Wallet } from "lucide-react";
+import { formatWon } from "@/lib/format-money";
 
 interface BudgetSummaryProps {
   totalIncome: number;
   totalExpense: number;
   totalSaving: number;
   livingBalance: number;
-  personalAllowance: number;
-  budgetId: string;
 }
 
+/** 카드 배경은 모두 card. 금액 색만 의미에 따라 (수입·생활비 foreground, 지출 negative, 저축 positive) */
 const cards: {
-  key: "income" | "expense" | "saving" | "living" | "allowance";
+  key: "income" | "expense" | "saving" | "living";
   label: string;
   icon: React.ElementType;
   color: string;
-  bg: string;
 }[] = [
-  { key: "income", label: "예상 수입", icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
-  { key: "expense", label: "예상 지출", icon: TrendingDown, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-500/10" },
-  { key: "saving", label: "저축 및 투자", icon: PiggyBank, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
-  { key: "living", label: "생활비 잔액", icon: Wallet, color: "text-primary", bg: "bg-primary/10" },
-  { key: "allowance", label: "개인 용돈", icon: Banknote, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10" },
+  { key: "income", label: "예상 수입", icon: TrendingUp, color: "text-foreground" },
+  { key: "expense", label: "예상 지출", icon: TrendingDown, color: "text-negative" },
+  { key: "saving", label: "저축 및 투자", icon: PiggyBank, color: "text-positive" },
+  { key: "living", label: "생활비 잔액", icon: Wallet, color: "text-foreground" },
 ];
 
 export function BudgetSummary({
@@ -43,86 +28,25 @@ export function BudgetSummary({
   totalExpense,
   totalSaving,
   livingBalance,
-  personalAllowance,
-  budgetId,
 }: BudgetSummaryProps) {
-  const [editingAllowance, setEditingAllowance] = useState(false);
-  const [inputValue, setInputValue] = useState(String(personalAllowance));
-  const [isPending, startTransition] = useTransition();
-
-  function handleAllowanceSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const parsed = parseInt(inputValue.replace(/,/g, ""), 10);
-    if (isNaN(parsed) || parsed < 0) return;
-    startTransition(async () => {
-      await updatePersonalAllowance(budgetId, parsed);
-      setEditingAllowance(false);
-    });
-  }
-
   const values = {
     income: totalIncome,
     expense: totalExpense,
     saving: totalSaving,
     living: livingBalance,
-    allowance: personalAllowance,
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {cards.map(({ key, label, icon: Icon, color, bg }) => {
-        const isAllowance = key === "allowance";
-        const value = values[key];
-
-        return (
-          <Card
-            key={key}
-            className={`rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl ${isAllowance ? "cursor-pointer col-span-2 lg:col-span-1" : ""}`}
-            onClick={isAllowance && !editingAllowance ? () => setEditingAllowance(true) : undefined}
-          >
-            <CardHeader className={`py-4 px-4 ${bg}`}>
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg} ${color}`}>
-                  <Icon className="h-[18px] w-[18px]" />
-                </div>
-                <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
-                  {label}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="py-4 px-4">
-              {isAllowance && editingAllowance ? (
-                <form onSubmit={handleAllowanceSubmit} onClick={(e) => e.stopPropagation()} className="flex gap-2">
-                  <Input
-                    type="number"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onBlur={() => {
-                      const parsed = parseInt(inputValue.replace(/,/g, ""), 10);
-                      if (!isNaN(parsed) && parsed >= 0) {
-                        startTransition(async () => {
-                          await updatePersonalAllowance(budgetId, parsed);
-                        });
-                      }
-                      setEditingAllowance(false);
-                    }}
-                    autoFocus
-                    className="h-11 text-base font-black tracking-tighter rounded-xl flex-1 dark:bg-[#09090B] dark:text-slate-100 dark:border-white/10"
-                    disabled={isPending}
-                  />
-                  <Button type="submit" size="sm" disabled={isPending} className="shrink-0 rounded-xl h-11">
-                    저장
-                  </Button>
-                </form>
-              ) : (
-                <p className={`text-xl lg:text-2xl font-black tracking-tighter ${color}`}>
-                  {formatKRW(value)}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {cards.map(({ key, label, icon: Icon, color }) => (
+        <div key={key} className="rounded-card bg-card p-5">
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 shrink-0 text-fg-tertiary" />
+            <span className="t7 truncate text-fg-tertiary">{label}</span>
+          </div>
+          <p className={`t4 numeric mt-2 font-bold ${color}`}>{formatWon(values[key])}</p>
+        </div>
+      ))}
     </div>
   );
 }

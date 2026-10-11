@@ -102,30 +102,30 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-2xl">
+      <DialogContent className="sm:max-w-md rounded-card">
         <DialogHeader>
-          <DialogTitle className="text-base font-semibold">
+          <DialogTitle className="t5 font-bold text-foreground">
             목표 수정
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} onPaste={handlePasteImage} className="mt-2 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               이미지 (선택)
             </label>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="t8 text-fg-tertiary">
               URL 입력 또는 이미지 복사 후 여기 붙여넣기 (Ctrl+V / ⌘V)
             </p>
-            <div className="aspect-video w-full rounded-xl border border-border/60 overflow-hidden relative bg-muted/20">
+            <div className="aspect-video w-full rounded-control overflow-hidden relative bg-background">
               {!imageUrl.trim() ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="t7 text-fg-tertiary">
                     URL 입력 시 또는 이미지 붙여넣기 시 미리보기
                   </span>
                 </div>
               ) : imgPreviewError ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 via-primary/10 to-primary/15">
-                  <span className="text-xs text-muted-foreground">
+                <div className="absolute inset-0 flex items-center justify-center bg-accent-soft">
+                  <span className="t7 text-fg-tertiary">
                     이미지를 불러올 수 없습니다
                   </span>
                 </div>
@@ -146,22 +146,22 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
                 setImgPreviewError(false);
               }}
               placeholder="이미지 URL 입력"
-              className="rounded-xl"
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               제목 *
             </label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="rounded-xl"
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               중요도 *
             </label>
             <ResponsiveSelect
@@ -171,12 +171,12 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
                 value: String(n),
                 label: String(n),
               }))}
-              triggerClassName="rounded-xl"
-              contentClassName="rounded-xl"
+              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground"
+              contentClassName="rounded-control"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               목표 금액 (원) *
             </label>
             <Input
@@ -185,14 +185,14 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
               onChange={(e) => setTargetAmount(e.target.value)}
               required
               min={0}
-              className="rounded-xl"
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               누적 납입 금액 (원) *
             </label>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="t8 text-fg-tertiary">
               지금까지 모은 금액입니다. 숫자로 직접 수정할 수 있습니다.
             </p>
             <Input
@@ -201,18 +201,18 @@ export default function EditBucketDialog({ bucket, open, onOpenChange }: Props) 
               onChange={(e) => setCurrentAmount(e.target.value)}
               required
               min={0}
-              className="rounded-xl"
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
             />
           </div>
           <DialogFooter className="gap-2 pt-2">
             <DialogClose
               render={
-                <Button type="button" variant="outline" size="sm" className="rounded-xl">
+                <Button type="button" variant="outline" size="sm" className="rounded-control border-0 bg-divider text-foreground hover:bg-divider">
                   취소
                 </Button>
               }
             />
-            <Button type="submit" size="sm" disabled={pending} className="rounded-xl">
+            <Button type="submit" size="sm" disabled={pending} className="rounded-control bg-primary font-bold text-primary-foreground">
               {pending ? "저장 중…" : "저장"}
             </Button>
           </DialogFooter>

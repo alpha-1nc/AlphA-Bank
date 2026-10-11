@@ -12,6 +12,7 @@ import MobileMainPad from "@/components/MobileMainPad";
 import { AppSerwistProvider } from "@/components/AppSerwistProvider";
 import { type SessionData, sessionOptions } from "@/lib/session";
 import { getUserProfile, isValidUserId } from "@/lib/user-profiles";
+import { buildTokenCSS } from "@/lib/design-tokens";
 
 async function getSessionProfileLabel(): Promise<string | null> {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
@@ -79,6 +80,12 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* 디자인 토큰 (--tk-*) — 단일 소스: src/lib/design-tokens.ts */}
+        <style id="design-tokens" dangerouslySetInnerHTML={{ __html: buildTokenCSS() }} />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

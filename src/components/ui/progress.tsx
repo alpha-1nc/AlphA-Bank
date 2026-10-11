@@ -20,7 +20,7 @@ function Progress({ className, value = 0, max = 100, ...props }: ProgressProps) 
       {...props}
     >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all dark:shadow-[0_0_10px_rgba(96,165,250,0.5)]"
+        className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all "
         style={{ width: `${percent}%` }}
       />
     </div>

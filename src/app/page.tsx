@@ -1,30 +1,23 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
-import { Check, LayoutDashboard } from "lucide-react";
-import AssetDonutChart from "@/components/dashboard/AssetDonutChart";
 import CashFlowBarChart from "@/components/dashboard/CashFlowBarChart";
-import { PendingActionsChecklist } from "@/components/dashboard/PendingActionsChecklist";
-import PrimeBucketDashboardCard from "@/components/dashboard/PrimeBucketDashboardCard";
-import WorkSalaryDashboardCard from "@/components/dashboard/WorkSalaryDashboardCard";
+import PaydayHero from "@/components/dashboard/PaydayHero";
+import MonthSummary from "@/components/dashboard/MonthSummary";
 import { getDashboardWorkNet } from "@/lib/dashboard-work-net";
+import { getCurrentBudgetMonth } from "@/lib/budget-utils";
+import { computeBudgetTotals } from "@/lib/budget-totals";
+import { isExpenseType } from "@/lib/cashflow-categories";
+import { formatKstDateKey } from "@/lib/kst-date-key";
+import { getNextPayday } from "@/lib/payday";
+import { getUserProfile } from "@/lib/user-profiles";
+import { getBudgetPeriodRange } from "@/lib/budget-period";
 
 export const dynamic = "force-dynamic";
 
-function formatKRW(amount: number): string {
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-
-function getCurrentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+const WEEKDAYS = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 
 function getPast6Months(): string[] {
   const months: string[] = [];
@@ -43,76 +36,83 @@ function monthLabel(ym: string): string {
   return `${parseInt(m)}월`;
 }
 
-const ACCOUNT_TYPE_LABEL: Record<string, string> = {
-  입출금: "입출금",
-  금고: "금고",
-  저축: "저축",
-  증권: "증권",
-  연금: "연금",
-};
+/** 예산 기간 라벨 (/budget과 같은 getBudgetPeriodRange 사용): "10월 10일 ~ 11월 9일" */
+function budgetPeriodLabel(month: string, budgetStartDate: number): string {
+  const { start, end } = getBudgetPeriodRange(month, budgetStartDate);
+  const f = (d: Date) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return `${f(start)} ~ ${f(end)}`;
+}
+
+/** KST 날짜 키 → { month, day, weekday } */
+function kstParts(date: Date) {
+  const [y, m, d] = formatKstDateKey(date).split("-").map(Number);
+  return { month: m, day: d, weekday: WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] };
+}
 
 export default async function DashboardPage() {
   const userId = await getCurrentUserId();
-  const currentMonth = getCurrentMonth();
   const past6Months = getPast6Months();
 
-  // ── SystemSettings 먼저 조회 → 동적 예산 월 계산 ────────────────────────────
+  // ── 설정 기준일 기준 현재 예산 월 (/budget 기본 월과 동일) ───────────────────
   const systemSettings = await getSystemSettings();
-  const startDay = systemSettings?.budgetStartDate ?? 1;
-  const today = new Date();
-  let targetYear = today.getFullYear();
-  let targetMonth = today.getMonth() + 1; // 1~12
-  if (today.getDate() < startDay) {
-    targetMonth -= 1;
-    if (targetMonth === 0) {
-      targetMonth = 12;
-      targetYear -= 1;
-    }
-  }
-  const currentBudgetMonth = `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
+  const currentBudgetMonth = getCurrentBudgetMonth(systemSettings.budgetStartDate);
 
-  // ── Data fetching ──────────────────────────────────────────────────────────
-  const [accounts, monthlyBudgets, primeBucket, workNet] = await Promise.all([
-    // a) All accounts for total net worth + donut chart
-    prisma.account.findMany({ where: { userId }, select: { type: true, initialBalance: true } }),
-
-    // b) Last 6 months of budgets with cash flows for bar chart
+  const [monthlyBudgets, workNet, currentBudget] = await Promise.all([
+    // 최근 6개월 예산 (막대그래프)
     prisma.monthlyBudget.findMany({
       where: { userId, month: { in: past6Months } },
       include: { transactions: true },
     }),
-
-    // c) Prime bucket: 미완료·미달성 중 중요도 최상위 (완료 시 자동으로 다음 순위)
-    prisma.bucketList.findFirst({
-      where: { userId, isAchieved: false, isCompleted: false },
-      orderBy: [{ importance: "desc" }, { createdAt: "asc" }],
-    }),
-
-    // d) KST·근무지 월급일 기준 미지급 근무월 알바 예상 실수령 (활성 근무지 합산)
     getDashboardWorkNet(userId),
+    getOrCreateMonthlyBudget(currentBudgetMonth, userId),
   ]);
-  const currentBudget =
-    currentBudgetMonth === currentMonth
-      ? monthlyBudgets.find((b) => b.month === currentBudgetMonth)
-      : await getOrCreateMonthlyBudget(currentBudgetMonth, userId);
-  const currentBudgetResolved =
-    typeof currentBudget === "object" && "transactions" in currentBudget
-      ? currentBudget
-      : await getOrCreateMonthlyBudget(currentBudgetMonth, userId);
 
-  // ── a) Total net worth & donut data ────────────────────────────────────────
-  const totalNetWorth = accounts.reduce((s, a) => s + a.initialBalance, 0);
+  // ── 헤더 ────────────────────────────────────────────────────────────────────
+  const displayName = getUserProfile(userId)?.displayName ?? "";
+  const budgetMonthNumber = Number(currentBudgetMonth.split("-")[1]);
+  const today = kstParts(new Date());
 
-  const typeMap: Record<string, number> = {};
-  for (const acc of accounts) {
-    const label = ACCOUNT_TYPE_LABEL[acc.type] ?? acc.type;
-    typeMap[label] = (typeMap[label] ?? 0) + acc.initialBalance;
+  // ── 월급 카드: 가장 가까운 지급일 ───────────────────────────────────────────
+  const nextPaydays = workNet.workplaces.map((w) => ({
+    workplace: w,
+    ...getNextPayday(w.paydayOfMonth),
+  }));
+  const nearest = nextPaydays.reduce<(typeof nextPaydays)[number] | null>(
+    (best, cur) => (best === null || cur.daysUntil < best.daysUntil ? cur : best),
+    null
+  );
+
+  let payday: {
+    month: number;
+    day: number;
+    weekday: string;
+    daysUntil: number;
+    originalLabel: string | null;
+  } | null = null;
+  if (nearest) {
+    const p = kstParts(nearest.date);
+    const o = kstParts(nearest.originalDate);
+    payday = {
+      ...p,
+      daysUntil: nearest.daysUntil,
+      originalLabel:
+        o.month === p.month && o.day === p.day
+          ? null
+          : o.month === p.month
+            ? `${o.day}일`
+            : `${o.month}월 ${o.day}일`,
+    };
   }
-  const donutData = Object.entries(typeMap)
-    .filter(([, v]) => v > 0)
-    .map(([name, value]) => ({ name, value }));
+  const workplaceLabel = nearest
+    ? workNet.workplaces.length > 1
+      ? `${nearest.workplace.name} 외 ${workNet.workplaces.length - 1}곳`
+      : nearest.workplace.name
+    : "";
 
-  // ── b) Monthly cash flow bar chart data ───────────────────────────────────
+  // ── 이번 달 예산 (/budget과 같은 공용 계산) ─────────────────────────────────
+  const totals = computeBudgetTotals(currentBudget.transactions);
+
+  // ── 최근 6개월 막대그래프 데이터 ────────────────────────────────────────────
   const budgetByMonth = Object.fromEntries(
     monthlyBudgets.map((b) => [b.month, b.transactions])
   );
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
       .filter((t) => t.type === "INCOME")
       .reduce((s, t) => s + t.amount, 0);
     const expense = txs
-      .filter((t) => t.type === "EXPENSE_FIXED" || t.type === "EXPENSE_VAR")
+      .filter((t) => isExpenseType(t.type))
       .reduce((s, t) => s + t.amount, 0);
     const saving = txs
       .filter((t) => t.type === "SAVING")
@@ -131,225 +131,61 @@ export default async function DashboardPage() {
     return { month: monthLabel(ym), income, expense, saving };
   });
 
-  // ── c) Pending actions (설정 기준일 기준 현재 예산 월, 지출(EXPENSE)만) ─────
-  const pendingActions = (currentBudgetResolved?.transactions ?? [])
-    .filter((t) => !t.isCompleted)
-    .filter(
-      (t) => t.type === "EXPENSE_FIXED" || t.type === "EXPENSE_VAR"
-    );
-
-  const primeBucketItem = primeBucket
-    ? {
-        id: primeBucket.id,
-        title: primeBucket.title,
-        importance: primeBucket.importance,
-        targetAmount: primeBucket.targetAmount,
-        currentAmount: primeBucket.currentAmount,
-        isAchieved: primeBucket.isAchieved,
-        isCompleted: primeBucket.isCompleted,
-        completedAt: primeBucket.completedAt
-          ? primeBucket.completedAt.toISOString().slice(0, 10)
-          : null,
-        imageUrl: primeBucket.imageUrl,
-      }
-    : null;
-
   return (
-    <div className="px-4 py-6 md:p-8 lg:p-10 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
-      {/* ── Hero Section ──────────────────────────────────────────────────── */}
-      <header className="mb-6 md:mb-10">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="hidden md:flex text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 md:mb-1.5 items-center gap-2.5 min-w-0">
-              <LayoutDashboard className="h-8 w-8 text-primary shrink-0" />
-              <span className="break-words">대시보드</span>
-            </h1>
-            <p className="hidden md:block text-sm text-slate-400 font-medium">
-              자산, 예산, 머니 버킷리스트 종합 현황
-            </p>
-          </div>
-          <p className="hidden md:block text-sm text-slate-400 font-medium shrink-0">
-            {new Date().toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}{" "}
-            기준
+    <div className="px-4 py-6 md:p-7 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
+      <div className="mx-auto w-full max-w-6xl flex flex-col gap-3">
+        {/* 1) 헤더 */}
+        <header className="flex items-baseline justify-between gap-3 shrink-0">
+          <h1 className="t3 font-bold text-foreground">
+            {displayName ? `${displayName}님의 ` : ""}
+            {budgetMonthNumber}월
+          </h1>
+          <p className="t7 shrink-0 text-fg-tertiary">
+            {today.month}월 {today.day}일 기준
           </p>
-        </div>
-      </header>
+        </header>
 
-      {/* ── Grid Row 1: Charts ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mt-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* Donut Chart Card */}
-        <div
-          className="
-            bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
-            shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-5 md:p-6 flex flex-col
-            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
-          "
-        >
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-              Asset Breakdown
-            </p>
-            <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
-              자산 구성
-            </h2>
-          </div>
-
-          <AssetDonutChart data={donutData} totalNetWorth={totalNetWorth} />
-
-          {/* Legend */}
-          <ul className="mt-5 space-y-3">
-            {donutData.map((d, i) => {
-              const colors = [
-                "#3b82f6",
-                "#60a5fa",
-                "#93c5fd",
-                "#6366f1",
-                "#a5b4fc",
-                "#94a3b8",
-                "#cbd5e1",
-              ];
-              const pct =
-                totalNetWorth > 0
-                  ? ((d.value / totalNetWorth) * 100).toFixed(1)
-                  : "0";
-              return (
-                <li key={d.name} className="flex items-center gap-2.5 text-[15px]">
-                  <span
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ background: colors[i % colors.length] }}
-                  />
-                  <span className="text-slate-600 font-medium flex-1">
-                    {d.name}
-                  </span>
-                  <span className="text-slate-400 font-medium">{pct}%</span>
-                  <span className="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">
-                    {formatKRW(d.value)}
-                  </span>
-                </li>
-              );
-            })}
-            {donutData.length === 0 && (
-              <li className="text-[15px] text-slate-400 text-center py-4">
-                등록된 계좌가 없습니다
-              </li>
-            )}
-          </ul>
-        </div>
-
-        {/* Bar Chart Card (2 cols) */}
-        <div
-          className="
-            md:col-span-2 bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
-            shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-5 md:p-6 flex flex-col
-            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
-          "
-        >
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-              Cash Flow
-            </p>
-            <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5">
-              월별 수입 · 지출 · 저축
-            </h2>
-          </div>
-
-          <div className="flex-1 w-full min-w-0">
-            <CashFlowBarChart data={barData} />
-          </div>
-
-          {/* Summary row - 설정 기준일 기준 현재 예산 월 */}
-          {currentBudgetResolved && (
-            <div className="mt-5 grid grid-cols-3 gap-3 pt-4 border-t border-slate-50 dark:border-white/5">
-              {[
-                {
-                  label: "이번달 수입",
-                  value: currentBudgetResolved.transactions
-                    .filter((t) => t.type === "INCOME")
-                    .reduce((s, t) => s + t.amount, 0),
-                  color: "text-blue-600 dark:text-blue-400",
-                },
-                {
-                  label: "이번달 예상 지출",
-                  value: currentBudgetResolved.transactions
-                    .filter((t) => t.type === "EXPENSE_FIXED" || t.type === "EXPENSE_VAR")
-                    .reduce((s, t) => s + t.amount, 0),
-                  color: "text-red-400",
-                },
-                {
-                  label: "이번달 저축",
-                  value: currentBudgetResolved.transactions
-                    .filter((t) => t.type === "SAVING")
-                    .reduce((s, t) => s + t.amount, 0),
-                  color: "text-emerald-500",
-                },
-              ].map((item) => (
-                <div key={item.label} className="text-center min-w-0 overflow-hidden">
-                  <p className="text-xs text-slate-400 font-medium truncate">
-                    {item.label}
-                  </p>
-                  <p
-                    className={`text-sm sm:text-base font-black tracking-tighter ${item.color} mt-0.5 truncate`}
-                  >
-                    {formatKRW(item.value)}
-                  </p>
-                </div>
-              ))}
+        {/* 2) 월급 카드 + 이번 달 예산 카드 */}
+        <div className="flex flex-col lg:flex-row gap-3 shrink-0">
+          {/* 근무지가 없으면(퇴사 후 등) 월급 카드 숨김 → 예산 카드가 전체 폭 */}
+          {payday && (
+            <div className="lg:w-[450px] lg:shrink-0 [&>*]:h-full">
+              <PaydayHero
+                payday={payday}
+                netPay={workNet.netPay}
+                workHours={Math.round((workNet.totalWorkMinutes / 60) * 10) / 10}
+                workplaceLabel={workplaceLabel}
+                noRecords={workNet.recordCount === 0 && workNet.netPay === 0}
+              />
             </div>
           )}
-        </div>
-      </div>
-
-      {/* ── Grid Row 2: 알바 실수령 · Actions & Bucket ─────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 md:gap-6 mt-5 md:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-        <WorkSalaryDashboardCard
-          netPay={workNet.netPay}
-          activeWorkplaces={workNet.activeWorkplaces}
-          monthLabel={workNet.monthLabel}
-        />
-
-        {/* Action Checklist Card */}
-        <div
-          className="
-            bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10
-            shadow-[0_8px_30px_rgb(0,0,0,0.04)]
-            p-5 md:p-6 flex flex-col min-h-[230px]
-            transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]
-          "
-        >
-          <div className="flex items-start justify-between gap-2 mb-4">
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-none">
-                Pending Actions
-              </p>
-              <h2 className="text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-0.5 leading-none">
-                미결제 체크리스트
-              </h2>
-            </div>
-            <Check
-              className="h-8 w-8 text-primary shrink-0 opacity-90 stroke-[2.5]"
-              aria-hidden
+          <div className="flex-1 min-w-0 [&>*]:h-full">
+            <MonthSummary
+              totalIncome={totals.totalIncome}
+              totalExpense={totals.totalExpense}
+              totalSaving={totals.totalSaving}
+              livingBalance={totals.livingBalance}
+              savingRate={totals.savingRate}
+              periodLabel={budgetPeriodLabel(currentBudgetMonth, systemSettings.budgetStartDate)}
             />
           </div>
-
-          <PendingActionsChecklist
-            items={pendingActions.map((t) => ({
-              id: t.id,
-              type: t.type,
-              title: t.title,
-              amount: t.amount,
-              isCompleted: t.isCompleted,
-              accountId: t.accountId,
-            }))}
-          />
         </div>
 
-        <PrimeBucketDashboardCard bucket={primeBucketItem} />
+        {/* 3) 최근 6개월 */}
+        <div className="flex flex-col rounded-card bg-card p-6 shrink-0">
+          <p className="t5 font-bold text-foreground mb-3 shrink-0">최근 6개월</p>
+          <div className="w-full min-w-0 h-[150px]">
+            <CashFlowBarChart data={barData} height="100%" />
+          </div>
+        </div>
+
+        {/* 4) 예산 짜러 가기 */}
+        <Link
+          href="/budget"
+          className="t5 flex h-[54px] w-full shrink-0 items-center justify-center rounded-control bg-primary font-bold text-primary-foreground transition-transform duration-150 active:scale-[0.98]"
+        >
+          이번 달 예산 짜러 가기
+        </Link>
       </div>
     </div>
   );

@@ -7,8 +7,9 @@ export const VALID_USER_IDS = [JK_USER_ID, "user-my"] as const;
 export type ValidUserId = (typeof VALID_USER_IDS)[number];
 
 export const USER_PROFILES = [
-  { id: JK_USER_ID, name: "JK", initial: "J" },
-  { id: "user-my" as const, name: "MY", initial: "M" },
+  /** displayName: 대시보드 인사말("○○님의 10월")에 쓰는 이름 */
+  { id: JK_USER_ID, name: "JK", initial: "J", displayName: "중경" },
+  { id: "user-my" as const, name: "MY", initial: "M", displayName: "MY" },
 ] as const;
 
 export function isValidUserId(id: string): id is ValidUserId {

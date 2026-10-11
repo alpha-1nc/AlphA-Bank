@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { getOrCreateMonthlyBudget } from "./budget";
+import { EXPENSE_CATEGORY } from "@/lib/cashflow-categories";
 
 function assertBillingDay(day: number): number | null {
   if (!Number.isFinite(day)) return null;
@@ -17,7 +18,6 @@ export interface AddSubscriptionData {
   amount: number;
   billingDay: number;
   category: string;
-  accountId?: string | null;
   memo?: string | null;
 }
 
@@ -34,7 +34,6 @@ export async function addSubscription(data: AddSubscriptionData) {
       amount: data.amount,
       billingDay,
       category: data.category,
-      accountId: data.accountId ?? null,
       memo: data.memo?.trim() ?? null,
     },
   });
@@ -47,7 +46,6 @@ export interface UpdateSubscriptionData {
   amount?: number;
   billingDay?: number;
   category?: string;
-  accountId?: string | null;
   memo?: string | null;
 }
 
@@ -68,9 +66,6 @@ export async function updateSubscription(id: string, data: UpdateSubscriptionDat
   }
   if (data.category !== undefined && data.category.trim()) {
     updateData.category = data.category;
-  }
-  if (data.accountId !== undefined) {
-    updateData.accountId = data.accountId || null;
   }
   if (data.memo !== undefined) {
     updateData.memo = data.memo?.trim() || null;
@@ -106,7 +101,7 @@ export async function toggleSubscriptionActive(id: string) {
 }
 
 /**
- * 구독 하나를 현재월 예산의 고정지출(EXPENSE_FIXED)로 추가합니다.
+ * 구독 하나를 현재월 예산의 고정지출(EXPENSE / FIXED)로 추가합니다.
  */
 export async function addSubscriptionToBudget(
   subscriptionId: string,
@@ -121,18 +116,18 @@ export async function addSubscriptionToBudget(
   const budget = await getOrCreateMonthlyBudget(month, userId);
 
   const existing = budget.transactions.find(
-    (t) => t.type === "EXPENSE_FIXED" && t.title === sub.name
+    (t) => t.type === "EXPENSE" && t.category === EXPENSE_CATEGORY.FIXED && t.title === sub.name
   );
   if (existing) return { success: true, alreadyExists: true };
 
   await prisma.cashFlow.create({
     data: {
-      type: "EXPENSE_FIXED",
+      type: "EXPENSE",
+      category: EXPENSE_CATEGORY.FIXED,
       title: sub.name,
       amount: sub.amount,
       isCompleted: false,
       monthlyBudgetId: budget.id,
-      accountId: sub.accountId ?? null,
     },
   });
 
@@ -155,7 +150,7 @@ export async function addAllSubscriptionsToBudget(
 
   const existingTitles = new Set(
     budget.transactions
-      .filter((t) => t.type === "EXPENSE_FIXED")
+      .filter((t) => t.type === "EXPENSE" && t.category === EXPENSE_CATEGORY.FIXED)
       .map((t) => t.title)
   );
 
@@ -167,12 +162,12 @@ export async function addAllSubscriptionsToBudget(
       toAdd.map((s) =>
         prisma.cashFlow.create({
           data: {
-            type: "EXPENSE_FIXED",
+            type: "EXPENSE",
+            category: EXPENSE_CATEGORY.FIXED,
             title: s.name,
             amount: s.amount,
             isCompleted: false,
             monthlyBudgetId: budget.id,
-            accountId: s.accountId ?? null,
           },
         })
       )

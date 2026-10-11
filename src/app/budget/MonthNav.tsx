@@ -86,12 +86,12 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 mb-8 p-3 md:p-4 rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+    <div className="flex items-center justify-between gap-4 p-3 md:p-4 rounded-card bg-card">
       <Button
         variant="outline"
         size="default"
         onClick={() => goTo(prevMonth(currentMonth))}
-        className="rounded-2xl shrink-0 h-12 w-12 px-0 border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 touch-manipulation"
+        className="rounded-control shrink-0 h-12 w-12 px-0 border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary touch-manipulation"
       >
         <ChevronLeft className="h-5 w-5" />
       </Button>
@@ -102,25 +102,25 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
           type="button"
           onClick={() => setOpen((o) => !o)}
           className={cn(
-            "flex items-center justify-center gap-2 text-xl font-black tracking-tighter text-slate-900 dark:text-slate-100 min-w-[170px] py-2 px-4 rounded-2xl transition-colors touch-manipulation",
-            "hover:bg-slate-50 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            "t4 numeric flex items-center justify-center gap-2 font-bold text-foreground min-w-[170px] py-2 px-4 rounded-control transition-colors touch-manipulation",
+            "hover:bg-divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           )}
         >
           {formatMonthLabel(currentMonth)}
           <ChevronDown
-            className={cn("h-5 w-5 text-slate-400 transition-transform", open && "rotate-180")}
+            className={cn("h-5 w-5 text-fg-tertiary transition-transform", open && "rotate-180")}
           />
         </button>
 
         {open && (
           <div
             ref={panelRef}
-            className="absolute left-1/2 top-full -translate-x-1/2 mt-2 z-50 w-[220px] rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-4 animate-in fade-in-0 zoom-in-95"
+            className="absolute left-1/2 top-full -translate-x-1/2 mt-2 z-50 w-[220px] rounded-control border border-divider bg-card p-4 animate-in fade-in-0 zoom-in-95"
             onKeyDown={(e) => e.key === "Enter" && applyQuickSelect()}
           >
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-muted-foreground shrink-0">연도</label>
+                <label className="t7 font-medium text-fg-tertiary shrink-0">연도</label>
                 <Input
                   ref={yearInputRef}
                   type="number"
@@ -129,24 +129,24 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
                   step={1}
                   value={yearInput}
                   onChange={(e) => setYearInput(e.target.value)}
-                  className="h-8 text-sm"
+                  className="t7 h-8 rounded-control"
                   placeholder="2026"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-muted-foreground shrink-0">월</label>
+                <label className="t7 font-medium text-fg-tertiary shrink-0">월</label>
                 <ResponsiveSelect
                   value={monthInput}
                   onValueChange={(v) => v && setMonthInput(v)}
                   options={MONTHS.map((mo) => ({ value: mo.value, label: mo.label }))}
                   placeholder="월 선택"
                   size="sm"
-                  triggerClassName="h-8 flex-1"
+                  triggerClassName="t7 h-8 flex-1 rounded-control"
                 />
               </div>
               <Button
                 size="sm"
-                className="w-full"
+                className="w-full rounded-control bg-primary text-primary-foreground"
                 onClick={applyQuickSelect}
               >
                 해당 월로 이동
@@ -160,7 +160,7 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
         variant="outline"
         size="default"
         onClick={() => goTo(nextMonth(currentMonth))}
-        className="rounded-2xl shrink-0 h-12 w-12 px-0 border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 touch-manipulation"
+        className="rounded-control shrink-0 h-12 w-12 px-0 border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary touch-manipulation"
       >
         <ChevronRight className="h-5 w-5" />
       </Button>

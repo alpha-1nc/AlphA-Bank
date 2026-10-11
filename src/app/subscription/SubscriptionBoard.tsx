@@ -11,14 +11,8 @@ import {
   addSubscriptionToBudget,
   addAllSubscriptionsToBudget,
 } from "@/app/actions/subscription";
-import { CATEGORY_COLORS, SUBSCRIPTION_CATEGORIES, type SubscriptionCategory } from "@/lib/subscription-constants";
 import { cn } from "@/lib/utils";
-
-interface Account {
-  id: string;
-  name: string;
-  type: string;
-}
+import { formatWon } from "@/lib/format-money";
 
 interface Subscription {
   id: string;
@@ -27,19 +21,28 @@ interface Subscription {
   billingDay: number;
   category: string;
   isActive: boolean;
-  accountId: string | null;
   memo: string | null;
 }
 
 interface Props {
   subscriptions: Subscription[];
-  accounts: Account[];
   currentBudgetMonth: string;
   totalMonthly: number;
 }
 
-function formatKRW(amount: number) {
-  return amount.toLocaleString("ko-KR") + "원";
+/** 결제일이 오늘 포함 3일 이내로 임박했는지 (D-day 강조용) */
+function isBillingImminent(day: number): boolean {
+  const diff = day - new Date().getDate();
+  return diff >= 0 && diff <= 3;
+}
+
+/** 카테고리 뱃지: 무채색 pill (/budget 카테고리 뱃지와 동일) */
+function CategoryPill({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={cn("t8 inline-flex max-w-full shrink-0 items-center truncate rounded-pill bg-divider px-2 py-0.5 font-medium text-fg-secondary", className)}>
+      {children}
+    </span>
+  );
 }
 
 function getBillingDayLabel(day: number): string {
@@ -50,8 +53,7 @@ function getBillingDayLabel(day: number): string {
   return `매월 ${day}일`;
 }
 
-export default function SubscriptionBoard({ subscriptions, accounts, currentBudgetMonth, totalMonthly }: Props) {
-  const [categoryFilter, setCategoryFilter] = useState<string>("전체");
+export default function SubscriptionBoard({ subscriptions, currentBudgetMonth, totalMonthly }: Props) {
   const [editTarget, setEditTarget] = useState<Subscription | null>(null);
   const [reflectedIds, setReflectedIds] = useState<Set<string>>(new Set());
   const [isPendingAll, startAllTransition] = useTransition();
@@ -63,11 +65,6 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
     return () => clearTimeout(t);
   }, [banner]);
 
-  const categories = ["전체", ...SUBSCRIPTION_CATEGORIES];
-
-  const filtered = subscriptions.filter((s) =>
-    categoryFilter === "전체" ? true : s.category === categoryFilter
-  );
 
   function handleAddAllToBudget() {
     startAllTransition(async () => {
@@ -92,23 +89,21 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
         <div
           role="status"
           className={cn(
-            "rounded-2xl border px-4 py-3 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300",
-            banner.ok
-              ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100"
-              : "border-amber-500/30 bg-amber-500/10 text-amber-950 dark:text-amber-100"
+            "t6 rounded-control px-4 py-3 font-medium animate-in fade-in slide-in-from-top-2 duration-300",
+            banner.ok ? "bg-accent-soft text-primary" : "bg-divider text-fg-secondary"
           )}
         >
           {banner.message}
         </div>
       )}
 
-      <div className="rounded-2xl bg-gradient-to-br from-primary/12 via-primary/8 to-primary/5 border border-primary/20 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="rounded-card bg-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">월 총 구독료</p>
-          <p className="text-3xl sm:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mt-1 tabular-nums">
-            {formatKRW(totalMonthly)}
+          <p className="t7 text-fg-tertiary">월 총 구독료</p>
+          <p className="t2 sm:t1 numeric mt-1 font-bold text-foreground">
+            {formatWon(totalMonthly)}
           </p>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
+          <p className="t7 numeric mt-1 text-fg-tertiary">
             활성 구독 {subscriptions.filter((s) => s.isActive).length}건
           </p>
         </div>
@@ -116,7 +111,7 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 rounded-xl border-slate-200 dark:border-white/15 transition-all hover:bg-primary/5 active:scale-[0.98]"
+            className="t7 gap-1 rounded-control border-0 bg-divider font-semibold text-foreground hover:bg-divider active:scale-[0.98]"
             onClick={handleAddAllToBudget}
             disabled={isPendingAll}
           >
@@ -127,60 +122,26 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
             trigger={
               <Button
                 size="sm"
-                className="gap-1.5 rounded-full bg-gradient-to-br from-primary to-primary/90 text-white font-bold shadow-lg shadow-primary/25 hover:opacity-95 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                className="t7 gap-1 rounded-control bg-primary font-bold text-primary-foreground hover:opacity-90 active:scale-[0.98] transition-all"
               >
                 <Plus className="h-4 w-4" />
                 새 구독 추가
               </Button>
             }
-            accounts={accounts}
           />
         </div>
       </div>
 
-      <div
-        className="flex flex-wrap gap-2 animate-in fade-in duration-500"
-        role="tablist"
-        aria-label="구독 카테고리 필터"
-      >
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            role="tab"
-            aria-selected={categoryFilter === cat}
-            onClick={() => setCategoryFilter(cat)}
-            className={cn(
-              "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 active:scale-95 touch-manipulation",
-              categoryFilter === cat
-                ? "bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]"
-                : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/18 hover:scale-[1.02]"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 px-8 py-20 flex flex-col items-center justify-center text-center transition-colors hover:border-primary/25 hover:bg-slate-50/80 dark:hover:bg-white/[0.07] animate-in fade-in zoom-in-95 duration-500">
-          <RefreshCw className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-4 opacity-80" />
-          {subscriptions.length === 0 ? (
-            <>
-              <p className="text-base font-semibold text-slate-500">등록된 구독이 없습니다</p>
-              <p className="text-sm text-slate-400 mt-1">새 구독 추가 버튼으로 구독을 등록해보세요</p>
-            </>
-          ) : (
-            <>
-              <p className="text-base font-semibold text-slate-500">이 카테고리에 해당하는 구독이 없습니다</p>
-              <p className="text-sm text-slate-400 mt-1">다른 카테고리를 선택해보세요</p>
-            </>
-          )}
+      {subscriptions.length === 0 ? (
+        <div className="rounded-card bg-card px-7 py-7 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-500">
+          <RefreshCw className="h-12 w-12 text-fg-disabled mb-4" />
+          <p className="t6 font-semibold text-fg-secondary">등록된 구독이 없습니다</p>
+          <p className="t7 text-fg-tertiary mt-1">새 구독 추가 버튼으로 구독을 등록해보세요</p>
         </div>
       ) : (
         <>
           <div className="md:hidden space-y-2">
-            {filtered.map((sub) => (
+            {subscriptions.map((sub) => (
               <SubscriptionRow
                 key={sub.id}
                 subscription={sub}
@@ -193,7 +154,7 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
             ))}
           </div>
 
-          <div className="hidden md:block rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.03)] transition-all duration-300 hover:shadow-md">
+          <div className="hidden md:block rounded-card bg-card overflow-hidden">
             <table className="w-full table-fixed border-collapse text-sm">
               <colgroup>
                 <col className="w-14 min-w-[3.5rem]" />
@@ -204,27 +165,27 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
                 <col style={{ width: "17%" }} />
               </colgroup>
               <thead>
-                <tr className="border-b border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.03]">
+                <tr className="border-b border-divider">
                   <th scope="col" className="py-3 px-1 w-14">
                     <span className="sr-only">활성</span>
                   </th>
-                  <th className="py-3 pl-2 pr-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  <th className="py-3 pl-2 pr-2 text-left t7 font-medium text-fg-tertiary">
                     서비스
                   </th>
-                  <th className="py-3 px-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  <th className="py-3 px-2 text-left t7 font-medium text-fg-tertiary">
                     결제일
                   </th>
-                  <th className="py-3 px-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  <th className="py-3 px-2 text-left t7 font-medium text-fg-tertiary">
                     금액
                   </th>
-                  <th className="py-3 px-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                  <th className="py-3 px-2 text-left t7 font-medium text-fg-tertiary">
                     카테고리
                   </th>
                   <th className="py-3 pl-2 pr-4">
                     <div className="flex justify-end">
                       <div className="flex w-[calc(2.25rem*3+0.25rem)] justify-center">
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                          액션
+                        <span className="t7 font-medium text-fg-tertiary">
+                          작업
                         </span>
                       </div>
                     </div>
@@ -232,7 +193,7 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((sub) => (
+                {subscriptions.map((sub) => (
                   <SubscriptionTableRow
                     key={sub.id}
                     subscription={sub}
@@ -252,7 +213,6 @@ export default function SubscriptionBoard({ subscriptions, accounts, currentBudg
       {editTarget && (
         <EditSubscriptionDialog
           subscription={editTarget}
-          accounts={accounts}
           open={editTarget !== null}
           onOpenChange={(v) => { if (!v) setEditTarget(null); }}
         />
@@ -283,8 +243,14 @@ function SubscriptionRow({
   const [isPendingDelete, startDelete] = useTransition();
   const [isPendingReflect, startReflect] = useTransition();
 
-  const categoryColor = CATEGORY_COLORS[sub.category as SubscriptionCategory] ?? CATEGORY_COLORS["기타"];
   const billingLabel = getBillingDayLabel(sub.billingDay);
+  // 일시정지 행은 전체를 fg-disabled로 흐리게
+  const off = !sub.isActive;
+  const billingColor = off
+    ? "text-fg-disabled"
+    : isBillingImminent(sub.billingDay)
+      ? "text-primary"
+      : "text-fg-tertiary";
 
   function handleToggle() {
     startToggle(async () => {
@@ -320,8 +286,7 @@ function SubscriptionRow({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white dark:bg-white/5 border-slate-100 dark:border-white/10 p-5 transition-all duration-200 md:hover:shadow-md md:hover:border-primary/15 active:scale-[0.99]",
-        !sub.isActive && "opacity-50"
+        "rounded-card bg-card p-5 transition-all duration-200 active:scale-[0.99]"
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -333,35 +298,28 @@ function SubscriptionRow({
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="min-w-0 truncate font-bold text-slate-900 dark:text-slate-100">
+              <span className={cn("t6 min-w-0 truncate font-bold", off ? "text-fg-disabled" : "text-foreground")}>
                 {sub.name}
               </span>
-              <span
-                className={cn(
-                  "inline-flex max-w-[45%] shrink-0 items-center truncate rounded-full px-2 py-0.5 text-xs font-medium",
-                  categoryColor
-                )}
-              >
-                {sub.category}
-              </span>
+              <CategoryPill className={cn("max-w-[45%]", off && "text-fg-disabled")}>{sub.category}</CategoryPill>
             </div>
             {!sub.isActive && (
-              <span className="mt-0.5 inline-block text-xs text-slate-400 font-medium">일시정지</span>
+              <span className="t7 mt-1 inline-block font-medium text-fg-disabled">일시정지</span>
             )}
           </div>
         </div>
       </div>
 
-      <p className="mt-3 text-2xl font-black tabular-nums tracking-tight text-slate-900 dark:text-slate-100">
-        {formatKRW(sub.amount)}
+      <p className={cn("t3 numeric mt-3 font-bold", off ? "text-fg-disabled" : "text-foreground")}>
+        {formatWon(sub.amount)}
       </p>
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-white/10">
-        <span className="flex min-w-0 items-center gap-1 text-sm text-slate-500">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-divider pt-3">
+        <span className={cn("t7 numeric flex min-w-0 items-center gap-1", billingColor)}>
           <CalendarDays className="h-4 w-4 shrink-0" aria-hidden />
           <span className="truncate">{billingLabel}</span>
         </span>
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-1">
           <SecondarySubscriptionActions
             isReflected={isReflected}
             isPendingDelete={isPendingDelete}
@@ -373,7 +331,7 @@ function SubscriptionRow({
         </div>
       </div>
 
-      {sub.memo && <p className="mt-2 truncate text-xs text-slate-400">{sub.memo}</p>}
+      {sub.memo && <p className={cn("t7 mt-2 truncate", off ? "text-fg-disabled" : "text-fg-tertiary")}>{sub.memo}</p>}
     </div>
   );
 }
@@ -391,8 +349,14 @@ function SubscriptionTableRow({
   const [isPendingDelete, startDelete] = useTransition();
   const [isPendingReflect, startReflect] = useTransition();
 
-  const categoryColor = CATEGORY_COLORS[sub.category as SubscriptionCategory] ?? CATEGORY_COLORS["기타"];
   const billingLabel = getBillingDayLabel(sub.billingDay);
+  // 일시정지 행은 전체를 fg-disabled로 흐리게
+  const off = !sub.isActive;
+  const billingColor = off
+    ? "text-fg-disabled"
+    : isBillingImminent(sub.billingDay)
+      ? "text-primary"
+      : "text-fg-tertiary";
 
   function handleToggle() {
     startToggle(async () => {
@@ -428,8 +392,7 @@ function SubscriptionTableRow({
   return (
     <tr
       className={cn(
-        "border-b border-slate-100 dark:border-white/10 last:border-b-0 transition-colors hover:bg-slate-50/90 dark:hover:bg-white/[0.04]",
-        !sub.isActive && "opacity-50"
+        "border-b border-divider last:border-b-0 transition-colors hover:bg-background"
       )}
     >
       <td className="py-4 pl-3 pr-1 align-middle w-14">
@@ -444,30 +407,28 @@ function SubscriptionTableRow({
       <td className="py-4 pl-2 pr-2 align-middle min-w-0">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-slate-900 dark:text-slate-100 truncate">{sub.name}</span>
+            <span className={cn("t6 font-bold truncate", off ? "text-fg-disabled" : "text-foreground")}>{sub.name}</span>
             {!sub.isActive && (
-              <span className="text-xs text-slate-400 font-medium shrink-0">일시정지</span>
+              <span className="t7 font-medium shrink-0 text-fg-disabled">일시정지</span>
             )}
           </div>
-          {sub.memo && <p className="text-xs text-slate-400 mt-0.5 truncate">{sub.memo}</p>}
+          {sub.memo && <p className={cn("t7 mt-1 truncate", off ? "text-fg-disabled" : "text-fg-tertiary")}>{sub.memo}</p>}
         </div>
       </td>
-      <td className="py-4 px-2 align-middle text-slate-500">
+      <td className={cn("t7 numeric py-4 px-2 align-middle", billingColor)}>
         <div className="flex items-center gap-1">
-          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+          <CalendarDays className="h-4 w-4 shrink-0" />
           <span className="truncate">{billingLabel}</span>
         </div>
       </td>
-      <td className="py-4 px-2 align-middle font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-        {formatKRW(sub.amount)}
+      <td className={cn("t6 numeric py-4 px-2 align-middle font-semibold whitespace-nowrap", off ? "text-fg-disabled" : "text-foreground")}>
+        {formatWon(sub.amount)}
       </td>
       <td className="py-4 px-2 align-middle">
-        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium max-w-full truncate", categoryColor)}>
-          {sub.category}
-        </span>
+        <CategoryPill className={cn(off && "text-fg-disabled")}>{sub.category}</CategoryPill>
       </td>
       <td className="py-4 pl-2 pr-4 align-middle text-right">
-        <div className="inline-flex items-center justify-end gap-0.5 flex-nowrap">
+        <div className="inline-flex items-center justify-end gap-1 flex-nowrap">
           <SecondarySubscriptionActions
             isReflected={isReflected}
             isPendingDelete={isPendingDelete}
@@ -483,7 +444,7 @@ function SubscriptionTableRow({
 }
 
 const secondaryActionIconClass =
-  "h-11 w-11 text-slate-400 hover:text-primary";
+  "h-11 w-11 rounded-pill text-fg-tertiary hover:bg-accent-soft hover:text-primary";
 
 function ToggleSubscriptionButton({
   isActive,
@@ -498,7 +459,7 @@ function ToggleSubscriptionButton({
     <Button
       variant="ghost"
       size="icon"
-      className="!size-11 min-h-11 min-w-11 shrink-0 rounded-xl text-slate-500 hover:text-primary"
+      className="!size-11 min-h-11 min-w-11 shrink-0 rounded-pill text-fg-disabled hover:bg-transparent"
       title={isActive ? "일시정지" : "활성화"}
       onClick={onToggle}
       disabled={isPending}
@@ -506,7 +467,7 @@ function ToggleSubscriptionButton({
       {isActive ? (
         <ToggleRight className="size-6 text-primary" />
       ) : (
-        <ToggleLeft className="size-6" />
+        <ToggleLeft className="size-6 text-fg-disabled" />
       )}
     </Button>
   );
@@ -539,7 +500,7 @@ function SecondarySubscriptionActions({
         onClick={onReflect}
         disabled={isPendingReflect || isReflected}
       >
-        <RefreshCw className={cn("h-5 w-5", isPendingReflect && "animate-spin", isReflected && "text-emerald-500")} />
+        <RefreshCw className={cn("h-5 w-5", isPendingReflect && "animate-spin", isReflected && "text-positive")} />
       </Button>
       <Button
         variant="ghost"
@@ -553,7 +514,7 @@ function SecondarySubscriptionActions({
       <Button
         variant="ghost"
         size="icon"
-        className={cn(secondaryActionIconClass, "hover:text-destructive")}
+        className={cn(secondaryActionIconClass, "hover:bg-divider hover:text-negative")}
         title="삭제"
         onClick={onDelete}
         disabled={isPendingDelete}

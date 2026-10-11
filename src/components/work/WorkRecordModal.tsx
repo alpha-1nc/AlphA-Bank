@@ -13,6 +13,7 @@ import { ResponsiveSelect } from "@/components/ui/responsive-select";
 import { CalendarDays, Loader2, Trash2 } from "lucide-react";
 import { Popover } from "@base-ui/react/popover";
 import { cn } from "@/lib/utils";
+import { formatWon } from "@/lib/format-money";
 import type { WorkRecord } from "@/generated/prisma";
 import {
   createWorkRecord,
@@ -403,12 +404,12 @@ export default function WorkRecordModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-slate-100 dark:border-white/10 max-md:rounded-t-3xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-card max-md:rounded-t-card">
         <div className="md:hidden -mx-1 mb-1 flex shrink-0 justify-center" aria-hidden>
-          <div className="h-1 w-11 rounded-full bg-muted" />
+          <div className="h-1 w-11 rounded-full bg-divider" />
         </div>
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold tracking-tight">
+          <DialogTitle className="t5 font-bold text-foreground">
             {editId
               ? "근무 수정"
               : bulkSelectedKeys.size > 1
@@ -420,8 +421,8 @@ export default function WorkRecordModal({
         <div className="space-y-4 mt-1">
           {recordsOnDay.length > 0 &&
             (editId || bulkSelectedKeys.size <= 1) && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">
                 같은 날 근무 추가
               </label>
               <ResponsiveSelect
@@ -444,7 +445,7 @@ export default function WorkRecordModal({
                 }}
                 options={sameDaySelectOptions}
                 placeholder="선택"
-                triggerClassName="rounded-2xl w-full"
+                triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
                 renderValue={(v) => {
                   if (!v || v === "__new__") return "새 근무 등록";
                   const rec = recordsOnDay.find((r) => r.id === v);
@@ -454,12 +455,12 @@ export default function WorkRecordModal({
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">근무일</label>
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">근무일</label>
             {editId ? (
-              <div className="flex items-center gap-2.5 rounded-2xl border border-slate-100 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-3 py-2 text-sm font-medium text-foreground">
+              <div className="t6 flex items-center gap-2 rounded-control bg-background px-3 py-2 font-medium text-foreground">
                 <CalendarDays
-                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  className="h-4 w-4 shrink-0 text-fg-tertiary"
                   aria-hidden
                 />
                 <span>{dateLabel}</span>
@@ -471,8 +472,8 @@ export default function WorkRecordModal({
                   disabled={pending}
                   title="날짜를 눌러 여러 날 선택"
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-2xl border border-slate-100 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-3 py-2 text-left text-sm font-medium transition-colors",
-                    "hover:border-primary/35 hover:bg-muted/50 dark:hover:bg-white/[0.06]",
+                    "t6 flex w-full items-center gap-2 rounded-control bg-background px-3 py-2 text-left font-medium text-foreground transition-colors",
+                    "hover:bg-accent-soft",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
                     pending && "pointer-events-none opacity-60"
                   )}
@@ -494,8 +495,8 @@ export default function WorkRecordModal({
                   >
                     <Popover.Popup
                       className={cn(
-                        "rounded-2xl border border-slate-100 dark:border-white/10 bg-popover text-popover-foreground shadow-lg",
-                        "ring-1 ring-foreground/10 duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+                        "rounded-control border border-divider bg-card text-foreground",
+                        "duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
                         "max-h-[min(70vh,480px)] overflow-y-auto p-3 sm:p-4"
                       )}
                     >
@@ -513,9 +514,8 @@ export default function WorkRecordModal({
                       <Popover.Close
                         type="button"
                         className={cn(
-                          "mt-3 inline-flex w-full items-center justify-center rounded-xl border border-border bg-background py-2.5 text-sm font-medium transition-colors",
-                          "hover:bg-muted hover:text-foreground",
-                          "dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+                          "t6 mt-3 inline-flex w-full items-center justify-center rounded-control bg-primary py-3 font-bold text-primary-foreground transition-colors",
+                          "hover:opacity-90",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
                         )}
                       >
@@ -527,41 +527,41 @@ export default function WorkRecordModal({
               </Popover.Root>
             )}
             {!editId && (
-              <p className="text-[0.7rem] text-muted-foreground leading-relaxed">
+              <p className="t8 text-fg-tertiary">
                 아이콘 옆 날짜를 누르면 달력에서 여러 날을 선택할 수 있어요.
               </p>
             )}
           </div>
 
           {!editId && bulkSelectedKeys.size > 1 && (
-            <p className="text-xs text-muted-foreground leading-relaxed -mt-2">
+            <p className="t7 text-fg-tertiary -mt-2">
               아래 시작·종료·휴게는 선택한 모든 날에 동일하게 적용됩니다.
             </p>
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">시작</label>
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">시작</label>
               <Input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="rounded-xl"
+                className="t6 h-11 rounded-control border-0 bg-background text-foreground"
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">종료</label>
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">종료</label>
               <Input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="rounded-xl"
+                className="t6 h-11 rounded-control border-0 bg-background text-foreground"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">휴게</label>
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">휴게</label>
             <ResponsiveSelect
               value={String(breakM)}
               onValueChange={(v) => {
@@ -571,48 +571,48 @@ export default function WorkRecordModal({
                 value: String(m),
                 label: `${m}분`,
               }))}
-              triggerClassName="rounded-xl w-full"
+              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
             />
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="t7 text-fg-tertiary">
             시급·3.3% 세금·주휴수당은{" "}
             <span className="font-medium text-foreground">설정 → 근무지</span>에서
             바꿀 수 있습니다.
           </p>
 
           {estimate && (
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 space-y-2 transition-colors">
+            <div className="rounded-control bg-background px-4 py-3 space-y-2">
               {!editId && bulkSelectedKeys.size > 1 && (
-                <p className="text-[0.65rem] text-muted-foreground leading-relaxed">
+                <p className="t8 text-fg-tertiary">
                   여러 날 등록 시, 선택한 날짜 중 가장 이른 날을 기준으로 주 단위 예상을
                   보여 줍니다.
                 </p>
               )}
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="t7 font-medium text-fg-tertiary">
                 이번 주 기준 예상 실수령액 (세후)
               </p>
-              <p className="text-2xl font-black tabular-nums tracking-tight text-primary">
-                {estimate.netWeek.toLocaleString("ko-KR")}원
+              <p className="t3 numeric font-bold text-primary">
+                {formatWon(estimate.netWeek)}
               </p>
-              <div className="text-[0.7rem] text-muted-foreground space-y-0.5 leading-relaxed">
+              <div className="t8 text-fg-tertiary space-y-1">
                 <p>
                   이번 근무 일일 기본:{" "}
-                  <span className="font-semibold text-foreground tabular-nums">
-                    {estimate.dailyBase.toLocaleString("ko-KR")}원
+                  <span className="numeric font-semibold text-foreground">
+                    {formatWon(estimate.dailyBase)}
                   </span>
                 </p>
-                <p className="tabular-nums">
-                  주 단위 합산: 기본 {estimate.weekBaseSum.toLocaleString("ko-KR")}원 ·
-                  주휴 {estimate.weeklyAllow.toLocaleString("ko-KR")}원 · 세금{" "}
-                  {estimate.tax.toLocaleString("ko-KR")}원
+                <p className="numeric">
+                  주 단위 합산: 기본 {formatWon(estimate.weekBaseSum)} ·
+                  주휴 {formatWon(estimate.weeklyAllow)} · 세금{" "}
+                  {formatWon(estimate.tax)}
                 </p>
               </div>
             </div>
           )}
 
           {localError && (
-            <p className="text-sm text-destructive" role="alert">
+            <p className="t7 text-negative" role="alert">
               {localError}
             </p>
           )}
@@ -622,11 +622,11 @@ export default function WorkRecordModal({
               <Button
                 type="button"
                 variant="destructive"
-                className="w-full rounded-2xl md:w-auto md:mr-auto"
+                className="w-full rounded-control bg-negative text-primary-foreground hover:bg-negative hover:opacity-90 md:w-auto md:mr-auto"
                 onClick={handleDelete}
                 disabled={pending}
               >
-                <Trash2 className="h-4 w-4 mr-1.5" />
+                <Trash2 className="h-4 w-4 mr-1" />
                 삭제
               </Button>
             )}
@@ -634,7 +634,7 @@ export default function WorkRecordModal({
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-2xl"
+                className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
                 onClick={() => onOpenChange(false)}
                 disabled={pending}
               >
@@ -642,7 +642,7 @@ export default function WorkRecordModal({
               </Button>
               <Button
                 type="button"
-                className="rounded-2xl"
+                className="rounded-control bg-primary font-bold text-primary-foreground"
                 onClick={handleSubmit}
                 disabled={pending || (!editId && bulkSelectedKeys.size === 0)}
               >

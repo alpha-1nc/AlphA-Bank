@@ -3,32 +3,17 @@ import { getCurrentUserId } from "@/lib/auth";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getCurrentBudgetMonth } from "@/lib/budget-utils";
+import { computeBudgetTotals } from "@/lib/budget-totals";
+import { getBudgetPeriodRange } from "@/lib/budget-period";
 import { BudgetSummary } from "./BudgetSummary";
 import { CashFlowBoard } from "./CashFlowBoard";
+import { ImportPreviousMonthButton } from "./ImportPreviousMonthButton";
 import { MonthNav } from "./MonthNav";
 import { Wallet } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-/** 예산 기준일과 선택 월로 실제 예산 통제 기간 계산 (시작일 ~ 종료일) */
-function getBudgetPeriodRange(month: string, budgetStartDate: number): { start: Date; end: Date } {
-  const [y, m] = month.split("-").map(Number);
-  const year = y;
-  const monthIndex = m - 1; // 0-based for Date
-
-  if (budgetStartDate === 1) {
-    return {
-      start: new Date(year, monthIndex, 1),
-      end: new Date(year, monthIndex + 1, 0),
-    };
-  }
-  // 기준일 25 → 2/25 ~ 3/24
-  return {
-    start: new Date(year, monthIndex - 1, budgetStartDate),
-    end: new Date(year, monthIndex, budgetStartDate - 1),
-  };
-}
-
+/** 예산 통제 기간 표시 (시작일 ~ 종료일) */
 function formatPeriodLabel(start: Date, end: Date): string {
   const f = (d: Date) => {
     const y = d.getFullYear();
@@ -55,49 +40,33 @@ export default async function BudgetPage({
   const rawMonth = (typeof raw === "string" ? raw : raw?.[0]) ?? defaultMonth;
   const month = isValidMonth(rawMonth) ? rawMonth : defaultMonth;
 
-  const [budget, accounts] = await Promise.all([
-    getOrCreateMonthlyBudget(month, userId),
-    prisma.account.findMany({ where: { userId }, orderBy: { name: "asc" } }),
-  ]);
+  const budget = await getOrCreateMonthlyBudget(month, userId);
 
   const { start, end } = getBudgetPeriodRange(month, systemSettings.budgetStartDate);
   const periodLabel = formatPeriodLabel(start, end);
 
-  const totalIncome = budget.transactions
-    .filter((c) => c.type === "INCOME")
-    .reduce((sum, c) => sum + c.amount, 0);
-  const totalFixed = budget.transactions
-    .filter((c) => c.type === "EXPENSE_FIXED")
-    .reduce((sum, c) => sum + c.amount, 0);
-  const totalVar = budget.transactions
-    .filter((c) => c.type === "EXPENSE_VAR")
-    .reduce((sum, c) => sum + c.amount, 0);
-  const totalExpense = totalFixed + totalVar;
-  const totalSaving = budget.transactions
-    .filter((c) => c.type === "SAVING")
-    .reduce((sum, c) => sum + c.amount, 0);
-  const livingBalance = totalIncome - totalExpense - totalSaving;
+  const { totalIncome, totalExpense, totalSaving, livingBalance } = computeBudgetTotals(budget.transactions);
 
   return (
-    <div className="px-4 py-6 md:p-8 lg:p-10 space-y-8 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+    <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="hidden md:flex text-3xl md:text-4xl font-black tracking-tighter text-slate-900 dark:text-slate-100 mb-1.5 items-center gap-2.5 min-w-0">
-            <Wallet className="h-8 w-8 text-primary shrink-0" />
+          <h1 className="t3 hidden md:flex font-bold text-foreground mb-1 items-center gap-2 min-w-0">
+            <Wallet className="h-6 w-6 text-primary shrink-0" />
             <span className="break-words">월별 예산</span>
           </h1>
-          <p className="hidden md:block text-sm text-slate-400 font-medium">
-            월간 예산 수립, 집행 추적, 개인 용돈 관리
+          <p className="t7 hidden md:block text-fg-tertiary">
+            월간 예산 수립, 집행 추적
           </p>
         </div>
       </header>
 
       <MonthNav currentMonth={month} />
 
-      <p className="md:hidden text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 mb-2 break-words">
+      <p className="t7 md:hidden text-fg-tertiary break-words">
         통제 기간 {periodLabel}
       </p>
-      <p className="hidden md:block text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 mb-2">
+      <p className="t7 hidden md:block text-fg-tertiary">
         예산 통제 기간: {periodLabel}
       </p>
 
@@ -106,21 +75,21 @@ export default async function BudgetPage({
         totalExpense={totalExpense}
         totalSaving={totalSaving}
         livingBalance={livingBalance}
-        personalAllowance={budget.personalAllowance}
-        budgetId={budget.id}
       />
 
-      <section className="bg-white dark:bg-[#18181B] rounded-3xl border border-slate-100 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 overflow-hidden transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-end">
+        <ImportPreviousMonthButton currentMonth={month} />
+      </div>
+
+      <section className="rounded-card bg-card p-4 md:p-7 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+          <h2 className="t5 font-bold text-foreground">
             새 내역 추가
           </h2>
         </div>
         <CashFlowBoard
           monthlyBudgetId={budget.id}
           transactions={budget.transactions}
-          accounts={accounts.map((a) => ({ id: a.id, name: a.name, type: a.type }))}
-          currentMonth={month}
         />
       </section>
     </div>

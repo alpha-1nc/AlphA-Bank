@@ -8,4 +8,4 @@ services:
     volumes:
       - ./prisma:/app/prisma
     environment:
-      SESSION_PASSWORD: "9014c20b5ed41f6f6999ac8be64dc2456abc5ff40afd151c9f3977bd0c698bfe"
+      SESSION_PASSWORD: ${SESSION_PASSWORD}

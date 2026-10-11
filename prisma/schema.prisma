@@ -32,11 +32,8 @@ model Account {
   bankName       String?    // 은행/증권사 명
   accountNumber  String?    // 계좌번호
   description    String?    // 계좌 용도 설명
-  initialBalance Int        @default(0) // 초기 잔액
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @default(now()) @updatedAt
-  transactions   CashFlow[] // 연결된 예산/현금흐름
-  subscriptions  Subscription[]
 }
 
 model MonthlyBudget {
@@ -44,7 +41,6 @@ model MonthlyBudget {
   userId            String     @default("74881cb7-6fa0-4a86-a6b3-cf3e271c7ce0")
   user              User       @relation(fields: [userId], references: [id])
   month             String     // "YYYY-MM" 포맷
-  personalAllowance Int        @default(0) // 전월 이월된 개인 용돈
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   transactions      CashFlow[]
@@ -54,14 +50,16 @@ model MonthlyBudget {
 
 model CashFlow {
   id                     String                  @id @default(uuid())
-  type                   String                  // INCOME, EXPENSE_FIXED, EXPENSE_VAR, SAVING
+  type                   String                  // 섹션: INCOME, EXPENSE, SAVING
+  /// 섹션 내 카테고리 키 (EXPENSE: FIXED|VARIABLE|SPECIAL, SAVING: SAVE|INVEST|PURPOSE, INCOME: null) — src/lib/cashflow-categories.ts 참고
+  category               String?
+  /// 항목별 이모지 (선택)
+  emoji                  String?
   title                  String                  // 내역
   amount                 Int
   isCompleted            Boolean                 @default(false) // 실제 집행 여부 (체크박스)
   monthlyBudgetId        String
   monthlyBudget          MonthlyBudget           @relation(fields: [monthlyBudgetId], references: [id], onDelete: Cascade)
-  accountId              String?                 // 자산과 연동될 경우 계좌 ID
-  account                Account?                @relation(fields: [accountId], references: [id])
   /// 알바 근무지에서 월별 실수령으로 자동 생성된 수입일 때만 설정 (수동 수입과 구분)
   workplaceId            String?
   workplace              Workplace?              @relation(fields: [workplaceId], references: [id], onDelete: Cascade)
@@ -100,8 +98,6 @@ model Subscription {
   billingDay Int      @default(1)
   category   String
   isActive   Boolean  @default(true)
-  accountId  String?
-  account    Account? @relation(fields: [accountId], references: [id])
   memo       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
@@ -113,7 +109,6 @@ model Workplace {
   userId                    String
   user                      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                      String
-  color                     String       // UI 구분용 색상 코드 (예: #RRGGBB)
   isActive                  Boolean      @default(true) // 퇴사/미사용 구분
   /// PARTTIME | FULLTIME
   type                      String       @default("PARTTIME")

@@ -23,13 +23,9 @@ function parseDateSafe(d: unknown): Date {
 }
 
 function buildDayStats(
-  records: WorkRecord[],
-  workplaceColor: string
-): Map<string, { totalMinutes: number; totalPay: number; color: string }> {
-  const map = new Map<
-    string,
-    { totalMinutes: number; totalPay: number; color: string }
-  >();
+  records: WorkRecord[]
+): Map<string, { totalMinutes: number; totalPay: number }> {
+  const map = new Map<string, { totalMinutes: number; totalPay: number }>();
   for (const r of records) {
     const dk = formatKstDateKey(parseDateSafe(r.date));
     const start = parseDateSafe(r.startTime);
@@ -48,7 +44,6 @@ function buildDayStats(
     const prev = map.get(dk) ?? {
       totalMinutes: 0,
       totalPay: 0,
-      color: workplaceColor,
     };
     prev.totalMinutes += gross;
     prev.totalPay += base;
@@ -61,7 +56,6 @@ type Props = {
   year: number;
   month: number;
   records: WorkRecord[];
-  workplaceColor: string;
   paydayOfMonth: number;
   payPeriodCaption: string;
   onPrevMonth: () => void;
@@ -75,7 +69,6 @@ export default function WorkCalendar({
   year,
   month,
   records,
-  workplaceColor,
   paydayOfMonth,
   payPeriodCaption,
   onPrevMonth,
@@ -133,8 +126,8 @@ export default function WorkCalendar({
   );
 
   const stats = useMemo(
-    () => buildDayStats(records, workplaceColor),
-    [records, workplaceColor]
+    () => buildDayStats(records),
+    [records]
   );
 
   const todayKey = formatKstDateKey(new Date());
@@ -173,14 +166,14 @@ export default function WorkCalendar({
   }, [year, month]);
 
   return (
-    <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-3 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99] animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-stretch justify-between gap-2 sm:gap-3 mb-6 p-2.5 sm:p-3 rounded-2xl border border-slate-100/80 dark:border-white/10 bg-slate-50/40 dark:bg-white/[0.02]">
+    <div className="rounded-card bg-card p-3 sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-stretch justify-between gap-2 sm:gap-3 mb-6 p-2 sm:p-3 rounded-control bg-background">
         <Button
           type="button"
           variant="outline"
           size="default"
           onClick={onPrevMonth}
-          className="h-11 w-11 px-0 rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-95 touch-manipulation"
+          className="h-11 w-11 px-0 rounded-control shrink-0 border-0 bg-card text-fg-secondary hover:bg-accent-soft hover:text-primary transition-all active:scale-95 touch-manipulation"
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
@@ -192,14 +185,14 @@ export default function WorkCalendar({
                 type="button"
                 onClick={() => setMonthPickerOpen((o) => !o)}
                 className={cn(
-                  "flex items-center justify-center gap-1 sm:gap-1.5 text-base sm:text-lg font-black tracking-tighter text-slate-900 dark:text-slate-100 py-1.5 px-2 sm:px-3 rounded-2xl transition-all min-w-0 max-w-full",
-                  "hover:bg-white/80 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98]"
+                  "t5 numeric flex items-center justify-center gap-1 font-bold text-foreground py-2 px-2 sm:px-3 rounded-control transition-all min-w-0 max-w-full",
+                  "hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98]"
                 )}
               >
                 <span className="truncate">{label}</span>
                 <ChevronDown
                   className={cn(
-                    "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+                    "h-4 w-4 shrink-0 text-fg-tertiary transition-transform duration-200",
                     monthPickerOpen && "rotate-180"
                   )}
                 />
@@ -207,12 +200,12 @@ export default function WorkCalendar({
               {monthPickerOpen && (
                 <div
                   ref={panelRef}
-                  className="absolute left-1/2 top-full z-50 mt-2 w-[min(100%,220px)] -translate-x-1/2 rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-4 animate-in fade-in-0 zoom-in-95"
+                  className="absolute left-1/2 top-full z-50 mt-2 w-[min(100%,220px)] -translate-x-1/2 rounded-control border border-divider bg-card p-4 animate-in fade-in-0 zoom-in-95"
                   onKeyDown={(e) => e.key === "Enter" && applyMonthJump()}
                 >
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <label className="text-sm font-medium text-muted-foreground shrink-0">
+                      <label className="t7 font-medium text-fg-tertiary shrink-0">
                         연도
                       </label>
                       <Input
@@ -223,12 +216,12 @@ export default function WorkCalendar({
                         step={1}
                         value={yearInput}
                         onChange={(e) => setYearInput(e.target.value)}
-                        className="h-8 text-sm"
+                        className="t7 h-8 rounded-control"
                         placeholder="2026"
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <label className="text-sm font-medium text-muted-foreground shrink-0">
+                      <label className="t7 font-medium text-fg-tertiary shrink-0">
                         월
                       </label>
                       <ResponsiveSelect
@@ -237,10 +230,10 @@ export default function WorkCalendar({
                         options={MONTHS.map((mo) => ({ value: mo.value, label: mo.label }))}
                         placeholder="월 선택"
                         size="sm"
-                        triggerClassName="h-8 flex-1"
+                        triggerClassName="t7 h-8 flex-1 rounded-control"
                       />
                     </div>
-                    <Button size="sm" className="w-full rounded-xl" onClick={applyMonthJump}>
+                    <Button size="sm" className="w-full rounded-control bg-primary text-primary-foreground" onClick={applyMonthJump}>
                       해당 월로 이동
                     </Button>
                   </div>
@@ -248,7 +241,7 @@ export default function WorkCalendar({
               )}
             </>
           ) : (
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground text-center truncate px-1">
+            <h2 className="t5 numeric font-bold text-foreground text-center truncate px-1">
               {label}
             </h2>
           )}
@@ -258,24 +251,24 @@ export default function WorkCalendar({
           variant="outline"
           size="default"
           onClick={onNextMonth}
-          className="h-11 w-11 px-0 rounded-2xl shrink-0 border-slate-100 dark:border-white/10 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-95 touch-manipulation"
+          className="h-11 w-11 px-0 rounded-control shrink-0 border-0 bg-card text-fg-secondary hover:bg-accent-soft hover:text-primary transition-all active:scale-95 touch-manipulation"
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
 
-      <p className="text-[0.7rem] sm:text-xs text-muted-foreground text-center leading-relaxed px-1 mb-5">
+      <p className="t8 text-fg-tertiary text-center px-1 mb-5">
         {payPeriodCaption}
       </p>
 
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center">
         {WEEK_LABELS.map((w, i) => (
           <div
             key={w}
             className={cn(
-              "text-xs font-semibold uppercase tracking-wider py-1.5 sm:py-2",
-              i === 0 && "text-rose-500/90",
-              i === 6 && "text-primary/90"
+              "t7 font-medium py-1 sm:py-2",
+              // 일·토만 색 구분 유지 (날짜 인식용)
+              i === 0 ? "text-negative" : i === 6 ? "text-primary" : "text-fg-tertiary"
             )}
           >
             {w}
@@ -287,7 +280,7 @@ export default function WorkCalendar({
             return (
               <div
                 key={cell.key}
-                className="min-h-[3.5rem] sm:min-h-[5.25rem] rounded-xl sm:rounded-2xl bg-muted/20 dark:bg-white/[0.02]"
+                className="min-h-[3.5rem] sm:min-h-[5.25rem]"
               />
             );
           }
@@ -307,18 +300,15 @@ export default function WorkCalendar({
               type="button"
               onClick={() => onDayClick(cell.date!)}
               className={cn(
-                "relative group flex min-h-[3.5rem] sm:min-h-[5.25rem] flex-col rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
-                "border-slate-100/80 dark:border-white/10 md:hover:border-primary/40 md:hover:bg-primary/5 md:hover:shadow-sm dark:md:hover:bg-white/5 active:scale-[0.98]",
-                isToday &&
-                  "ring-2 ring-primary/40 ring-offset-2 ring-offset-background dark:ring-offset-[#18181B]",
-                isPayday &&
-                  "border-amber-300/80 dark:border-amber-500/40 bg-amber-50/50 dark:bg-amber-500/10"
+                "relative group flex min-h-[3.5rem] sm:min-h-[5.25rem] flex-col rounded-control border bg-card p-1 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
+                "md:hover:bg-accent-soft active:scale-[0.98]",
+                isToday ? "border-primary" : "border-divider"
               )}
             >
               <span className="flex items-start justify-between gap-1 w-full">
                 <span
                   className={cn(
-                    "text-sm font-bold tabular-nums",
+                    "t7 numeric font-bold",
                     isToday ? "text-primary" : "text-foreground"
                   )}
                 >
@@ -327,13 +317,13 @@ export default function WorkCalendar({
                 {isPayday && (
                   <>
                     <span
-                      className="hidden sm:inline-flex shrink-0 rounded-md bg-amber-500/90 px-1 py-0.5 text-[0.55rem] font-bold text-white leading-none"
+                      className="t9 hidden sm:inline-flex shrink-0 rounded-pill bg-primary px-1 py-0.5 font-bold text-primary-foreground leading-none"
                       aria-hidden
                     >
                       월급
                     </span>
                     <span
-                      className="sm:hidden h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 shadow-sm shadow-amber-500/40"
+                      className="sm:hidden h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
                       title="월급일"
                       aria-label="월급일"
                     />
@@ -342,25 +332,19 @@ export default function WorkCalendar({
               </span>
 
               {s && s.totalMinutes > 0 && (
-                <div className="mt-auto flex flex-col gap-0.5 sm:gap-0.5 items-center sm:items-stretch">
+                <div className="mt-auto flex flex-col gap-1 items-center sm:items-stretch">
                   <span
-                    className="hidden sm:inline-flex max-w-full items-center justify-center rounded-md px-1 py-0.5 text-[0.65rem] font-semibold tabular-nums leading-none truncate border border-transparent"
-                    style={{
-                      backgroundColor: `${s.color}22`,
-                      color: s.color,
-                      borderColor: `${s.color}44`,
-                    }}
+                    className="t9 numeric hidden sm:inline-flex max-w-full items-center justify-center rounded-pill bg-accent-soft px-1 py-0.5 font-semibold text-primary leading-none truncate"
                   >
                     {(s.totalMinutes / 60).toFixed(1)}h
                   </span>
                   <span
-                    className="sm:hidden h-2 w-2 rounded-full shrink-0"
-                    style={{ backgroundColor: s.color }}
+                    className="sm:hidden h-2 w-2 rounded-full shrink-0 bg-primary"
                     title={`${(s.totalMinutes / 60).toFixed(1)}시간 · ${s.totalPay.toLocaleString("ko-KR")}원`}
                     aria-hidden
                   />
                   <span
-                    className="hidden sm:inline text-[0.6rem] text-muted-foreground tabular-nums truncate text-center"
+                    className="t8 numeric hidden sm:inline text-fg-tertiary truncate text-center"
                     title={`예상 일급 ${s.totalPay.toLocaleString("ko-KR")}원`}
                   >
                     {s.totalPay >= 10000
@@ -372,7 +356,7 @@ export default function WorkCalendar({
 
               {nSameDay > 1 && (
                 <span
-                  className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3 min-w-3 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-primary/90 px-0.5 sm:px-1 text-[0.5rem] sm:text-[0.55rem] font-bold text-primary-foreground"
+                  className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 flex h-3 min-w-3 sm:h-4 sm:min-w-4 items-center justify-center rounded-full bg-primary px-0.5 sm:px-1 text-[0.5rem] sm:text-[0.55rem] font-bold text-primary-foreground"
                   title={`같은 날 근무 ${nSameDay}건`}
                 >
                   {nSameDay}

@@ -11,7 +11,6 @@ export interface AddAccountData {
   bankName: string;
   accountNumber: string;
   description: string;
-  initialBalance: number;
 }
 
 export async function addAccount(data: AddAccountData) {
@@ -24,18 +23,23 @@ export async function addAccount(data: AddAccountData) {
       bankName: data.bankName.trim() || null,
       accountNumber: data.accountNumber.trim() || null,
       description: data.description.trim() || null,
-      initialBalance: data.initialBalance,
     },
   });
   revalidatePath("/asset");
   revalidatePath("/");
 }
 
-export async function updateAccountBalance(id: string, amount: number) {
+export async function updateAccount(id: string, data: AddAccountData) {
   const userId = await getCurrentUserId();
   await prisma.account.updateMany({
     where: { id, userId },
-    data: { initialBalance: amount },
+    data: {
+      name: data.name.trim(),
+      type: data.type,
+      bankName: data.bankName.trim() || null,
+      accountNumber: data.accountNumber.trim() || null,
+      description: data.description.trim() || null,
+    },
   });
   revalidatePath("/asset");
   revalidatePath("/");

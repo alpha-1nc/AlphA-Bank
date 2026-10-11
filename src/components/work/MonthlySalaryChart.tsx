@@ -1,13 +1,14 @@
 "use client";
 
-import { useChartColors } from "@/hooks/useChartColors";
+import { useEffect, useState } from "react";
+import { getThemeTokens } from "@/lib/design-tokens";
+import { formatWon } from "@/lib/format-money";
 import type { MonthNetDatum } from "@/lib/work-salary-summary";
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -18,12 +19,17 @@ function formatYAxis(value: number): string {
   return String(value);
 }
 
-function formatKRWFull(amount: number): string {
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(amount);
+/** 다크 모드 여부 (html.dark) — 차트 색을 토큰에서 고르기 위함 */
+function useIsDarkMode() {
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const read = () => setIsDark(document.documentElement.classList.contains("dark"));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
 }
 
 function formatDurationMinutes(total: number): string {
@@ -44,23 +50,23 @@ const CustomTooltip = ({
   if (active && payload && payload.length) {
     const row = payload[0].payload;
     return (
-      <div className="bg-white dark:bg-[#18181B] border border-slate-100 dark:border-white/10 rounded-xl px-4 py-3 shadow-lg text-sm space-y-2">
-        <p className="font-black tracking-tighter text-slate-800 dark:text-slate-100">
+      <div className="rounded-control bg-card border border-divider px-4 py-3 space-y-2">
+        <p className="t7 font-bold text-foreground">
           {row.fullLabel}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="t7 flex items-center gap-2">
           <span
             className="w-2 h-2 rounded-full shrink-0 bg-primary"
             aria-hidden
           />
-          <span className="text-slate-500 dark:text-slate-400 font-medium">실수령액</span>
-          <span className="font-semibold text-slate-800 dark:text-slate-100 ml-auto pl-4 tabular-nums">
-            {formatKRWFull(row.net)}
+          <span className="text-fg-secondary">실수령액</span>
+          <span className="numeric font-semibold text-foreground ml-auto pl-4">
+            {formatWon(row.net)}
           </span>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="t8 text-fg-tertiary">
           총 근무 시간{" "}
-          <span className="font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
+          <span className="numeric font-semibold text-foreground">
             {formatDurationMinutes(row.minutes)}
           </span>
         </p>
@@ -75,7 +81,7 @@ type Props = {
 };
 
 export default function MonthlySalaryChart({ data }: Props) {
-  const { income } = useChartColors();
+  const t = getThemeTokens(useIsDarkMode());
   const chartData: ChartRow[] = data.map((d) => ({
     ...d,
     month: d.monthLabel,
@@ -83,12 +89,12 @@ export default function MonthlySalaryChart({ data }: Props) {
 
   return (
     <section
-      className="w-full min-w-0 rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-4 md:p-8 transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:shadow-xl max-md:active:scale-[0.99]"
+      className="w-full min-w-0 rounded-card bg-card p-4 md:p-7"
       aria-labelledby="work-chart-heading"
     >
       <h2
         id="work-chart-heading"
-        className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-6"
+        className="t5 font-bold text-foreground mb-6"
       >
         최근 6개월 실수령 추이
       </h2>
@@ -97,32 +103,26 @@ export default function MonthlySalaryChart({ data }: Props) {
           data={chartData}
           margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
           barCategoryGap="28%"
-          barGap={3}
+          barGap={4}
         >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="var(--border)"
-            strokeOpacity={0.55}
-            vertical={false}
-          />
           <XAxis
             dataKey="month"
-            tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 600 }}
+            tick={{ fontSize: 12, fill: t.tertiaryFg, fontWeight: 400 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             tickFormatter={formatYAxis}
-            tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }}
+            tick={{ fontSize: 12, fill: t.tertiaryFg, fontWeight: 400 }}
             axisLine={false}
             tickLine={false}
             width={44}
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ fill: "rgba(148, 163, 184, 0.14)" }}
+            cursor={{ fill: t.divider }}
           />
-          <Bar dataKey="net" fill={income} radius={[4, 4, 0, 0]} name="net" />
+          <Bar dataKey="net" fill={t.accent} barSize={22} radius={[5, 5, 0, 0]} name="net" />
         </BarChart>
       </ResponsiveContainer>
     </section>

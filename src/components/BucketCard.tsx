@@ -16,6 +16,7 @@ import { Plus, Star, Trash2, CheckCircle2, Circle, Pencil } from "lucide-react";
 import { addBucketFund, deleteBucket, completeBucket, uncompleteBucket } from "@/app/actions/bucket";
 import EditBucketDialog from "@/app/bucket/EditBucketDialog";
 import { cn } from "@/lib/utils";
+import { formatWon } from "@/lib/format-money";
 
 export interface BucketItem {
   id: string;
@@ -28,14 +29,6 @@ export interface BucketItem {
   /** YYYY-MM-DD */
   completedAt: string | null;
   imageUrl: string | null;
-}
-
-function formatKRW(amount: number): string {
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(amount);
 }
 
 function todayLocalYMD(): string {
@@ -115,17 +108,20 @@ export default function BucketCard({ bucket }: Props) {
     });
   }
 
-  const showImage = bucket.imageUrl && !imgError;
+  const showImage = !!bucket.imageUrl && !imgError;
+  const done = progress >= 100;
+  /** 이미지 위(어두운 오버레이) 글자 / 이미지 없을 때 card 위 글자 */
+  const onImage = showImage;
+  const titleColor = onImage ? "text-white" : "text-foreground";
+  const metaColor = onImage ? "text-white/70" : "text-fg-tertiary";
+  const overlayBtn = onImage
+    ? "bg-black/35 text-white hover:bg-black/55"
+    : "bg-divider text-fg-secondary hover:bg-divider";
 
   return (
     <>
       <div
-        className={cn(
-          "rounded-3xl border overflow-hidden flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl",
-          bucket.isCompleted
-            ? "border-emerald-400/80 shadow-[0_8px_32px_rgba(16,185,129,0.18)] ring-2 ring-emerald-400/35"
-            : "border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
-        )}
+        className="rounded-card bg-card overflow-hidden flex flex-col"
       >
         {/* Cinematic image area */}
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: "16/9" }}>
@@ -137,26 +133,18 @@ export default function BucketCard({ bucket }: Props) {
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 flex items-center justify-center">
-              <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20" />
-            </div>
+            <div className="absolute inset-0 bg-card" />
           )}
 
-          {/* Gradient mask overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          {bucket.isCompleted && (
-            <div
-              className="absolute inset-0 pointer-events-none bg-gradient-to-br from-emerald-500/20 via-transparent to-emerald-600/10"
-              aria-hidden
-            />
-          )}
+          {/* 이미지 위 글자가 읽히도록 일정한 어두운 오버레이 (이미지 있을 때만) */}
+          {showImage && <div className="absolute inset-0 bg-black/45" aria-hidden />}
 
           {/* 수정 · 완료 토글 — 이미지 상단 */}
           <div className="absolute top-3 right-3 flex items-center gap-2 z-10 max-w-[60%] justify-end">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/35 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/55 active:scale-[0.97] transition-transform duration-150 touch-manipulation"
+              className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-control backdrop-blur-sm active:scale-[0.97] transition-transform duration-150 touch-manipulation", overlayBtn)}
               aria-label="목표 수정"
             >
               <Pencil className="h-4 w-4" />
@@ -166,7 +154,7 @@ export default function BucketCard({ bucket }: Props) {
               onClick={handleCompleteClick}
               disabled={pending}
               title={bucket.isCompleted ? "탭하면 진행 중으로 되돌립니다" : "탭하면 완료로 표시합니다"}
-              className="flex min-h-10 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-tight shadow-lg backdrop-blur-sm border border-white/35 bg-black/35 text-white hover:bg-black/55 active:scale-[0.97] transition-transform duration-150 disabled:opacity-45 disabled:pointer-events-none touch-manipulation"
+              className={cn("t7 flex min-h-10 items-center justify-center gap-1 rounded-control px-3 py-2 font-bold backdrop-blur-sm active:scale-[0.97] transition-transform duration-150 disabled:opacity-45 disabled:pointer-events-none touch-manipulation", overlayBtn)}
               aria-label={bucket.isCompleted ? "완료 해제" : "완료로 표시"}
             >
               {bucket.isCompleted ? (
@@ -189,34 +177,41 @@ export default function BucketCard({ bucket }: Props) {
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-3 w-3 ${
-                    i < bucket.importance ? "fill-amber-400 text-amber-400" : "text-white/20"
-                  }`}
+                  className={cn(
+                    "h-3 w-3",
+                    i < bucket.importance
+                      ? onImage
+                        ? "fill-white text-white"
+                        : "fill-foreground text-foreground"
+                      : onImage
+                        ? "text-white/35"
+                        : "text-fg-disabled"
+                  )}
                 />
               ))}
             </div>
-            <h3 className="font-black tracking-tighter text-white text-base leading-tight line-clamp-2 mb-3">
+            <h3 className={cn("t5 font-bold line-clamp-2 mb-3", titleColor)}>
               {bucket.title}
             </h3>
 
             {/* Progress bar */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex justify-between items-end">
-                <span className="text-xs text-white/60 font-medium">
-                  {formatKRW(bucket.currentAmount)}
+                <span className={cn("t7 numeric font-medium", metaColor)}>
+                  {formatWon(bucket.currentAmount)}
                 </span>
-                <span className="text-xs font-black tracking-tighter text-white">
+                <span className={cn("t7 numeric font-bold", titleColor)}>
                   {progress.toFixed(0)}%
                 </span>
               </div>
-              <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-divider rounded-pill overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-500 dark:shadow-[0_0_10px_rgba(96,165,250,0.5)]"
+                  className={cn("h-full rounded-pill transition-all duration-500", done ? "bg-positive" : "bg-primary")}
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-xs text-white/40 font-medium">
-                목표 {formatKRW(bucket.targetAmount)}
+              <p className={cn("t8 numeric font-medium", metaColor)}>
+                목표 {formatWon(bucket.targetAmount)}
               </p>
             </div>
           </div>
@@ -225,31 +220,30 @@ export default function BucketCard({ bucket }: Props) {
         {/* 하단: 미완료는 납입+삭제, 완료는 달성 문구+삭제 (동일 min-height로 카드 길이 맞춤) */}
         <div
           className={cn(
-            "px-4 py-3 flex items-center gap-2 min-h-[64px] box-border",
-            bucket.isCompleted
-              ? "justify-between border-t border-emerald-100 bg-emerald-50/90 dark:border-emerald-900/50 dark:bg-emerald-950/35"
-              : "bg-white dark:bg-[#18181B]",
+            "px-4 py-3 flex items-center gap-2 min-h-[64px] box-border border-t border-divider",
+            bucket.isCompleted && "justify-between",
           )}
         >
           {bucket.isCompleted ? (
             <>
-              <p className="text-sm font-black tracking-tight text-emerald-800 dark:text-emerald-200 pr-2">
-                {completedDateLabel ? (
-                  <>
-                    <span className="text-emerald-700 dark:text-emerald-300 font-bold tabular-nums">
-                      {completedDateLabel}{" "}
-                    </span>
-                    머니 버킷리스트 달성!
-                  </>
-                ) : (
-                  "머니 버킷리스트 달성!"
-                )}
+              <p className="t7 flex min-w-0 items-center gap-2 pr-2 text-fg-secondary">
+                <span className="t8 shrink-0 rounded-pill bg-positive/15 px-2 py-0.5 font-bold text-positive">완료</span>
+                <span className="min-w-0">
+                  {completedDateLabel ? (
+                    <>
+                      <span className="numeric font-semibold text-foreground">{completedDateLabel} </span>
+                      머니 버킷리스트 달성!
+                    </>
+                  ) : (
+                    "머니 버킷리스트 달성!"
+                  )}
+                </span>
               </p>
               <button
                 type="button"
                 disabled={pending}
                 onClick={handleDelete}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-emerald-700/70 hover:bg-red-50 hover:text-destructive dark:text-emerald-300/80 dark:hover:bg-red-950/40 active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 touch-manipulation"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control text-fg-tertiary hover:text-negative active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 touch-manipulation"
                 aria-label="삭제"
               >
                 <Trash2 className="h-4 w-4" />
@@ -263,7 +257,7 @@ export default function BucketCard({ bucket }: Props) {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-10 text-sm rounded-2xl gap-1.5 border-slate-100 hover:bg-slate-50 flex-1 font-semibold touch-manipulation"
+                      className="t7 h-10 flex-1 gap-1 rounded-control border-0 bg-primary font-semibold text-primary-foreground hover:bg-primary hover:opacity-90 touch-manipulation"
                       disabled={pending || bucket.isAchieved}
                     >
                       <Plus className="h-4 w-4" />
@@ -271,14 +265,14 @@ export default function BucketCard({ bucket }: Props) {
                     </Button>
                   }
                 />
-                <DialogContent className="sm:max-w-sm rounded-3xl">
+                <DialogContent className="sm:max-w-sm rounded-card">
                   <DialogHeader>
-                    <DialogTitle className="font-black tracking-tighter">
+                    <DialogTitle className="t5 font-bold text-foreground">
                       납입 금액
                     </DialogTitle>
                   </DialogHeader>
-                  <p className="text-sm text-slate-400 -mt-1">
-                    <span className="font-semibold text-slate-700">{bucket.title}</span>
+                  <p className="t7 text-fg-tertiary">
+                    <span className="font-semibold text-foreground">{bucket.title}</span>
                     에 납입할 금액을 입력하세요.
                   </p>
                   <form onSubmit={handleDeposit} className="mt-1 space-y-4">
@@ -287,12 +281,12 @@ export default function BucketCard({ bucket }: Props) {
                       value={depositAmount}
                       onChange={(e) => setDepositAmount(e.target.value)}
                       min={1}
-                      className="rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 h-11 font-black tracking-tighter dark:text-slate-100"
+                      className="t6 h-11 rounded-control border-0 bg-background text-foreground numeric font-bold"
                     />
                     <DialogFooter className="gap-2">
                       <DialogClose
                         render={
-                          <Button type="button" variant="outline" size="sm" className="rounded-xl">
+                          <Button type="button" variant="outline" size="sm" className="rounded-control border-0 bg-divider text-foreground hover:bg-divider">
                             취소
                           </Button>
                         }
@@ -301,7 +295,7 @@ export default function BucketCard({ bucket }: Props) {
                         type="submit"
                         size="sm"
                         disabled={pending || !depositAmount}
-                        className="rounded-xl"
+                        className="rounded-control bg-primary font-bold text-primary-foreground"
                       >
                         {pending ? "저장 중…" : "납입"}
                       </Button>
@@ -314,7 +308,7 @@ export default function BucketCard({ bucket }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={handleDelete}
-                className="flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 hover:bg-red-50 hover:text-destructive active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 shrink-0 touch-manipulation"
+                className="flex h-10 w-10 items-center justify-center rounded-control text-fg-tertiary hover:text-negative active:scale-[0.97] transition-transform duration-150 disabled:opacity-40 shrink-0 touch-manipulation"
                 aria-label="삭제"
               >
                 <Trash2 className="h-4 w-4" />
@@ -325,12 +319,12 @@ export default function BucketCard({ bucket }: Props) {
       </div>
 
       <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
-        <DialogContent className="sm:max-w-sm rounded-3xl">
+        <DialogContent className="sm:max-w-sm rounded-card">
           <DialogHeader>
-            <DialogTitle className="font-black tracking-tighter">달성일 선택</DialogTitle>
+            <DialogTitle className="t5 font-bold text-foreground">달성일 선택</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-400 -mt-1">
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{bucket.title}</span>
+          <p className="t7 text-fg-tertiary">
+            <span className="font-semibold text-foreground">{bucket.title}</span>
             을(를) 완료한 날짜를 선택하세요.
           </p>
           <form onSubmit={handleConfirmComplete} className="space-y-4">
@@ -339,18 +333,18 @@ export default function BucketCard({ bucket }: Props) {
               value={completeDate}
               onChange={(e) => setCompleteDate(e.target.value)}
               max={todayLocalYMD()}
-              className="rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 h-11 font-mono tabular-nums dark:text-slate-100"
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground numeric"
               required
             />
             <DialogFooter className="gap-2">
               <DialogClose
                 render={
-                  <Button type="button" variant="outline" size="sm" className="rounded-xl">
+                  <Button type="button" variant="outline" size="sm" className="rounded-control border-0 bg-divider text-foreground hover:bg-divider">
                     취소
                   </Button>
                 }
               />
-              <Button type="submit" size="sm" disabled={pending || !completeDate} className="rounded-xl">
+              <Button type="submit" size="sm" disabled={pending || !completeDate} className="rounded-control bg-primary font-bold text-primary-foreground">
                 {pending ? "저장 중…" : "완료로 저장"}
               </Button>
             </DialogFooter>

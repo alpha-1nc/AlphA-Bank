@@ -44,6 +44,11 @@ next-env.d.ts
 # Security & Database
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+prisma/*.db.bak*
+prisma/*.db-*.bak*
+*.db.bak*
 dev.db
 .env
 .env.local

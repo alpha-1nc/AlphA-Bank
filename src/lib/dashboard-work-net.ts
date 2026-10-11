@@ -13,6 +13,12 @@ export type DashboardWorkNetResult = {
   activeWorkplaces: number;
   /** 카드에 표시하는 근무월 라벨 (근무지마다 월이 다를 수 있음) */
   monthLabel: string;
+  /** 활성 근무지별 정보 (지급일 D-day 계산용). workMinutes는 알바 근무 기록 기준 총 근무 분 */
+  workplaces: { id: string; name: string; paydayOfMonth: number; workMinutes: number }[];
+  /** workplaces[].workMinutes 합 */
+  totalWorkMinutes: number;
+  /** 실수령 계산 대상 근무월의 근무 기록 수 (0이면 기록 없음) */
+  recordCount: number;
 };
 
 function formatDashboardWorkMonthLabel(
@@ -45,6 +51,7 @@ export async function getDashboardWorkNet(userId: string): Promise<DashboardWork
     where: { userId, isActive: true },
     select: {
       id: true,
+      name: true,
       paydayOfMonth: true,
       type: true,
       monthlyBaseSalary: true,
@@ -57,7 +64,14 @@ export async function getDashboardWorkNet(userId: string): Promise<DashboardWork
   const fallbackLabel = `${kst.year}년 ${kst.month}월`;
 
   if (workplaces.length === 0) {
-    return { netPay: 0, activeWorkplaces: 0, monthLabel: fallbackLabel };
+    return {
+      netPay: 0,
+      activeWorkplaces: 0,
+      monthLabel: fallbackLabel,
+      workplaces: [],
+      totalWorkMinutes: 0,
+      recordCount: 0,
+    };
   }
 
   const perWpMonth = workplaces.map((w) => ({
@@ -101,14 +115,23 @@ export async function getDashboardWorkNet(userId: string): Promise<DashboardWork
   }
 
   let netPay = 0;
+  let recordCount = 0;
+  const minutesByWorkplace = new Map<string, number>();
   for (const row of perWpMonth) {
     const recs = byWorkplace.get(row.id) ?? [];
+    // 근무지별 대상 근무월(KST)에 속한 기록 수 (계산 입력은 그대로 두고 개수만 셈)
+    const range = getKstMonthRangeUtc(row.year, row.month);
+    recordCount += recs.filter(
+      (r) => r.date >= range.startInclusive && r.date <= range.endInclusive
+    ).length;
     const wp = workplaces.find((w) => w.id === row.id);
     if (wp && isFulltimeWorkplace(wp)) {
       netPay += computeFulltimeMonthSalarySummary(recs, wp, row.year, row.month)
         .netPay;
     } else {
-      netPay += computeMonthSalarySummary(recs, row.year, row.month).netPay;
+      const summary = computeMonthSalarySummary(recs, row.year, row.month);
+      netPay += summary.netPay;
+      minutesByWorkplace.set(row.id, summary.totalWorkMinutes);
     }
   }
 
@@ -118,5 +141,13 @@ export async function getDashboardWorkNet(userId: string): Promise<DashboardWork
     monthLabel: formatDashboardWorkMonthLabel(
       perWpMonth.map(({ year, month }) => ({ year, month }))
     ),
+    workplaces: workplaces.map((w) => ({
+      id: w.id,
+      name: w.name,
+      paydayOfMonth: w.paydayOfMonth ?? WORKPLACE_DEFAULTS.paydayOfMonth,
+      workMinutes: minutesByWorkplace.get(w.id) ?? 0,
+    })),
+    totalWorkMinutes: Array.from(minutesByWorkplace.values()).reduce((a, b) => a + b, 0),
+    recordCount,
   };
 }

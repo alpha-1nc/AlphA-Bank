@@ -15,8 +15,8 @@ export function FieldSwitch({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 dark:border-white/10 bg-muted/30 dark:bg-white/[0.03] px-3 py-2.5 transition-colors">
-      <span className="text-sm font-medium text-foreground">{label}</span>
+    <div className="flex items-center justify-between gap-4 rounded-control bg-background px-3 py-2 transition-colors">
+      <span className="t6 font-medium text-foreground">{label}</span>
       <button
         type="button"
         role="switch"
@@ -25,12 +25,12 @@ export function FieldSwitch({
         onClick={() => onCheckedChange(!checked)}
         className={cn(
           "relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50",
-          checked ? "bg-primary" : "bg-muted"
+          checked ? "bg-primary" : "bg-fg-disabled"
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-background shadow transition-transform duration-200 ease-out",
+            "absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-card transition-transform duration-200 ease-out",
             checked && "translate-x-5"
           )}
         />
@@ -49,10 +49,10 @@ export function HourlyWageField({
   id?: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <label
         htmlFor={id}
-        className="text-xs font-medium text-muted-foreground"
+        className="t7 font-medium text-fg-tertiary ml-1"
       >
         시급 (원)
       </label>
@@ -64,7 +64,7 @@ export function HourlyWageField({
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-xl"
+        className="t6 h-11 rounded-control border-0 bg-background text-foreground"
       />
     </div>
   );

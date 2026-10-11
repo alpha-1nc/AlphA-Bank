@@ -108,21 +108,21 @@ export default function WorkBulkDayPicker({
           type="button"
           variant="outline"
           size="icon"
-          className="rounded-xl shrink-0 h-9 w-9"
+          className="rounded-control border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary shrink-0 h-9 w-9"
           onClick={prevMonth}
           disabled={disabled}
           aria-label="이전 달"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <p className="text-sm font-bold text-foreground tabular-nums truncate text-center min-w-0">
+        <p className="t6 numeric font-bold text-foreground truncate text-center min-w-0">
           {title}
         </p>
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="rounded-xl shrink-0 h-9 w-9"
+          className="rounded-control border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary shrink-0 h-9 w-9"
           onClick={nextMonth}
           disabled={disabled}
           aria-label="다음 달"
@@ -132,7 +132,7 @@ export default function WorkBulkDayPicker({
       </div>
 
       <div>
-        <p className="text-[0.65rem] font-medium text-muted-foreground mb-1.5">
+        <p className="t8 font-medium text-fg-tertiary mb-2">
           요일로 한 번에 (이번 달 해당 요일 전체 선택·해제)
         </p>
         <div className="grid grid-cols-7 gap-1">
@@ -142,7 +142,7 @@ export default function WorkBulkDayPicker({
               type="button"
               variant="secondary"
               size="sm"
-              className="h-8 rounded-lg px-0 text-[0.7rem] font-semibold"
+              className="t8 h-8 rounded-pill bg-divider px-0 font-semibold text-fg-secondary hover:bg-accent-soft hover:text-primary"
               onClick={() => toggleWeekday(weekday)}
               disabled={disabled}
               title={`이번 달 ${label}요일 전체`}
@@ -154,14 +154,14 @@ export default function WorkBulkDayPicker({
       </div>
 
       <div>
-        <p className="text-[0.65rem] font-medium text-muted-foreground mb-1.5">
+        <p className="t8 font-medium text-fg-tertiary mb-2">
           날짜 탭으로 추가·제거
         </p>
-        <div className="grid grid-cols-7 gap-0.5 text-center mb-1">
+        <div className="grid grid-cols-7 gap-1 text-center mb-1">
           {WEEK_LABELS.map((w) => (
             <div
               key={w}
-              className="text-[0.6rem] font-semibold text-muted-foreground py-0.5"
+              className="t9 font-medium text-fg-tertiary py-1"
             >
               {w}
             </div>
@@ -173,7 +173,7 @@ export default function WorkBulkDayPicker({
               return (
                 <div
                   key={`pad-${idx}`}
-                  className="aspect-square min-h-[2rem] rounded-xl bg-muted/15 dark:bg-white/[0.02]"
+                  className="aspect-square min-h-[2rem]"
                 />
               );
             }
@@ -186,12 +186,13 @@ export default function WorkBulkDayPicker({
                 disabled={disabled}
                 onClick={() => toggleKey(cell.key!)}
                 className={cn(
-                  "aspect-square min-h-[2rem] rounded-xl text-xs font-semibold tabular-nums transition-colors",
+                  "t8 numeric aspect-square min-h-[2rem] rounded-control font-semibold transition-colors",
                   "border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   sel
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-slate-100 dark:border-white/10 bg-muted/20 dark:bg-white/[0.03] text-foreground hover:border-primary/40",
-                  isToday && !sel && "ring-1 ring-primary/35"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : isToday
+                      ? "border-primary bg-card text-foreground"
+                      : "border-divider bg-card text-foreground hover:bg-accent-soft"
                 )}
               >
                 {parseInt(cell.key.slice(-2), 10)}
@@ -201,9 +202,9 @@ export default function WorkBulkDayPicker({
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="t7 text-fg-tertiary">
         선택{" "}
-        <span className="font-bold text-foreground tabular-nums">
+        <span className="numeric font-bold text-foreground">
           {selectedKeys.size}
         </span>
         일

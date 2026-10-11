@@ -63,7 +63,6 @@ export async function getWorkplaces(): Promise<ActionResult<Workplace[]>> {
 
 export type CreateWorkplaceInput = {
   name: string;
-  color: string;
   type: typeof WORKPLACE_TYPE.PARTTIME | typeof WORKPLACE_TYPE.FULLTIME;
   hourlyWage: number;
   isWeeklyAllowanceActive: boolean;
@@ -85,10 +84,6 @@ export async function createWorkplace(
     const name = data.name.trim();
     if (!name) {
       return { success: false, error: "근무지 이름은 비울 수 없습니다." };
-    }
-    const color = data.color.trim();
-    if (!color) {
-      return { success: false, error: "색상 코드는 비울 수 없습니다." };
     }
     const pe = validatePayday(data.paydayOfMonth);
     if (pe) {
@@ -119,7 +114,6 @@ export async function createWorkplace(
         data: {
           userId,
           name,
-          color,
           type: WORKPLACE_TYPE.FULLTIME,
           hourlyWage: hw,
           isWeeklyAllowanceActive: false,
@@ -151,7 +145,6 @@ export async function createWorkplace(
       data: {
         userId,
         name,
-        color,
         type: WORKPLACE_TYPE.PARTTIME,
         hourlyWage: data.hourlyWage,
         isWeeklyAllowanceActive: data.isWeeklyAllowanceActive,
@@ -172,7 +165,6 @@ export async function createWorkplace(
 export type UpdateWorkplaceInput = {
   workplaceId: string;
   name: string;
-  color: string;
   type: typeof WORKPLACE_TYPE.PARTTIME | typeof WORKPLACE_TYPE.FULLTIME;
   hourlyWage: number;
   isWeeklyAllowanceActive: boolean;
@@ -195,10 +187,6 @@ export async function updateWorkplace(
     const name = data.name.trim();
     if (!name) {
       return { success: false, error: "근무지 이름은 비울 수 없습니다." };
-    }
-    const color = data.color.trim();
-    if (!color) {
-      return { success: false, error: "색상 코드는 비울 수 없습니다." };
     }
     const pe = validatePayday(data.paydayOfMonth);
     if (pe) {
@@ -246,7 +234,6 @@ export async function updateWorkplace(
           where: { id: data.workplaceId },
           data: {
             name,
-            color,
             type: WORKPLACE_TYPE.FULLTIME,
             hourlyWage: hw,
             isWeeklyAllowanceActive: false,
@@ -300,7 +287,6 @@ export async function updateWorkplace(
         where: { id: data.workplaceId },
         data: {
           name,
-          color,
           type: WORKPLACE_TYPE.PARTTIME,
           hourlyWage: wageNum,
           isWeeklyAllowanceActive: data.isWeeklyAllowanceActive,

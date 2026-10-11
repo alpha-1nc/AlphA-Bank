@@ -116,14 +116,14 @@ export default function MobileHeader({ profileLabel }: Props) {
       )}
 
       <div className="relative z-[2]">
-        <header className="pointer-events-auto border-b border-border/80 bg-card/95 text-foreground shadow-sm backdrop-blur-md">
+        <header className="pointer-events-auto border-b border-border/80 bg-card/95 text-foreground backdrop-blur-md">
           <div className="relative flex h-16 items-stretch">
             <div className="relative z-[2] flex w-16 shrink-0 items-center justify-center">
               <button
                 type="button"
                 onClick={toggleMenu}
                 className={cn(
-                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-sm",
+                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ",
                   "border-primary/40 bg-primary/12 text-primary",
                   "transition-colors active:scale-[0.97] touch-manipulation select-none",
                   "hover:bg-primary/18 hover:border-primary/50",
@@ -152,7 +152,7 @@ export default function MobileHeader({ profileLabel }: Props) {
             <div className="relative z-[2] ml-auto flex w-16 shrink-0 items-center justify-center">
               {profileLabel ? (
                 <span
-                  className="inline-flex h-10 min-w-10 max-w-[4.5rem] shrink-0 items-center justify-center rounded-full bg-primary/15 px-2.5 text-sm font-bold tabular-nums text-primary shadow-sm"
+                  className="inline-flex h-10 min-w-10 max-w-[4.5rem] shrink-0 items-center justify-center rounded-full bg-primary/15 px-2.5 text-sm font-bold tabular-nums text-primary "
                   aria-label={`현재 프로필 ${profileLabel}`}
                 >
                   {profileLabel}
@@ -168,8 +168,8 @@ export default function MobileHeader({ profileLabel }: Props) {
           <nav
             className={cn(
               "absolute left-2 right-2 top-full z-[3] mt-1.5 max-h-[min(72vh,calc(100dvh-5rem))] overflow-y-auto overflow-x-hidden",
-              "rounded-2xl border border-border/80 bg-card/95 py-2.5 shadow-[0_16px_50px_-12px_rgba(15,23,42,0.18)] backdrop-blur-md",
-              "dark:shadow-[0_16px_50px_-12px_rgba(0,0,0,0.55)]"
+              "rounded-2xl border border-border/80 bg-card/95 py-2.5 backdrop-blur-md",
+              ""
             )}
             aria-label="앱 메뉴"
           >

@@ -66,7 +66,7 @@ async function ensureMonthlyBudget(month: string, userId: string) {
   });
   if (existing) return existing;
   return prisma.monthlyBudget.create({
-    data: { userId, month, personalAllowance: 0 },
+    data: { userId, month },
   });
 }
 

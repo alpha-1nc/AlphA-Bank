@@ -38,17 +38,6 @@ const PAY_PERIOD_SELECT_OPTIONS = [
   },
 ];
 
-const PRESET_COLORS = [
-  "#3498db",
-  "#e74c3c",
-  "#2ecc71",
-  "#9b59b6",
-  "#f39c12",
-  "#1abc9c",
-  "#e91e63",
-  "#607d8b",
-];
-
 type Props = {
   workplaces: Workplace[];
   selectedId: string | null;
@@ -65,7 +54,6 @@ export default function WorkplaceSelector({
   const active = workplaces.filter((w) => w.isActive);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState(PRESET_COLORS[0]);
   const [hourly, setHourly] = useState("10030");
   const [weeklyOn, setWeeklyOn] = useState(true);
   const [taxOn, setTaxOn] = useState(true);
@@ -97,7 +85,6 @@ export default function WorkplaceSelector({
     startTransition(async () => {
       const res = await createWorkplace({
         name: name.trim(),
-        color,
         type: WORKPLACE_TYPE.PARTTIME,
         hourlyWage: wageNum,
         isWeeklyAllowanceActive: weeklyOn,
@@ -109,7 +96,6 @@ export default function WorkplaceSelector({
         onWorkplaceCreated(res.data);
         setCreating(false);
         setName("");
-        setColor(PRESET_COLORS[0]);
         resetPayrollForm();
       } else {
         setError(res.error);
@@ -119,17 +105,17 @@ export default function WorkplaceSelector({
 
   if (active.length === 0 && !creating) {
     return (
-      <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <p className="text-sm text-muted-foreground mb-4">
+      <div className="rounded-card bg-card p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <p className="t7 text-fg-tertiary mb-4">
           등록된 근무지가 없습니다. 첫 근무지를 추가해 주세요.
         </p>
         <Button
           type="button"
           variant="outline"
-          className="rounded-2xl border-slate-100 dark:border-white/10"
+          className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
           onClick={() => setCreating(true)}
         >
-          <Plus className="h-4 w-4 mr-1.5" />
+          <Plus className="h-4 w-4 mr-1" />
           근무지 추가
         </Button>
       </div>
@@ -139,41 +125,23 @@ export default function WorkplaceSelector({
   if (active.length === 0 && creating) {
     return (
       <form
-        className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-4 transition-all duration-300 ease-out hover:shadow-xl animate-in fade-in zoom-in-95 duration-300"
+        className="rounded-card bg-card p-6 space-y-4 animate-in fade-in zoom-in-95 duration-300"
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
           submitCreate();
         }}
       >
-        <p className="text-sm font-medium text-foreground">새 근무지</p>
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">이름</label>
+        <p className="t5 font-bold text-foreground">새 근무지</p>
+        <div className="space-y-2">
+          <label className="t7 font-medium text-fg-tertiary ml-1">이름</label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="예: 편의점 A점"
-            className="rounded-xl"
+            className="t6 h-11 rounded-control border-0 bg-background text-foreground"
             required
           />
-        </div>
-        <div className="space-y-2">
-          <span className="text-xs font-medium text-muted-foreground">색상</span>
-          <div className="flex flex-wrap gap-2">
-            {PRESET_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className={cn(
-                  "h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-background transition-transform duration-150 hover:scale-110",
-                  color === c ? "ring-primary" : "ring-transparent"
-                )}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-                aria-label={`색 ${c}`}
-              />
-            ))}
-          </div>
         </div>
         <HourlyWageField
           id="wp-first-hourly"
@@ -191,8 +159,8 @@ export default function WorkplaceSelector({
           onCheckedChange={setTaxOn}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               월급일 (매월)
             </label>
             <ResponsiveSelect
@@ -200,12 +168,12 @@ export default function WorkplaceSelector({
               onValueChange={(v) => v != null && setPayday(v)}
               options={PAYDAY_SELECT_OPTIONS}
               placeholder="일 선택"
-              triggerClassName="rounded-xl w-full"
-              contentClassName="max-h-60 rounded-xl"
+              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
+              contentClassName="max-h-60 rounded-control"
             />
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">
+          <div className="space-y-2 sm:col-span-2">
+            <label className="t7 font-medium text-fg-tertiary ml-1">
               급여 기간
             </label>
             <ResponsiveSelect
@@ -213,8 +181,8 @@ export default function WorkplaceSelector({
               onValueChange={(v) => v != null && setPayMode(v)}
               options={PAY_PERIOD_SELECT_OPTIONS}
               placeholder="급여 기간 선택"
-              triggerClassName="rounded-xl w-full min-w-0"
-              contentClassName="rounded-xl max-w-[min(100vw-2rem,24rem)]"
+              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full min-w-0"
+              contentClassName="rounded-control max-w-[min(100vw-2rem,24rem)]"
               renderValue={(v) =>
                 v != null && v !== "" ? payPeriodModeLabel(v) : null
               }
@@ -222,7 +190,7 @@ export default function WorkplaceSelector({
           </div>
         </div>
         {error && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="t7 text-negative" role="alert">
             {error}
           </p>
         )}
@@ -230,7 +198,7 @@ export default function WorkplaceSelector({
           <Button
             type="button"
             variant="ghost"
-            className="rounded-2xl"
+            className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
             onClick={() => {
               setCreating(false);
               setError(null);
@@ -239,7 +207,7 @@ export default function WorkplaceSelector({
           >
             취소
           </Button>
-          <Button type="submit" className="rounded-2xl flex-1" disabled={pending}>
+          <Button type="submit" className="rounded-control bg-primary font-bold text-primary-foreground flex-1" disabled={pending}>
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "저장"}
           </Button>
         </div>
@@ -248,7 +216,7 @@ export default function WorkplaceSelector({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#18181B] p-4 sm:p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-card bg-card p-4 sm:p-5 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
         {active.map((w) => {
           const isSel = selectedId === w.id;
@@ -258,25 +226,12 @@ export default function WorkplaceSelector({
               type="button"
               onClick={() => onSelect(w.id)}
               className={cn(
-                "inline-flex max-w-full min-w-0 items-center rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-200 border touch-manipulation",
+                "t6 inline-flex max-w-full min-w-0 items-center rounded-pill px-4 py-2 font-semibold transition-colors duration-200 touch-manipulation",
                 isSel
-                  ? "border-primary/40 bg-primary/15 text-primary shadow-md scale-[1.02] ring-2 ring-primary/20"
-                  : "border-slate-100 dark:border-white/10 bg-white/80 dark:bg-white/5 text-muted-foreground hover:bg-slate-50 dark:hover:bg-white/10 hover:text-foreground hover:border-primary/20 active:scale-[0.98]"
+                  ? "bg-accent-soft text-primary"
+                  : "text-fg-tertiary hover:text-fg-secondary active:scale-[0.98]"
               )}
             >
-              <span className="relative inline-flex h-2.5 w-2.5 mr-2 align-middle shrink-0">
-                {isSel && (
-                  <span
-                    className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                    style={{ backgroundColor: w.color }}
-                    aria-hidden
-                  />
-                )}
-                <span
-                  className="relative inline-flex rounded-full h-2.5 w-2.5"
-                  style={{ backgroundColor: w.color }}
-                />
-              </span>
               <span className="truncate">{w.name}</span>
             </button>
           );
@@ -286,7 +241,7 @@ export default function WorkplaceSelector({
         type="button"
         variant="outline"
         size="sm"
-        className="rounded-2xl shrink-0 border-slate-100 dark:border-white/10"
+        className="rounded-control border-0 bg-divider text-foreground hover:bg-divider shrink-0"
         onClick={() => setCreating(true)}
       >
         <Plus className="h-4 w-4 mr-1" />
@@ -300,35 +255,21 @@ export default function WorkplaceSelector({
             role="presentation"
           >
             <form
-            className="w-full max-w-sm max-h-[min(90vh,720px)] overflow-y-auto rounded-3xl border border-slate-100 dark:border-white/10 bg-background p-6 shadow-xl space-y-4 animate-in zoom-in-95"
+            className="w-full max-w-sm max-h-[min(90vh,720px)] overflow-y-auto rounded-card bg-card p-6 space-y-4 animate-in zoom-in-95"
             onSubmit={(e) => {
               e.preventDefault();
               setError(null);
               submitCreate();
             }}
           >
-            <p className="text-sm font-semibold">새 근무지</p>
+            <p className="t5 font-bold text-foreground">새 근무지</p>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="근무지 이름"
-              className="rounded-xl"
+              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
               required
             />
-            <div className="flex flex-wrap gap-2">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={cn(
-                    "h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-background",
-                    color === c ? "ring-primary" : "ring-transparent"
-                  )}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setColor(c)}
-                />
-              ))}
-            </div>
             <HourlyWageField
               id="wp-modal-hourly"
               value={hourly}
@@ -344,8 +285,8 @@ export default function WorkplaceSelector({
               checked={taxOn}
               onCheckedChange={setTaxOn}
             />
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">
                 월급일 (매월)
               </label>
               <ResponsiveSelect
@@ -353,12 +294,12 @@ export default function WorkplaceSelector({
                 onValueChange={(v) => v != null && setPayday(v)}
                 options={PAYDAY_SELECT_OPTIONS}
                 placeholder="일 선택"
-                triggerClassName="rounded-xl w-full"
-                contentClassName="max-h-60 rounded-xl"
+                triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
+                contentClassName="max-h-60 rounded-control"
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
+            <div className="space-y-2">
+              <label className="t7 font-medium text-fg-tertiary ml-1">
                 급여 기간
               </label>
               <ResponsiveSelect
@@ -366,19 +307,19 @@ export default function WorkplaceSelector({
                 onValueChange={(v) => v != null && setPayMode(v)}
                 options={PAY_PERIOD_SELECT_OPTIONS}
                 placeholder="급여 기간 선택"
-                triggerClassName="rounded-xl w-full min-w-0"
-                contentClassName="rounded-xl max-w-[min(100vw-2rem,24rem)]"
+                triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full min-w-0"
+                contentClassName="rounded-control max-w-[min(100vw-2rem,24rem)]"
                 renderValue={(v) =>
                   v != null && v !== "" ? payPeriodModeLabel(v) : null
                 }
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="t7 text-negative">{error}</p>}
             <div className="flex gap-2">
               <Button
                 type="button"
                 variant="ghost"
-                className="flex-1 rounded-2xl"
+                className="flex-1 rounded-control border-0 bg-divider text-foreground hover:bg-divider"
                 onClick={() => {
                   setCreating(false);
                   setError(null);
@@ -387,7 +328,7 @@ export default function WorkplaceSelector({
               >
                 닫기
               </Button>
-              <Button type="submit" className="flex-1 rounded-2xl" disabled={pending}>
+              <Button type="submit" className="flex-1 rounded-control bg-primary font-bold text-primary-foreground" disabled={pending}>
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "추가"}
               </Button>
             </div>
