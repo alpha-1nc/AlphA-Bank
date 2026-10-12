@@ -82,8 +82,7 @@ export function LoadingSpinner({
   );
 
   if (mode === "overlay") {
-    // 레이아웃 `<main class="overflow-y-auto">` 안에 두면 fixed 오버레이가 잘리거나
-    // 전체 화면으로 안 보일 수 있어 body에 포털합니다 (예전 LogoEntranceAnimation과 동일).
+    // stacking context 영향을 받지 않도록 body에 포털합니다 (예전 LogoEntranceAnimation과 동일).
     if (typeof document === "undefined") return null;
     return createPortal(
       <div

@@ -9,14 +9,33 @@ export function useMounted() {
   return mounted;
 }
 
-/** 열린 동안 body 스크롤 잠금 */
+let lockCount = 0;
+let lockedY = 0;
+
+/**
+ * 열린 동안 body 스크롤 잠금 (iOS 는 body overflow:hidden 으로 못 막아서 position:fixed + top 보정).
+ * 중첩 오버레이는 카운트로 관리하고, 마지막 하나가 닫힐 때 원래 위치로 복원한다.
+ */
 export function useBodyScrollLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const body = document.body;
+    if (lockCount++ === 0) {
+      lockedY = window.scrollY;
+      body.style.position = "fixed";
+      body.style.top = `-${lockedY}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+    }
     return () => {
-      document.body.style.overflow = prev;
+      if (--lockCount > 0) return;
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      window.scrollTo(0, lockedY);
     };
   }, [active]);
 }

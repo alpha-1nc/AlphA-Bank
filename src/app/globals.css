@@ -173,6 +173,7 @@
   }
 
   body {
+    overscroll-behavior-y: none;
     @apply bg-background text-foreground;
     font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
     letter-spacing: -0.02em;
@@ -302,15 +303,17 @@
 
   /* 모바일 전용: 가로 스크롤 완전 차단, 상하 스크롤만 허용 */
   @media (max-width: 767px) {
-    html,
-    body {
+    /* body 에 overflow 를 주면 body 가 스크롤 컨테이너가 되어 sticky 헤더가 깨진다 → html 에만 */
+    html {
       overflow-x: hidden;
+      max-width: 100vw;
+    }
+    body {
       max-width: 100vw;
     }
     main {
       min-width: 0;
       overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
     }
     [data-slot="dialog-content"],
     [data-slot="sheet-content"] {

@@ -13,10 +13,10 @@ export default function MobileHeader() {
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-[120] md:hidden"
+      className="sticky top-0 z-[120] border-b border-border/80 bg-card/95 backdrop-blur-md md:hidden"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
-      <header className="pointer-events-auto border-b border-border/80 bg-card/95 text-foreground backdrop-blur-md">
+      <header className="text-foreground">
         <div className="relative flex h-16 items-stretch">
           <div className="w-16 shrink-0" aria-hidden />
 

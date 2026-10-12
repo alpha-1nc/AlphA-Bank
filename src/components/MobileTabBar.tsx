@@ -102,8 +102,7 @@ export default function MobileTabBar() {
     if (pathname !== href || searchParams.toString() !== "") return;
     e.preventDefault();
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // 스크롤 컨테이너는 window 가 아니라 <main> (layout: h-screen overflow-hidden)
-    document.querySelector("main")?.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   }
 
   const moreActive = SHEET_ITEMS.some((i) => isActive(pathname, i.href));

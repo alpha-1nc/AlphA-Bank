@@ -89,17 +89,17 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased bg-background text-foreground overflow-x-hidden min-w-0">
+      <body className="antialiased bg-background text-foreground min-w-0">
         <AppSerwistProvider>
           <OverlayProvider>
-            <div className="flex h-screen overflow-hidden min-w-0">
+            <div className="min-w-0">
               {/* 데스크탑 사이드바 */}
-              <div className="relative z-[100] hidden md:flex md:shrink-0">
+              <div className="fixed inset-y-0 left-0 z-[100] hidden w-20 md:flex">
                 <Sidebar />
               </div>
 
               {/* 우측 메인 영역 */}
-              <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+              <div className="relative flex min-h-dvh min-w-0 flex-col md:ml-20">
                 <MobileFirstVisitLogoIntro />
                 <MobileHeader />
                 <MobileMainPad>{children}</MobileMainPad>
