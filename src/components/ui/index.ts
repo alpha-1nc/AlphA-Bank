@@ -1,6 +1,5 @@
 /**
  * TDS API를 따르는 자체 구현 공용 컴포넌트.
- * (같은 폴더의 소문자 shadcn 파일들 — button.tsx, badge.tsx, checkbox.tsx, dialog.tsx — 은 기존 화면용으로 그대로 둔다)
  * 다이얼로그는 TDS 공식 API인 AlertDialog / ConfirmDialog를 쓴다.
  */
 export { Button } from "./tds-button";

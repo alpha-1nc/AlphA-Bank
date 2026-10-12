@@ -12,13 +12,8 @@ async function main() {
     create: { id: "74881cb7-6fa0-4a86-a6b3-cf3e271c7ce0", name: "JK" },
     update: { name: "JK" },
   });
-  await prisma.user.upsert({
-    where: { id: "user-my" },
-    create: { id: "user-my", name: "MY" },
-    update: { name: "MY" },
-  });
   console.log(
-    "Seeded users: 74881cb7-6fa0-4a86-a6b3-cf3e271c7ce0 (JK), user-my (MY)",
+    "Seeded user: 74881cb7-6fa0-4a86-a6b3-cf3e271c7ce0 (JK)",
   );
 }
 

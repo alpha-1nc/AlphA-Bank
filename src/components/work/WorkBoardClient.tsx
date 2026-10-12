@@ -218,10 +218,6 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
           monthPinnedRef.current = false;
           setSelectedId(id);
         }}
-        onWorkplaceCreated={(w) => {
-          setWorkplaces((prev) => [...prev, w]);
-          setSelectedId(w.id);
-        }}
       />
 
       {loadError && (

@@ -4,17 +4,8 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard } from "lucide-react";
 import { getNavItemForPathname } from "@/lib/app-nav";
 
-type Props = {
-  /** 세션 프로필 표시명 (예: JK, MY). 없으면 오른쪽 칸 비움 */
-  profileLabel: string | null;
-};
-
-export default function MobileHeader({ profileLabel }: Props) {
+export default function MobileHeader() {
   const pathname = usePathname();
-
-  if (pathname.startsWith("/select-profile")) {
-    return null;
-  }
 
   const navItem = getNavItemForPathname(pathname);
   const pageTitle = navItem?.label ?? "AlphA Bank";
@@ -41,18 +32,8 @@ export default function MobileHeader({ profileLabel }: Props) {
             </div>
           </div>
 
-          <div className="relative z-[2] ml-auto flex w-16 shrink-0 items-center justify-center">
-            {profileLabel ? (
-              <span
-                className="inline-flex h-10 min-w-10 max-w-[4.5rem] shrink-0 items-center justify-center rounded-full bg-primary/15 px-2.5 text-sm font-bold tabular-nums text-primary "
-                aria-label={`현재 프로필 ${profileLabel}`}
-              >
-                {profileLabel}
-              </span>
-            ) : (
-              <span className="inline-block h-10 w-10 shrink-0" aria-hidden />
-            )}
-          </div>
+          {/* 우측: 제목 중앙 정렬 유지용 빈 칸 */}
+          <div className="ml-auto w-16 shrink-0" aria-hidden />
         </div>
       </header>
     </div>

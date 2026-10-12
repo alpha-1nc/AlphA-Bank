@@ -13,7 +13,6 @@ import { computeBudgetTotals } from "@/lib/budget-totals";
 import { isExpenseType } from "@/lib/cashflow-categories";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import { getNextPayday } from "@/lib/payday";
-import { getUserProfile } from "@/lib/user-profiles";
 import { getBudgetPeriodRange } from "@/lib/budget-period";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +68,7 @@ export default async function DashboardPage() {
   ]);
 
   // ── 헤더 ────────────────────────────────────────────────────────────────────
-  const displayName = getUserProfile(userId)?.displayName ?? "";
+  const displayName = "중경";
   const budgetMonthNumber = Number(currentBudgetMonth.split("-")[1]);
   const today = kstParts(new Date());
 

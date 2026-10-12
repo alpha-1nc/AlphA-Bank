@@ -18,7 +18,6 @@ import {
   factoryReset,
 } from "@/app/actions/settings";
 import type { Workplace } from "@/generated/prisma";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
 import WorkplaceSettingsCard from "@/components/settings/WorkplaceSettingsCard";
 import SettingsSection, { SettingsIconBox } from "@/components/settings/SettingsSection";
 
@@ -37,17 +36,11 @@ function downloadCSV(content: string, filename: string) {
 interface SettingsClientProps {
   initialBudgetStartDate: number;
   initialWorkplaces: Workplace[];
-  currentUserId: string;
-  currentProfileName: string;
-  currentProfileInitial: string;
 }
 
 export default function SettingsClient({
   initialBudgetStartDate,
   initialWorkplaces,
-  currentUserId,
-  currentProfileName,
-  currentProfileInitial,
 }: SettingsClientProps) {
   const [budgetStartDate, setBudgetStartDate] = useState(initialBudgetStartDate);
   const [dayOpen, setDayOpen] = useState(false);
@@ -55,7 +48,6 @@ export default function SettingsClient({
   const [confirmInput, setConfirmInput] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [, startTransition] = useTransition();
   const { openToast } = useToast();
   const { openConfirm } = useDialog();
@@ -81,21 +73,6 @@ export default function SettingsClient({
       downloadCSV(combined, `alphabank-export-${timestamp}.csv`);
     } finally {
       setIsExporting(false);
-    }
-  }
-
-  async function handleSwitchProfile() {
-    if (isSwitchingProfile) return;
-    setIsSwitchingProfile(true);
-    try {
-      const res = await fetch("/api/session/destroy", { method: "POST" });
-      if (!res.ok) {
-        setIsSwitchingProfile(false);
-        return;
-      }
-      window.location.href = "/select-profile";
-    } catch {
-      setIsSwitchingProfile(false);
     }
   }
 
@@ -139,7 +116,6 @@ export default function SettingsClient({
 
   return (
     <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[960px] mx-auto min-w-0 overflow-x-hidden">
-      {isSwitchingProfile ? <LoadingSpinner mode="overlay" /> : null}
       <Top
         className="hidden px-0 md:block"
         upperGap={0}
@@ -223,35 +199,6 @@ export default function SettingsClient({
       </SettingsSection>
 
       <WorkplaceSettingsCard initialWorkplaces={initialWorkplaces} />
-
-      {/* 현재 프로필 */}
-      <SettingsSection title="현재 프로필">
-        <ListRow
-          border="none"
-          verticalPadding="medium"
-          left={
-            <span
-              className="t6 flex h-9 w-9 items-center justify-center rounded-full bg-divider font-bold text-fg-secondary"
-              aria-hidden
-            >
-              {currentProfileInitial}
-            </span>
-          }
-          contents={<ListRow.Texts type="2RowTypeA" top={currentProfileName} bottom="이 기기에서 사용 중인 프로필" />}
-          right={
-            <Button
-              size="small"
-              color="light"
-              variant="weak"
-              display="block"
-              disabled={isSwitchingProfile}
-              onClick={handleSwitchProfile}
-            >
-              {isSwitchingProfile ? "전환 중…" : "전환"}
-            </Button>
-          }
-        />
-      </SettingsSection>
 
       <footer className="pt-7 pb-4 text-center space-y-1">
         <p className="st12 numeric text-fg-disabled">v1.0.0</p>

@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Manrope } from "next/font/google";
-import { cookies } from "next/headers";
-import { getIronSession } from "iron-session";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
@@ -13,16 +11,7 @@ import MobileTabBar, { MobileTabBarFallback } from "@/components/MobileTabBar";
 import MobileMainPad from "@/components/MobileMainPad";
 import { AppSerwistProvider } from "@/components/AppSerwistProvider";
 import { OverlayProvider } from "@/components/ui";
-import { type SessionData, sessionOptions } from "@/lib/session";
-import { getUserProfile, isValidUserId } from "@/lib/user-profiles";
 import { buildTokenCSS } from "@/lib/design-tokens";
-
-async function getSessionProfileLabel(): Promise<string | null> {
-  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  const uid = session.userId;
-  if (!uid || !isValidUserId(uid)) return null;
-  return getUserProfile(uid)?.name ?? null;
-}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -69,13 +58,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const profileLabel = await getSessionProfileLabel();
-
   return (
     <html
       lang="ko"
@@ -116,7 +103,7 @@ export default async function RootLayout({
               {/* 우측 메인 영역 */}
               <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
                 <MobileFirstVisitLogoIntro />
-                <MobileHeader profileLabel={profileLabel} />
+                <MobileHeader />
                 <MobileMainPad>{children}</MobileMainPad>
               </div>
               <Suspense fallback={<MobileTabBarFallback />}>

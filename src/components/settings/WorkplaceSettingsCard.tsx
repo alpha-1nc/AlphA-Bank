@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Briefcase, Check, ChevronLeft } from "lucide-react";
 import {
   BottomSheet,
+  Button,
   ConfirmDialog,
   IconButton,
   ListRow,
@@ -13,10 +14,12 @@ import {
   TextButton,
   TextField,
   useDialog,
+  useToast,
 } from "@/components/ui";
 import type { Workplace } from "@/generated/prisma";
 import { WORKPLACE_DEFAULTS } from "@/lib/workplace-client";
-import { deleteWorkplace, updateWorkplace } from "@/actions/workplace.actions";
+import { createWorkplace, deleteWorkplace, updateWorkplace } from "@/actions/workplace.actions";
+import { WORKPLACE_TYPE } from "@/lib/workplace-type";
 import {
   PAY_PERIOD_MODE,
   SALARY_PERIOD_MODE,
@@ -65,6 +68,7 @@ const stopProps = {
 export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
   const router = useRouter();
   const { openConfirm } = useDialog();
+  const { openToast } = useToast();
   const [workplaces, setWorkplaces] = useState(initialWorkplaces);
   const [editing, setEditing] = useState<Workplace | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -82,6 +86,49 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
   useEffect(() => {
     setWorkplaces(initialWorkplaces);
   }, [initialWorkplaces]);
+
+  /** editing 이 null 이면 추가 모드 */
+  function openCreate() {
+    setEditing(null);
+    setName("");
+    setHourly(String(WORKPLACE_DEFAULTS.hourlyWage));
+    setWeeklyOn(WORKPLACE_DEFAULTS.isWeeklyAllowanceActive);
+    setTaxOn(WORKPLACE_DEFAULTS.isTaxActive);
+    setActive(true);
+    setPayday(String(WORKPLACE_DEFAULTS.paydayOfMonth));
+    setPayMode(PAY_PERIOD_MODE.CALENDAR_MONTH);
+    setError(null);
+    setStep("form");
+    setSheetOpen(true);
+  }
+
+  function handleCreate() {
+    setError(null);
+    const wageNum = parseInt(hourly, 10);
+    if (Number.isNaN(wageNum) || wageNum < 0) {
+      setError("시급을 올바르게 입력해 주세요.");
+      return;
+    }
+    startTransition(async () => {
+      const res = await createWorkplace({
+        name: name.trim(),
+        type: WORKPLACE_TYPE.PARTTIME,
+        hourlyWage: wageNum,
+        isWeeklyAllowanceActive: weeklyOn,
+        isTaxActive: taxOn,
+        paydayOfMonth: parseInt(payday, 10),
+        payPeriodMode: payMode,
+      });
+      if (res.success) {
+        setWorkplaces((prev) => [...prev, res.data]);
+        router.refresh();
+        closeEdit();
+        openToast("근무지를 추가했어요", { type: "bottom" });
+      } else {
+        setError(res.error);
+      }
+    });
+  }
 
   function openEdit(w: Workplace) {
     setEditing(w);
@@ -143,7 +190,10 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
   }
 
   function handleSave() {
-    if (!editing) return;
+    if (!editing) {
+      handleCreate();
+      return;
+    }
     setError(null);
     const parsed = parseInt(hourly, 10);
     const fallbackWage = editing.hourlyWage ?? WORKPLACE_DEFAULTS.hourlyWage;
@@ -199,11 +249,16 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
     <>
       <SettingsSection
         title="근무지"
+        action={
+          <Button size="small" color="light" variant="fill" display="inline" onClick={openCreate}>
+            새 근무지 추가
+          </Button>
+        }
         note="시급·세금·주휴·월급일·급여 기간·재직 여부를 관리합니다. 시급/세금/주휴 저장 시 해당 근무지의 모든 근무 기록에도 동일하게 반영됩니다."
       >
         {workplaces.length === 0 ? (
           <p className="t7 px-6 py-6 text-center text-fg-tertiary">
-            등록된 근무지가 없습니다. 아르바이트 급여 화면에서 근무지를 추가해 주세요.
+            등록된 근무지가 없습니다. 위의 새 근무지 추가 버튼으로 추가해 주세요.
           </p>
         ) : (
           workplaces.map((w, i) => (
@@ -252,26 +307,32 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
           ) : step === "payMode" ? (
             backHeader("급여 기간")
           ) : (
-            <BottomSheet.Header>근무지 수정</BottomSheet.Header>
+            <BottomSheet.Header>{editing ? "근무지 수정" : "근무지 추가"}</BottomSheet.Header>
           )
         }
         cta={
           step === "form" ? (
             <div className="flex flex-col gap-3">
-              <BottomSheet.CTA loading={pending} disabled={!name.trim()} onClick={handleSave}>
-                저장
+              <BottomSheet.CTA
+                loading={pending}
+                disabled={!name.trim() || (!editing && !hourly.trim())}
+                onClick={handleSave}
+              >
+                {editing ? "저장" : "추가"}
               </BottomSheet.CTA>
-              <div className="flex justify-center">
-                <TextButton
-                  size="small"
-                  variant="clear"
-                  disabled={pending}
-                  style={{ color: "var(--tk-negative)" }}
-                  onClick={() => editing && handleDeleteWorkplace(editing)}
-                >
-                  근무지 삭제
-                </TextButton>
-              </div>
+              {editing && (
+                <div className="flex justify-center">
+                  <TextButton
+                    size="small"
+                    variant="clear"
+                    disabled={pending}
+                    style={{ color: "var(--tk-negative)" }}
+                    onClick={() => handleDeleteWorkplace(editing)}
+                  >
+                    근무지 삭제
+                  </TextButton>
+                </div>
+              )}
             </div>
           ) : undefined
         }
@@ -321,12 +382,14 @@ export default function WorkplaceSettingsCard({ initialWorkplaces }: Props) {
                 contents={<ListRow.Texts type="1RowTypeA" top="3.3% 세금 공제" />}
                 right={<Switch aria-label="3.3% 세금 공제" checked={taxOn} onCheckedChange={setTaxOn} {...stopProps} />}
               />
-              <ListRow
-                border="none"
-                verticalPadding="medium"
-                contents={<ListRow.Texts type="1RowTypeA" top="재직 중" />}
-                right={<Switch aria-label="재직 중" checked={active} onCheckedChange={handleActiveToggle} {...stopProps} />}
-              />
+              {editing && (
+                <ListRow
+                  border="none"
+                  verticalPadding="medium"
+                  contents={<ListRow.Texts type="1RowTypeA" top="재직 중" />}
+                  right={<Switch aria-label="재직 중" checked={active} onCheckedChange={handleActiveToggle} {...stopProps} />}
+                />
+              )}
               <ListRow
                 withTouchEffect
                 withArrow

@@ -26,20 +26,26 @@ export async function addBucket(data: AddBucketData) {
   revalidatePath("/");
 }
 
+/** amount > 0 납입, amount < 0 출금. 누적 금액이 0 미만이 되는 요청은 거부한다. */
 export async function addBucketFund(id: string, amount: number) {
+  if (!Number.isInteger(amount) || amount === 0) throw new Error("금액이 올바르지 않습니다.");
+
   const userId = await getCurrentUserId();
   const bucket = await prisma.bucketList.findFirst({
     where: { id, userId },
   });
   if (!bucket) throw new Error("목표를 찾을 수 없습니다.");
 
-  const newAmount = Math.max(0, bucket.currentAmount + amount);
+  const newAmount = bucket.currentAmount + amount;
+  if (newAmount < 0) throw new Error("출금액이 현재 누적 금액을 초과합니다.");
   const isAchieved = newAmount >= bucket.targetAmount;
 
-  await prisma.bucketList.updateMany({
-    where: { id, userId },
+  // 읽은 시점의 누적 금액이 그대로일 때만 반영 (동시 요청으로 0 미만이 되는 것을 방지)
+  const result = await prisma.bucketList.updateMany({
+    where: { id, userId, currentAmount: bucket.currentAmount },
     data: { currentAmount: newAmount, isAchieved },
   });
+  if (result.count !== 1) throw new Error("금액이 이미 변경되었습니다. 다시 시도해 주세요.");
   revalidatePath("/bucket");
   revalidatePath("/");
 }

@@ -89,8 +89,6 @@ export default function MobileTabBar() {
     setSheetOpen(false);
   }, [pathname]);
 
-  if (pathname.startsWith("/select-profile")) return null;
-
   function toggleTheme() {
     const next = !isDark;
     setIsDark(next);

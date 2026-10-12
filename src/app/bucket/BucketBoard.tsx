@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AMOUNT_INPUT_FORMAT } from "@/lib/number-input";
+import { SIGNED_AMOUNT_INPUT_FORMAT } from "@/lib/number-input";
 import { motion } from "motion/react";
 import { Minus, Plus, Star, Target } from "lucide-react";
 import {
@@ -98,10 +98,12 @@ const PAY_STEP = 10_000;
 /** −/+ 한 덩어리 스피너 (TextField right 슬롯용) */
 function AmountSpinner({
   canDecrease,
+  canIncrease,
   onDecrease,
   onIncrease,
 }: {
   canDecrease: boolean;
+  canIncrease: boolean;
   onDecrease: () => void;
   onIncrease: () => void;
 }) {
@@ -130,11 +132,12 @@ function AmountSpinner({
       <motion.button
         type="button"
         aria-label="10,000원 늘리기"
+        disabled={!canIncrease}
         onClick={onIncrease}
-        whileTap={tap}
+        whileTap={canIncrease ? tap : undefined}
         transition={press}
-        className="flex h-8 w-9 items-center justify-center"
-        style={{ color: "var(--tk-secondary-fg)" }}
+        className="flex h-8 w-9 items-center justify-center disabled:cursor-default"
+        style={{ color: canIncrease ? "var(--tk-secondary-fg)" : "var(--tk-disabled-fg)" }}
       >
         <Plus size={16} aria-hidden />
       </motion.button>
@@ -146,7 +149,8 @@ function BucketRow({ bucket }: { bucket: BucketItem }) {
   const { openToast } = useToast();
   const [pending, startTransition] = useTransition();
   const [editOpen, setEditOpen] = useState(false);
-  const [payAmount, setPayAmount] = useState(0);
+  // 입력 중 "-" 만 있는 상태를 표현하려고 문자열로 들고 있는다
+  const [payText, setPayText] = useState("0");
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completeDate, setCompleteDate] = useState(() => todayLocalYMD());
   const [imgError, setImgError] = useState(false);
@@ -158,6 +162,25 @@ function BucketRow({ bucket }: { bucket: BucketItem }) {
   const done = progress >= 100;
   const completedDateLabel = formatCompletedDateLabel(bucket.completedAt);
   const showImage = !!bucket.imageUrl && !imgError;
+
+  // 입력 범위: 하한은 -(현재 누적 금액), 상한은 제한 없음 (달성 목표는 0 = 출금만)
+  const minPay = -bucket.currentAmount;
+  const maxPay = bucket.isAchieved ? 0 : Infinity;
+  const payAmount = Number(payText) || 0;
+  const isWithdraw = payAmount < 0;
+  const showPayControl = !bucket.isCompleted;
+
+  function setPayAmount(n: number) {
+    setPayText(String(Math.min(maxPay, Math.max(minPay, n))));
+  }
+
+  function handlePayTextChange(raw: string) {
+    if (raw === "" || raw === "-") {
+      setPayText(raw === "" ? "0" : raw);
+      return;
+    }
+    setPayAmount(parseInt(raw, 10));
+  }
 
   const infoLine = bucket.isCompleted ? `완료${completedDateLabel ? ` ${completedDateLabel}` : ""}` : "";
 
@@ -174,12 +197,12 @@ function BucketRow({ bucket }: { bucket: BucketItem }) {
   }
 
   function handlePay() {
-    if (pending || payAmount <= 0) return;
+    if (pending || payAmount === 0) return;
     const amount = payAmount;
     startTransition(async () => {
       await addBucketFund(bucket.id, amount);
-      setPayAmount(0);
-      openToast(`${formatWon(amount)}을 납입했어요`, { type: "bottom" });
+      setPayText("0");
+      openToast(`${formatWon(Math.abs(amount))}을 ${amount < 0 ? "출금" : "납입"}했어요`, { type: "bottom" });
     });
   }
 
@@ -264,7 +287,7 @@ function BucketRow({ bucket }: { bucket: BucketItem }) {
             size="normal"
             color={done ? "var(--tk-positive)" : undefined}
           />
-          {!bucket.isCompleted && !bucket.isAchieved && (
+          {showPayControl && (
             <div
               className="mt-4 flex flex-col gap-2"
               onClick={(e) => e.stopPropagation()}
@@ -274,25 +297,31 @@ function BucketRow({ bucket }: { bucket: BucketItem }) {
                 variant="box"
                 type="text"
                 inputMode="numeric"
-                format={AMOUNT_INPUT_FORMAT}
+                format={SIGNED_AMOUNT_INPUT_FORMAT}
                 suffix="원"
-                aria-label="납입 금액"
+                aria-label={isWithdraw ? "출금 금액" : "납입 금액"}
                 className="numeric [&_input]:text-center"
-                value={String(payAmount)}
-                onChange={(e) => {
-                  const n = parseInt(e.target.value, 10);
-                  setPayAmount(isNaN(n) ? 0 : Math.max(0, n));
-                }}
+                value={payText}
+                onChange={(e) => handlePayTextChange(e.target.value)}
                 right={
                   <AmountSpinner
-                    canDecrease={payAmount > 0}
-                    onDecrease={() => setPayAmount((a) => Math.max(0, a - PAY_STEP))}
-                    onIncrease={() => setPayAmount((a) => a + PAY_STEP)}
+                    canDecrease={payAmount > minPay}
+                    canIncrease={payAmount < maxPay}
+                    onDecrease={() => setPayAmount(payAmount - PAY_STEP)}
+                    onIncrease={() => setPayAmount(payAmount + PAY_STEP)}
                   />
                 }
               />
-              <Button size="large" color="primary" variant="fill" display="block" loading={pending} disabled={payAmount <= 0} onClick={handlePay}>
-                납입
+              <Button
+                size="large"
+                color={isWithdraw ? "danger" : "primary"}
+                variant="fill"
+                display="block"
+                loading={pending}
+                disabled={payAmount === 0}
+                onClick={handlePay}
+              >
+                {isWithdraw || bucket.isAchieved ? "출금" : "납입"}
               </Button>
             </div>
           )}
