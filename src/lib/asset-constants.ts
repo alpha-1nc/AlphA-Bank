@@ -1,6 +1,6 @@
 export const ACCOUNT_TYPES = [
   "입출금",
-  "금고",
+  "목적자금",
   "저축",
   "증권",
   "연금",

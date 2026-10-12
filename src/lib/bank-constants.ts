@@ -7,7 +7,7 @@ export interface BankOption {
   logoFile: string;
 }
 
-/** 입출금/금고/저축용 은행 (이름 = 파일명) */
+/** 입출금/목적자금/저축용 은행 (이름 = 파일명) */
 const BANKS_DEPOSIT: BankOption[] = [
   { displayName: "국민은행", value: "국민은행", logoFile: "국민은행.svg" },
   { displayName: "농협", value: "농협", logoFile: "농협.svg" },
@@ -31,7 +31,7 @@ const BANKS_INVESTMENT: BankOption[] = [
   { displayName: "미래에셋증권", value: "미래에셋증권", logoFile: "미래에셋증권.svg" },
 ];
 
-const DEPOSIT_TYPES: AccountType[] = ["입출금", "금고", "저축"];
+const DEPOSIT_TYPES: AccountType[] = ["입출금", "목적자금", "저축"];
 const INVESTMENT_TYPES: AccountType[] = ["증권", "연금"];
 
 export function getBanksByType(type: AccountType): BankOption[] {

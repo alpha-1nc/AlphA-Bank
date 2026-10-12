@@ -1,17 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getThemeTokens } from "@/lib/design-tokens";
 import { formatWon } from "@/lib/format-money";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 
 interface MonthlyData {
   month: string;
@@ -20,112 +9,61 @@ interface MonthlyData {
   saving: number;
 }
 
-interface Props {
-  data: MonthlyData[];
-  /** 차트 높이(px 또는 "100%"). 기본 260 */
-  height?: number | `${number}%`;
+type Kind = "income" | "expense" | "saving";
+
+const SERIES: { key: Kind; label: string; color: string }[] = [
+  { key: "income", label: "수입", color: "var(--tk-accent)" },
+  { key: "expense", label: "예상 지출", color: "var(--tk-negative)" },
+  { key: "saving", label: "저축·투자", color: "var(--tk-positive)" },
+];
+
+const MIN_PCT = 3;
+
+/** 카드 제목 줄 오른쪽에 두는 범례 */
+export function CashFlowLegend() {
+  return (
+    <div className="t7 flex shrink-0 items-center gap-[10px] whitespace-nowrap text-fg-tertiary">
+      {SERIES.map((s) => (
+        <span key={s.key} className="flex items-center gap-[6px]">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} aria-hidden />
+          {s.label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
-function formatYAxis(value: number): string {
-  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(0)}억`;
-  if (value >= 10_000) return `${(value / 10_000).toFixed(0)}만`;
-  return String(value);
-}
+export default function CashFlowBarChart({ data }: { data: MonthlyData[] }) {
+  const max = Math.max(0, ...data.flatMap((d) => SERIES.map((s) => d[s.key])));
 
-function useIsDarkMode() {
-  const [isDark, setIsDark] = useState(false);
-  useEffect(() => {
-    const read = () =>
-      setIsDark(document.documentElement.classList.contains("dark"));
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => obs.disconnect();
-  }, []);
-  return isDark;
-}
-
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string }>;
-  label?: string;
-}) => {
-  if (active && payload && payload.length) {
-    const labelMap: Record<string, string> = {
-      income: "수입",
-      expense: "지출",
-      saving: "저축",
-    };
-    return (
-      <div className="rounded-control bg-card border border-divider px-4 py-3 space-y-1">
-        <p className="t7 font-bold text-foreground mb-2">{label}</p>
-        {payload.map((p) => (
-          <div key={p.name} className="t7 flex items-center gap-2">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
-            <span className="text-fg-secondary">{labelMap[p.name] ?? p.name}</span>
-            <span className="numeric ml-auto pl-4 font-semibold text-foreground">{formatWon(p.value)}</span>
+  return (
+    <div className="flex w-full flex-col" role="img" aria-label="최근 6개월 수입·지출·저축 막대 그래프">
+      <div className="flex h-[180px] items-end">
+        {data.map((d) => (
+          <div key={d.month} className="flex h-full min-w-0 flex-1 items-end justify-center gap-[6px]">
+            {SERIES.map((s) => {
+              const v = d[s.key];
+              if (v <= 0) return null;
+              const pct = Math.max(MIN_PCT, (v / max) * 100);
+              return (
+                <div
+                  key={s.key}
+                  title={`${d.month} ${s.label} ${formatWon(v)}`}
+                  className="w-4 rounded-[5px]"
+                  style={{ height: `${pct}%`, background: s.color }}
+                />
+              );
+            })}
           </div>
         ))}
       </div>
-    );
-  }
-  return null;
-};
-
-export default function CashFlowBarChart({ data, height = 260 }: Props) {
-  const isDark = useIsDarkMode();
-  const t = getThemeTokens(isDark);
-  // 값 3개가 모두 0인 달은 막대를 그리지 않고 월 라벨만 남김
-  const chartData = data.map((d) =>
-    d.income === 0 && d.expense === 0 && d.saving === 0
-      ? { month: d.month, income: null, expense: null, saving: null }
-      : d
-  );
-
-  return (
-    <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={4}>
-        <XAxis
-          dataKey="month"
-          tick={{ fontSize: 12, fill: t.tertiaryFg, fontWeight: 500 }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          tickFormatter={formatYAxis}
-          tick={{ fontSize: 12, fill: t.tertiaryFg, fontWeight: 400 }}
-          axisLine={false}
-          tickLine={false}
-          width={44}
-        />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: t.divider }} />
-        <Legend
-          iconType="circle"
-          iconSize={8}
-          formatter={(value) => {
-            const map: Record<string, string> = {
-              income: "수입",
-              expense: "지출",
-              saving: "저축",
-            };
-            return (
-              <span style={{ fontSize: 12, color: t.tertiaryFg, fontWeight: 500 }}>
-                {map[value] ?? value}
-              </span>
-            );
-          }}
-        />
-        <Bar dataKey="income" fill={t.accent} barSize={22} radius={[5, 5, 0, 0]} />
-        <Bar dataKey="expense" fill={t.negative} barSize={22} radius={[5, 5, 0, 0]} />
-        <Bar dataKey="saving" fill={t.positive} barSize={22} radius={[5, 5, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
+      <div className="mt-[10px] flex">
+        {data.map((d) => (
+          <div key={d.month} className="t7 numeric min-w-0 flex-1 text-center text-fg-tertiary">
+            {d.month}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

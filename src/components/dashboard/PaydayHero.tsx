@@ -21,7 +21,7 @@ type Props = {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-3">
+    <div className="flex flex-1 items-center justify-between gap-3 py-3">
       <span className="t6 font-medium text-fg-secondary">{label}</span>
       <span className="text-right text-foreground">{children}</span>
     </div>
@@ -30,7 +30,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 export default function PaydayHero({ payday, netPay, workHours, workplaceLabel, noRecords }: Props) {
   return (
-    <div className="flex flex-col rounded-card bg-card px-6 py-5">
+    <div className="flex h-full flex-col rounded-card bg-card px-6 pb-6 pt-5">
       {payday ? (
         <>
           <p className="t7 text-fg-tertiary">
@@ -49,7 +49,7 @@ export default function PaydayHero({ payday, netPay, workHours, workplaceLabel, 
             )}
           </p>
 
-          <div className="mt-4 divide-y divide-divider">
+          <div className="mt-4 flex flex-1 flex-col divide-y divide-divider">
             <Row label="예상 실수령">
               {noRecords ? (
                 <span className="t6 text-fg-tertiary">근무 기록 없음</span>

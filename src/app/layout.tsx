@@ -8,8 +8,11 @@ import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import MobileFirstVisitLogoIntro from "@/components/MobileFirstVisitLogoIntro";
+import { Suspense } from "react";
+import MobileTabBar, { MobileTabBarFallback } from "@/components/MobileTabBar";
 import MobileMainPad from "@/components/MobileMainPad";
 import { AppSerwistProvider } from "@/components/AppSerwistProvider";
+import { OverlayProvider } from "@/components/ui";
 import { type SessionData, sessionOptions } from "@/lib/session";
 import { getUserProfile, isValidUserId } from "@/lib/user-profiles";
 import { buildTokenCSS } from "@/lib/design-tokens";
@@ -103,19 +106,24 @@ export default async function RootLayout({
       </head>
       <body className="antialiased bg-background text-foreground overflow-x-hidden min-w-0">
         <AppSerwistProvider>
-          <div className="flex h-screen overflow-hidden min-w-0">
-            {/* 데스크탑 사이드바 */}
-            <div className="relative z-[100] hidden md:flex md:shrink-0">
-              <Sidebar />
-            </div>
+          <OverlayProvider>
+            <div className="flex h-screen overflow-hidden min-w-0">
+              {/* 데스크탑 사이드바 */}
+              <div className="relative z-[100] hidden md:flex md:shrink-0">
+                <Sidebar />
+              </div>
 
-            {/* 우측 메인 영역 */}
-            <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
-              <MobileFirstVisitLogoIntro />
-              <MobileHeader profileLabel={profileLabel} />
-              <MobileMainPad>{children}</MobileMainPad>
+              {/* 우측 메인 영역 */}
+              <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+                <MobileFirstVisitLogoIntro />
+                <MobileHeader profileLabel={profileLabel} />
+                <MobileMainPad>{children}</MobileMainPad>
+              </div>
+              <Suspense fallback={<MobileTabBarFallback />}>
+                <MobileTabBar />
+              </Suspense>
             </div>
-          </div>
+          </OverlayProvider>
         </AppSerwistProvider>
       </body>
     </html>

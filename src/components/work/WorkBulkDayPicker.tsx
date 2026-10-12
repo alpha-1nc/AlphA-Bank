@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 
@@ -104,45 +104,25 @@ export default function WorkBulkDayPicker({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="rounded-control border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary shrink-0 h-9 w-9"
-          onClick={prevMonth}
-          disabled={disabled}
-          aria-label="이전 달"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+        <IconButton aria-label="이전 달" icon={ChevronLeft} variant="clear" disabled={disabled} onClick={prevMonth} />
         <p className="t6 numeric font-bold text-foreground truncate text-center min-w-0">
           {title}
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="rounded-control border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary shrink-0 h-9 w-9"
-          onClick={nextMonth}
-          disabled={disabled}
-          aria-label="다음 달"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <IconButton aria-label="다음 달" icon={ChevronRight} variant="clear" disabled={disabled} onClick={nextMonth} />
       </div>
 
       <div>
-        <p className="t8 font-medium text-fg-tertiary mb-2">
+        <p className="st12 font-medium text-fg-tertiary mb-2">
           요일로 한 번에 (이번 달 해당 요일 전체 선택·해제)
         </p>
         <div className="grid grid-cols-7 gap-1">
           {WEEK_LABELS.map((label, weekday) => (
             <Button
               key={weekday}
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="t8 h-8 rounded-pill bg-divider px-0 font-semibold text-fg-secondary hover:bg-accent-soft hover:text-primary"
+              size="small"
+              color="light"
+              variant="weak"
+              className="min-w-0 px-0"
               onClick={() => toggleWeekday(weekday)}
               disabled={disabled}
               title={`이번 달 ${label}요일 전체`}
@@ -154,14 +134,14 @@ export default function WorkBulkDayPicker({
       </div>
 
       <div>
-        <p className="t8 font-medium text-fg-tertiary mb-2">
+        <p className="st12 font-medium text-fg-tertiary mb-2">
           날짜 탭으로 추가·제거
         </p>
         <div className="grid grid-cols-7 gap-1 text-center mb-1">
           {WEEK_LABELS.map((w) => (
             <div
               key={w}
-              className="t9 font-medium text-fg-tertiary py-1"
+              className="st13 font-medium text-fg-tertiary py-1"
             >
               {w}
             </div>
@@ -186,7 +166,7 @@ export default function WorkBulkDayPicker({
                 disabled={disabled}
                 onClick={() => toggleKey(cell.key!)}
                 className={cn(
-                  "t8 numeric aspect-square min-h-[2rem] rounded-control font-semibold transition-colors",
+                  "st12 numeric aspect-square min-h-[2rem] rounded-control font-semibold transition-colors",
                   "border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   sel
                     ? "border-primary bg-primary text-primary-foreground"

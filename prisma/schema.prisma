@@ -28,7 +28,7 @@ model Account {
   userId         String     @default("74881cb7-6fa0-4a86-a6b3-cf3e271c7ce0")
   user           User       @relation(fields: [userId], references: [id])
   name           String     // 계좌명
-  type           String     // 입출금, 금고, 저축, 증권, 연금
+  type           String     // 입출금, 목적자금, 저축, 증권, 연금
   bankName       String?    // 은행/증권사 명
   accountNumber  String?    // 계좌번호
   description    String?    // 계좌 용도 설명

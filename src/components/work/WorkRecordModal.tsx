@@ -1,36 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ResponsiveSelect } from "@/components/ui/responsive-select";
-import { CalendarDays, Loader2, Trash2 } from "lucide-react";
-import { Popover } from "@base-ui/react/popover";
-import { cn } from "@/lib/utils";
-import { formatWon } from "@/lib/format-money";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Check, ChevronLeft } from "lucide-react";
+import { BottomSheet, IconButton, ListRow, TextButton, TextField, useDialog, useToast } from "@/components/ui";
 import type { WorkRecord } from "@/generated/prisma";
 import {
   createWorkRecord,
   createWorkRecordsBatch,
   deleteWorkRecord,
-  getWorkRecordsByDateRange,
   updateWorkRecord,
 } from "@/actions/workRecord.actions";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import WorkBulkDayPicker from "@/components/work/WorkBulkDayPicker";
-import {
-  calculateDailyBasePay,
-  calculateTaxDeduction,
-  calculateWeeklyAllowanceForWeek,
-} from "@/utils/calculator";
-import type { WorkRecordForWeeklyAllowance } from "@/utils/calculator";
-import { getLocalWeekRangeContaining } from "@/lib/work-week";
+
+type Step = "form" | "dates" | "break" | "sameDay";
 
 const BREAK_OPTIONS = [0, 30, 60, 90, 120] as const;
 
@@ -98,16 +81,6 @@ function formatBulkDateSummary(keys: Set<string>): string {
   return `${arr.length}일 선택 · ${rangeFmt.format(first)}~${rangeFmt.format(last)}`;
 }
 
-function toWeeklyCalc(r: WorkRecord): WorkRecordForWeeklyAllowance {
-  return {
-    startTime: parseDateSafe(r.startTime),
-    endTime: parseDateSafe(r.endTime),
-    breakTimeMinutes: r.breakTimeMinutes ?? 0,
-    hourlyWage: r.hourlyWage,
-    isWeeklyAllowanceActive: r.isWeeklyAllowanceActive,
-  };
-}
-
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -138,9 +111,10 @@ export default function WorkRecordModal({
   );
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("18:00");
-  const [breakM, setBreakM] = useState<number>(30);
-  const [weekRecords, setWeekRecords] = useState<WorkRecord[]>([]);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [breakM, setBreakM] = useState<number>(0);
+  const [step, setStep] = useState<Step>("form");
+  const { openToast } = useToast();
+  const { openConfirm } = useDialog();
   const [pending, startTransition] = useTransition();
 
   const [bulkCalendarYear, setBulkCalendarYear] = useState(viewYear);
@@ -148,33 +122,6 @@ export default function WorkRecordModal({
   const [bulkSelectedKeys, setBulkSelectedKeys] = useState<Set<string>>(
     () => new Set()
   );
-
-  const estimateReferenceDate = useMemo(() => {
-    if (editId) return selectedDate;
-    if (bulkSelectedKeys.size > 0) {
-      const keys = Array.from(bulkSelectedKeys).sort();
-      return dateFromKstKey(keys[0]);
-    }
-    return selectedDate;
-  }, [editId, bulkSelectedKeys, selectedDate]);
-
-  const loadWeek = useCallback(async () => {
-    const { startInclusive, endInclusive } =
-      getLocalWeekRangeContaining(estimateReferenceDate);
-    const res = await getWorkRecordsByDateRange(
-      workplaceId,
-      startInclusive,
-      endInclusive
-    );
-    if (res.success) {
-      setWeekRecords(res.data);
-    }
-  }, [workplaceId, estimateReferenceDate]);
-
-  useEffect(() => {
-    if (!open) return;
-    void loadWeek();
-  }, [open, loadWeek]);
 
   useEffect(() => {
     if (!open) return;
@@ -187,7 +134,7 @@ export default function WorkRecordModal({
     if (!editId) {
       setStartTime("09:00");
       setEndTime("18:00");
-      setBreakM(30);
+      setBreakM(0);
       return;
     }
     const rec = recordsOnDay.find((r) => r.id === editId);
@@ -197,64 +144,14 @@ export default function WorkRecordModal({
     setBreakM(rec.breakTimeMinutes ?? 30);
   }, [editId, recordsOnDay]);
 
-  const estimate = useMemo(() => {
-    const wageNum = payroll.hourlyWage;
-    if (wageNum < 0) {
-      return null;
-    }
-    const start = combineDateAndTime(estimateReferenceDate, startTime);
-    const end = combineDateAndTime(estimateReferenceDate, endTime);
-    const dailyBase = calculateDailyBasePay({
-      startTime: start,
-      endTime: end,
-      breakTimeMinutes: breakM,
-      hourlyWage: wageNum,
-    });
+  function showError(message: string) {
+    openToast(message, { type: "bottom" });
+  }
 
-    const draft: WorkRecordForWeeklyAllowance = {
-      startTime: start,
-      endTime: end,
-      breakTimeMinutes: breakM,
-      hourlyWage: wageNum,
-      isWeeklyAllowanceActive: payroll.isWeeklyAllowanceActive,
-    };
-
-    const others = weekRecords.filter((r) => r.id !== editId);
-    const calcList: WorkRecordForWeeklyAllowance[] = [
-      ...others.map(toWeeklyCalc),
-      draft,
-    ];
-
-    let weekBaseSum = 0;
-    for (const r of calcList) {
-      weekBaseSum += calculateDailyBasePay({
-        startTime: r.startTime,
-        endTime: r.endTime,
-        breakTimeMinutes: r.breakTimeMinutes,
-        hourlyWage: r.hourlyWage,
-      });
-    }
-
-    const weeklyAllow = calculateWeeklyAllowanceForWeek(calcList);
-    const tax = calculateTaxDeduction({
-      baseTotal: weekBaseSum,
-      weeklyAllowanceTotal: weeklyAllow,
-      isTaxActive: payroll.isTaxActive,
-    });
-    const netWeek = weekBaseSum + weeklyAllow - tax;
-
-    return { dailyBase, weeklyAllow, tax, netWeek, weekBaseSum };
-  }, [
-    payroll.hourlyWage,
-    payroll.isWeeklyAllowanceActive,
-    payroll.isTaxActive,
-    startTime,
-    endTime,
-    breakM,
-    estimateReferenceDate,
-    weekRecords,
-    editId,
-  ]);
+  /** 입력값·step 초기화는 부모가 열 때마다 key 를 바꿔 새로 마운트하는 것으로 처리 (닫힘 애니메이션 중 화면이 바뀌지 않도록) */
+  function handleClose() {
+    onOpenChange(false);
+  }
 
   function validate(): string | null {
     const ref =
@@ -270,14 +167,13 @@ export default function WorkRecordModal({
   }
 
   function handleSubmit() {
-    setLocalError(null);
     if (!editId && bulkSelectedKeys.size === 0) {
-      setLocalError("달력에서 등록할 날짜를 한 개 이상 선택해 주세요.");
+      showError("달력에서 등록할 날짜를 한 개 이상 선택해 주세요.");
       return;
     }
     const err = validate();
     if (err) {
-      setLocalError(err);
+      showError(err);
       return;
     }
     const wageNum = payroll.hourlyWage;
@@ -297,9 +193,9 @@ export default function WorkRecordModal({
         });
         if (res.success) {
           onSuccess();
-          onOpenChange(false);
+          handleClose();
         } else {
-          setLocalError(res.error);
+          showError(res.error);
         }
       } else if (bulkSelectedKeys.size > 1) {
         const keys = Array.from(bulkSelectedKeys).sort();
@@ -327,9 +223,9 @@ export default function WorkRecordModal({
         const res = await createWorkRecordsBatch(payloads);
         if (res.success) {
           onSuccess();
-          onOpenChange(false);
+          handleClose();
         } else {
-          setLocalError(res.error);
+          showError(res.error);
         }
       } else {
         const keys = Array.from(bulkSelectedKeys).sort();
@@ -355,24 +251,29 @@ export default function WorkRecordModal({
         });
         if (res.success) {
           onSuccess();
-          onOpenChange(false);
+          handleClose();
         } else {
-          setLocalError(res.error);
+          showError(res.error);
         }
       }
     });
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!editId) return;
-    if (!window.confirm("이 근무 기록을 삭제할까요?")) return;
+    const ok = await openConfirm({
+      title: "이 근무 기록을 삭제할까요?",
+      confirmButton: "삭제",
+      cancelButton: "취소",
+    });
+    if (!ok) return;
     startTransition(async () => {
       const res = await deleteWorkRecord(editId);
       if (res.success) {
         onSuccess();
-        onOpenChange(false);
+        handleClose();
       } else {
-        setLocalError(res.error ?? "삭제에 실패했습니다.");
+        showError(res.error ?? "삭제에 실패했습니다.");
       }
     });
   }
@@ -402,178 +303,207 @@ export default function WorkRecordModal({
     [selectedDate]
   );
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-card max-md:rounded-t-card">
-        <div className="md:hidden -mx-1 mb-1 flex shrink-0 justify-center" aria-hidden>
-          <div className="h-1 w-11 rounded-full bg-divider" />
-        </div>
-        <DialogHeader>
-          <DialogTitle className="t5 font-bold text-foreground">
-            {editId
-              ? "근무 수정"
-              : bulkSelectedKeys.size > 1
-                ? `근무 등록 (${bulkSelectedKeys.size}일)`
-                : "근무 등록"}
-          </DialogTitle>
-        </DialogHeader>
+  const timeError = validate();
+  const missingTime = !startTime || !endTime;
+  const title = editId
+    ? "근무 수정"
+    : bulkSelectedKeys.size > 1
+      ? `근무 등록 (${bulkSelectedKeys.size}일)`
+      : "근무 등록";
+  const editingRecord = editId ? recordsOnDay.find((r) => r.id === editId) : undefined;
+  const sameDayLabel = editingRecord ? formatSameDayRecordLabel(editingRecord) : "새 근무 등록";
 
-        <div className="space-y-4 mt-1">
-          {recordsOnDay.length > 0 &&
-            (editId || bulkSelectedKeys.size <= 1) && (
-            <div className="space-y-2">
-              <label className="t7 font-medium text-fg-tertiary ml-1">
-                같은 날 근무 추가
-              </label>
-              <ResponsiveSelect
-                value={editId ?? "__new__"}
-                onValueChange={(v) => {
-                  if (v === "__new__") {
-                    setEditId(null);
-                    setStartTime("09:00");
-                    setEndTime("18:00");
-                    setBreakM(30);
-                  } else {
-                    setEditId(v);
-                    const rec = recordsOnDay.find((r) => r.id === v);
-                    if (rec) {
-                      setStartTime(toTimeInput(parseDateSafe(rec.startTime)));
-                      setEndTime(toTimeInput(parseDateSafe(rec.endTime)));
-                      setBreakM(rec.breakTimeMinutes ?? 30);
-                    }
-                  }
-                }}
-                options={sameDaySelectOptions}
-                placeholder="선택"
-                triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
-                renderValue={(v) => {
-                  if (!v || v === "__new__") return "새 근무 등록";
-                  const rec = recordsOnDay.find((r) => r.id === v);
-                  return rec ? formatSameDayRecordLabel(rec) : "선택";
-                }}
+  function subHeader(text: string) {
+    return (
+      <div className="flex items-center gap-1">
+        <IconButton aria-label="뒤로가기" icon={ChevronLeft} variant="clear" iconSize={24} onClick={() => setStep("form")} />
+        <BottomSheet.Header>{text}</BottomSheet.Header>
+      </div>
+    );
+  }
+
+  function selectSameDay(v: string) {
+    if (v === "__new__") {
+      setEditId(null);
+      setStartTime("09:00");
+      setEndTime("18:00");
+      setBreakM(0);
+    } else {
+      setEditId(v);
+      const rec = recordsOnDay.find((r) => r.id === v);
+      if (rec) {
+        setStartTime(toTimeInput(parseDateSafe(rec.startTime)));
+        setEndTime(toTimeInput(parseDateSafe(rec.endTime)));
+        setBreakM(rec.breakTimeMinutes ?? 30);
+      }
+    }
+    setStep("form");
+  }
+
+  return (
+    <BottomSheet
+      open={open}
+      onClose={handleClose}
+      hasTextField
+      header={
+        step === "dates"
+          ? subHeader("근무일 선택")
+          : step === "break"
+            ? subHeader("휴게 시간")
+            : step === "sameDay"
+              ? subHeader("같은 날 근무")
+              : <BottomSheet.Header>{title}</BottomSheet.Header>
+      }
+      cta={
+        step === "form" ? (
+          <div className="flex flex-col gap-3">
+            <BottomSheet.CTA
+              loading={pending}
+              disabled={(!editId && bulkSelectedKeys.size === 0) || missingTime}
+              onClick={handleSubmit}
+            >
+              {editId ? "저장" : bulkSelectedKeys.size > 1 ? `선택한 ${bulkSelectedKeys.size}일에 등록` : "등록"}
+            </BottomSheet.CTA>
+            {editId && (
+              <div className="flex justify-center">
+                <TextButton
+                  size="small"
+                  variant="clear"
+                  disabled={pending}
+                  style={{ color: "var(--tk-negative)" }}
+                  onClick={handleDelete}
+                >
+                  근무 기록 삭제
+                </TextButton>
+              </div>
+            )}
+          </div>
+        ) : step === "dates" ? (
+          <BottomSheet.CTA onClick={() => setStep("form")}>완료</BottomSheet.CTA>
+        ) : undefined
+      }
+    >
+      {step === "dates" ? (
+        <WorkBulkDayPicker
+          year={bulkCalendarYear}
+          month={bulkCalendarMonth}
+          onYearMonthChange={(y, m) => {
+            setBulkCalendarYear(y);
+            setBulkCalendarMonth(m);
+          }}
+          selectedKeys={bulkSelectedKeys}
+          onChange={setBulkSelectedKeys}
+          disabled={pending}
+        />
+      ) : step === "break" ? (
+        <div className="-mx-6 flex flex-col">
+          {BREAK_OPTIONS.map((m) => (
+            <ListRow
+              key={m}
+              withTouchEffect
+              border="none"
+              verticalPadding="medium"
+              contents={<ListRow.Texts type="1RowTypeA" top={`${m}분`} />}
+              right={m === breakM ? <Check className="h-5 w-5 text-primary" aria-hidden /> : undefined}
+              onClick={() => {
+                setBreakM(m);
+                setStep("form");
+              }}
+            />
+          ))}
+        </div>
+      ) : step === "sameDay" ? (
+        <div className="-mx-6 flex flex-col">
+          {sameDaySelectOptions.map((o) => (
+            <ListRow
+              key={o.value}
+              withTouchEffect
+              border="none"
+              verticalPadding="medium"
+              contents={<ListRow.Texts type="1RowTypeA" top={o.label} />}
+              right={o.value === (editId ?? "__new__") ? <Check className="h-5 w-5 text-primary" aria-hidden /> : undefined}
+              onClick={() => selectSameDay(o.value)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 pb-1 pt-2">
+          {recordsOnDay.length > 0 && (editId || bulkSelectedKeys.size <= 1) && (
+            <ListRow
+              withTouchEffect
+              withArrow
+              border="none"
+              horizontalPadding="small"
+              className="rounded-control bg-divider"
+              onClick={() => setStep("sameDay")}
+              contents={<span className="t5 font-medium text-fg-tertiary">같은 날 근무</span>}
+              right={<span className="t5 font-medium text-foreground">{sameDayLabel}</span>}
+            />
+          )}
+
+          {editId ? (
+            <ListRow
+              border="none"
+              horizontalPadding="small"
+              className="rounded-control bg-divider"
+              contents={<span className="t5 font-medium text-fg-tertiary">근무일</span>}
+              right={<span className="t5 font-medium text-foreground">{dateLabel}</span>}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <ListRow
+                withTouchEffect
+                withArrow
+                border="none"
+                horizontalPadding="small"
+                className="rounded-control bg-divider"
+                onClick={() => setStep("dates")}
+                contents={<span className="t5 font-medium text-fg-tertiary">근무일</span>}
+                right={<span className="t5 font-medium text-foreground">{formatBulkDateSummary(bulkSelectedKeys)}</span>}
               />
+              <p className="st12 text-fg-tertiary">
+                근무일을 누르면 달력에서 여러 날을 선택할 수 있어요.
+              </p>
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="t7 font-medium text-fg-tertiary ml-1">근무일</label>
-            {editId ? (
-              <div className="t6 flex items-center gap-2 rounded-control bg-background px-3 py-2 font-medium text-foreground">
-                <CalendarDays
-                  className="h-4 w-4 shrink-0 text-fg-tertiary"
-                  aria-hidden
-                />
-                <span>{dateLabel}</span>
-              </div>
-            ) : (
-              <Popover.Root modal={false}>
-                <Popover.Trigger
-                  type="button"
-                  disabled={pending}
-                  title="날짜를 눌러 여러 날 선택"
-                  className={cn(
-                    "t6 flex w-full items-center gap-2 rounded-control bg-background px-3 py-2 text-left font-medium text-foreground transition-colors",
-                    "hover:bg-accent-soft",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
-                    pending && "pointer-events-none opacity-60"
-                  )}
-                >
-                  <CalendarDays
-                    className="h-4 w-4 shrink-0 text-primary"
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1 leading-snug">
-                    {formatBulkDateSummary(bulkSelectedKeys)}
-                  </span>
-                </Popover.Trigger>
-                <Popover.Portal>
-                  <Popover.Positioner
-                    side="bottom"
-                    align="start"
-                    sideOffset={8}
-                    className="z-[100] isolate w-[min(calc(100vw-2rem),var(--anchor-width))] max-w-[min(calc(100vw-2rem),var(--anchor-width))]"
-                  >
-                    <Popover.Popup
-                      className={cn(
-                        "rounded-control border border-divider bg-card text-foreground",
-                        "duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-                        "max-h-[min(70vh,480px)] overflow-y-auto p-3 sm:p-4"
-                      )}
-                    >
-                      <WorkBulkDayPicker
-                        year={bulkCalendarYear}
-                        month={bulkCalendarMonth}
-                        onYearMonthChange={(y, m) => {
-                          setBulkCalendarYear(y);
-                          setBulkCalendarMonth(m);
-                        }}
-                        selectedKeys={bulkSelectedKeys}
-                        onChange={setBulkSelectedKeys}
-                        disabled={pending}
-                      />
-                      <Popover.Close
-                        type="button"
-                        className={cn(
-                          "t6 mt-3 inline-flex w-full items-center justify-center rounded-control bg-primary py-3 font-bold text-primary-foreground transition-colors",
-                          "hover:opacity-90",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-                        )}
-                      >
-                        완료
-                      </Popover.Close>
-                    </Popover.Popup>
-                  </Popover.Positioner>
-                </Popover.Portal>
-              </Popover.Root>
-            )}
-            {!editId && (
-              <p className="t8 text-fg-tertiary">
-                아이콘 옆 날짜를 누르면 달력에서 여러 날을 선택할 수 있어요.
-              </p>
-            )}
-          </div>
-
           {!editId && bulkSelectedKeys.size > 1 && (
-            <p className="t7 text-fg-tertiary -mt-2">
+            <p className="t7 text-fg-tertiary">
               아래 시작·종료·휴게는 선택한 모든 날에 동일하게 적용됩니다.
             </p>
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <label className="t7 font-medium text-fg-tertiary ml-1">시작</label>
-              <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="t6 h-11 rounded-control border-0 bg-background text-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="t7 font-medium text-fg-tertiary ml-1">종료</label>
-              <Input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="t6 h-11 rounded-control border-0 bg-background text-foreground"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="t7 font-medium text-fg-tertiary ml-1">휴게</label>
-            <ResponsiveSelect
-              value={String(breakM)}
-              onValueChange={(v) => {
-                if (v != null && v !== "") setBreakM(parseInt(v, 10));
-              }}
-              options={BREAK_OPTIONS.map((m) => ({
-                value: String(m),
-                label: `${m}분`,
-              }))}
-              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
+            <TextField
+              variant="box"
+              label="시작"
+              labelOption="sustain"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
+            <TextField
+              variant="box"
+              label="종료"
+              labelOption="sustain"
+              type="time"
+              hasError={!!timeError}
+              help={timeError ?? undefined}
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
             />
           </div>
+
+          <ListRow
+            withTouchEffect
+            withArrow
+            border="none"
+            horizontalPadding="small"
+            className="rounded-control bg-divider"
+            onClick={() => setStep("break")}
+            contents={<span className="t5 font-medium text-fg-tertiary">휴게</span>}
+            right={<span className="t5 font-medium text-foreground">{breakM}분</span>}
+          />
 
           <p className="t7 text-fg-tertiary">
             시급·3.3% 세금·주휴수당은{" "}
@@ -581,85 +511,8 @@ export default function WorkRecordModal({
             바꿀 수 있습니다.
           </p>
 
-          {estimate && (
-            <div className="rounded-control bg-background px-4 py-3 space-y-2">
-              {!editId && bulkSelectedKeys.size > 1 && (
-                <p className="t8 text-fg-tertiary">
-                  여러 날 등록 시, 선택한 날짜 중 가장 이른 날을 기준으로 주 단위 예상을
-                  보여 줍니다.
-                </p>
-              )}
-              <p className="t7 font-medium text-fg-tertiary">
-                이번 주 기준 예상 실수령액 (세후)
-              </p>
-              <p className="t3 numeric font-bold text-primary">
-                {formatWon(estimate.netWeek)}
-              </p>
-              <div className="t8 text-fg-tertiary space-y-1">
-                <p>
-                  이번 근무 일일 기본:{" "}
-                  <span className="numeric font-semibold text-foreground">
-                    {formatWon(estimate.dailyBase)}
-                  </span>
-                </p>
-                <p className="numeric">
-                  주 단위 합산: 기본 {formatWon(estimate.weekBaseSum)} ·
-                  주휴 {formatWon(estimate.weeklyAllow)} · 세금{" "}
-                  {formatWon(estimate.tax)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {localError && (
-            <p className="t7 text-negative" role="alert">
-              {localError}
-            </p>
-          )}
-
-          <div className="flex flex-col gap-2 pt-2">
-            {editId && (
-              <Button
-                type="button"
-                variant="destructive"
-                className="w-full rounded-control bg-negative text-primary-foreground hover:bg-negative hover:opacity-90 md:w-auto md:mr-auto"
-                onClick={handleDelete}
-                disabled={pending}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                삭제
-              </Button>
-            )}
-            <div className="flex flex-row gap-2 w-full [&>button]:flex-1 max-md:[&>button]:min-h-12">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
-                onClick={() => onOpenChange(false)}
-                disabled={pending}
-              >
-                취소
-              </Button>
-              <Button
-                type="button"
-                className="rounded-control bg-primary font-bold text-primary-foreground"
-                onClick={handleSubmit}
-                disabled={pending || (!editId && bulkSelectedKeys.size === 0)}
-              >
-                {pending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : editId ? (
-                  "저장"
-                ) : bulkSelectedKeys.size > 1 ? (
-                  `선택한 ${bulkSelectedKeys.size}일에 등록`
-                ) : (
-                  "등록"
-                )}
-              </Button>
-            </div>
-          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </BottomSheet>
   );
 }

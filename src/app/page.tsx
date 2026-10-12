@@ -1,11 +1,12 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserId } from "@/lib/auth";
 import { getSystemSettings } from "@/app/actions/settings";
 import { getOrCreateMonthlyBudget } from "@/app/actions/budget";
-import CashFlowBarChart from "@/components/dashboard/CashFlowBarChart";
+import CashFlowBarChart, { CashFlowLegend } from "@/components/dashboard/CashFlowBarChart";
 import PaydayHero from "@/components/dashboard/PaydayHero";
 import MonthSummary from "@/components/dashboard/MonthSummary";
+import { Button } from "@/components/ui";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { getDashboardWorkNet } from "@/lib/dashboard-work-net";
 import { getCurrentBudgetMonth } from "@/lib/budget-utils";
 import { computeBudgetTotals } from "@/lib/budget-totals";
@@ -132,24 +133,19 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="px-4 py-6 md:p-7 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
-      <div className="mx-auto w-full max-w-6xl flex flex-col gap-3">
-        {/* 1) 헤더 */}
-        <header className="flex items-baseline justify-between gap-3 shrink-0">
-          <h1 className="t3 font-bold text-foreground">
-            {displayName ? `${displayName}님의 ` : ""}
-            {budgetMonthNumber}월
-          </h1>
-          <p className="t7 shrink-0 text-fg-tertiary">
-            {today.month}월 {today.day}일 기준
-          </p>
-        </header>
+    <div className="px-4 py-6 md:p-7 min-h-full max-w-[960px] mx-auto min-w-0 overflow-x-hidden">
+      <div className="flex w-full flex-col gap-3">
+        {/* 1) 헤더 (md 이상) */}
+        <DashboardHeader
+          title={`${displayName ? `${displayName}님의 ` : ""}${budgetMonthNumber}월`}
+          asOfLabel={`${today.month}월 ${today.day}일 기준`}
+        />
 
         {/* 2) 월급 카드 + 이번 달 예산 카드 */}
-        <div className="flex flex-col lg:flex-row gap-3 shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-stretch gap-3 shrink-0">
           {/* 근무지가 없으면(퇴사 후 등) 월급 카드 숨김 → 예산 카드가 전체 폭 */}
           {payday && (
-            <div className="lg:w-[450px] lg:shrink-0 [&>*]:h-full">
+            <div className="lg:w-[450px] lg:shrink-0 lg:[&>*]:h-full">
               <PaydayHero
                 payday={payday}
                 netPay={workNet.netPay}
@@ -159,7 +155,7 @@ export default async function DashboardPage() {
               />
             </div>
           )}
-          <div className="flex-1 min-w-0 [&>*]:h-full">
+          <div className="flex-1 min-w-0 lg:[&>*]:h-full">
             <MonthSummary
               totalIncome={totals.totalIncome}
               totalExpense={totals.totalExpense}
@@ -173,19 +169,19 @@ export default async function DashboardPage() {
 
         {/* 3) 최근 6개월 */}
         <div className="flex flex-col rounded-card bg-card p-6 shrink-0">
-          <p className="t5 font-bold text-foreground mb-3 shrink-0">최근 6개월</p>
-          <div className="w-full min-w-0 h-[150px]">
-            <CashFlowBarChart data={barData} height="100%" />
+          <div className="mb-4 flex shrink-0 items-center justify-between gap-3">
+            <p className="t5 font-bold text-foreground">최근 6개월</p>
+            <CashFlowLegend />
+          </div>
+          <div className="w-full min-w-0">
+            <CashFlowBarChart data={barData} />
           </div>
         </div>
 
         {/* 4) 예산 짜러 가기 */}
-        <Link
-          href="/budget"
-          className="t5 flex h-[54px] w-full shrink-0 items-center justify-center rounded-control bg-primary font-bold text-primary-foreground transition-transform duration-150 active:scale-[0.98]"
-        >
+        <Button as="a" href="/budget" color="primary" variant="fill" size="xlarge" display="block">
           이번 달 예산 짜러 가기
-        </Link>
+        </Button>
       </div>
     </div>
   );

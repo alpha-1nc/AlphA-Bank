@@ -2,9 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ResponsiveSelect } from "@/components/ui/responsive-select";
+import { Button, IconButton } from "@/components/ui";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,12 +24,16 @@ function nextMonth(month: string): string {
   return `${y}-${String(m + 1).padStart(2, "0")}`;
 }
 
+/** 연도 입력과 월 셀렉트가 같은 모양으로 보이도록 공유하는 필드 스타일 */
+const POPOVER_FIELD_CLASS =
+  "t6 h-11 w-full min-w-0 rounded-control border-0 bg-divider px-3 text-foreground outline-none placeholder:text-fg-disabled focus-visible:ring-2 focus-visible:ring-primary/30";
+
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({
   value: String(i + 1).padStart(2, "0"),
   label: `${i + 1}월`,
 }));
 
-export function MonthNav({ currentMonth }: { currentMonth: string }) {
+export function MonthNav({ currentMonth, className }: { currentMonth: string; className?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -86,15 +88,13 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 p-3 md:p-4 rounded-card bg-card">
-      <Button
-        variant="outline"
-        size="default"
+    <div className={cn("flex items-center gap-1", className)}>
+      <IconButton
+        aria-label="이전 달"
+        icon={ChevronLeft}
+        variant="clear"
         onClick={() => goTo(prevMonth(currentMonth))}
-        className="rounded-control shrink-0 h-12 w-12 px-0 border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary touch-manipulation"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
+      />
 
       <div className="relative shrink-0">
         <button
@@ -102,7 +102,7 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
           type="button"
           onClick={() => setOpen((o) => !o)}
           className={cn(
-            "t4 numeric flex items-center justify-center gap-2 font-bold text-foreground min-w-[170px] py-2 px-4 rounded-control transition-colors touch-manipulation",
+            "t5 numeric flex items-center justify-center gap-2 font-bold text-foreground min-w-[140px] py-2 px-3 rounded-control transition-colors touch-manipulation",
             "hover:bg-divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           )}
         >
@@ -118,52 +118,67 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
             className="absolute left-1/2 top-full -translate-x-1/2 mt-2 z-50 w-[220px] rounded-control border border-divider bg-card p-4 animate-in fade-in-0 zoom-in-95"
             onKeyDown={(e) => e.key === "Enter" && applyQuickSelect()}
           >
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <label className="t7 font-medium text-fg-tertiary shrink-0">연도</label>
-                <Input
-                  ref={yearInputRef}
-                  type="number"
-                  min={2000}
-                  max={2100}
-                  step={1}
-                  value={yearInput}
-                  onChange={(e) => setYearInput(e.target.value)}
-                  className="t7 h-8 rounded-control"
-                  placeholder="2026"
-                />
+                <label htmlFor="budget-year" className="t7 w-8 shrink-0 text-left font-medium text-fg-tertiary">
+                  연도
+                </label>
+                <div className="relative min-w-0 flex-1">
+                  <input
+                    id="budget-year"
+                    ref={yearInputRef}
+                    type="number"
+                    inputMode="numeric"
+                    min={2000}
+                    max={2100}
+                    step={1}
+                    value={yearInput}
+                    onChange={(e) => setYearInput(e.target.value)}
+                    className={POPOVER_FIELD_CLASS}
+                    placeholder="2026"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <label className="t7 font-medium text-fg-tertiary shrink-0">월</label>
-                <ResponsiveSelect
-                  value={monthInput}
-                  onValueChange={(v) => v && setMonthInput(v)}
-                  options={MONTHS.map((mo) => ({ value: mo.value, label: mo.label }))}
-                  placeholder="월 선택"
-                  size="sm"
-                  triggerClassName="t7 h-8 flex-1 rounded-control"
-                />
+                <label htmlFor="budget-month" className="t7 w-8 shrink-0 text-left font-medium text-fg-tertiary">
+                  월
+                </label>
+                <div className="relative min-w-0 flex-1">
+                  <select
+                    id="budget-month"
+                    value={monthInput}
+                    onChange={(e) => e.target.value && setMonthInput(e.target.value)}
+                    className={cn(POPOVER_FIELD_CLASS, "appearance-none pr-9")}
+                  >
+                    {MONTHS.map((mo) => (
+                      <option key={mo.value} value={mo.value}>
+                        {mo.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
+                    style={{ color: "var(--tk-tertiary-fg)" }}
+                    aria-hidden
+                  />
+                </div>
               </div>
-              <Button
-                size="sm"
-                className="w-full rounded-control bg-primary text-primary-foreground"
-                onClick={applyQuickSelect}
-              >
-                해당 월로 이동
-              </Button>
+              <div className="pl-10 pt-1">
+                <Button size="small" color="primary" variant="fill" display="block" onClick={applyQuickSelect}>
+                  해당 월로 이동
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      <Button
-        variant="outline"
-        size="default"
+      <IconButton
+        aria-label="다음 달"
+        icon={ChevronRight}
+        variant="clear"
         onClick={() => goTo(nextMonth(currentMonth))}
-        className="rounded-control shrink-0 h-12 w-12 px-0 border-0 bg-divider text-fg-secondary hover:bg-accent-soft hover:text-primary touch-manipulation"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </Button>
+      />
     </div>
   );
 }

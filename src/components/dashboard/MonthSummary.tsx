@@ -39,7 +39,7 @@ export default function MonthSummary({
 
   const rows = [
     { label: "수입", value: totalIncome, dot: "bg-primary" },
-    { label: "지출", value: totalExpense, dot: "bg-negative" },
+    { label: "예상 지출", value: totalExpense, dot: "bg-negative" },
     { label: "저축·투자", value: totalSaving, dot: "bg-positive" },
   ];
 
@@ -51,7 +51,7 @@ export default function MonthSummary({
       </div>
 
       <p className="t7 mt-4 text-fg-tertiary">쓸 수 있는 생활비</p>
-      <p className="numeric text-[30px] leading-[40px] font-bold tracking-[-0.025em] text-foreground">
+      <p className="numeric t2 font-bold text-foreground">
         {formatWon(livingBalance)}
       </p>
 
@@ -59,7 +59,7 @@ export default function MonthSummary({
         <div className="h-full bg-negative" style={{ width: `${expensePct}%` }} />
         <div className="h-full bg-positive" style={{ width: `${savingPct}%` }} />
       </div>
-      <p className="t8 numeric mt-2 text-right text-fg-tertiary">
+      <p className="st12 numeric mt-2 text-right text-fg-tertiary">
         남은 생활비 {remainingPct === null ? "-" : `${remainingPct.toFixed(1)}%`}
       </p>
 
@@ -72,7 +72,7 @@ export default function MonthSummary({
               <p className="t6 numeric font-bold text-foreground">{formatWon(r.value)}</p>
               {/* 저축률은 금액 아래 줄. 다른 행도 같은 높이가 되도록 빈 줄을 둔다 */}
               <p
-                className={`t8 numeric text-fg-tertiary ${r.label === "저축·투자" ? "" : "invisible"}`}
+                className={`st12 numeric text-fg-tertiary ${r.label === "저축·투자" ? "" : "invisible"}`}
                 aria-hidden={r.label !== "저축·투자"}
               >
                 저축률 {savingRate === null ? "-" : `${savingRate.toFixed(1)}%`}

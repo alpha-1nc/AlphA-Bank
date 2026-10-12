@@ -54,7 +54,8 @@
 }
 
 @layer base {
-  :root {
+  :root,
+  .light {
     /* AlphA Bank Brand Colors
      * Primary Blue:  #3498db → oklch(0.627 0.152 253.5)
      * Primary Dark:  #217dbb → oklch(0.524 0.140 253.5)
@@ -299,38 +300,6 @@
     to { opacity: 1; }
   }
 
-  /* 모바일 햄버거 플로팅 메뉴: 순차 등장 / 역순 퇴장 */
-  @keyframes mobile-nav-item-in {
-    from {
-      opacity: 0;
-      transform: translateY(-0.5rem);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes mobile-nav-item-out {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(-0.5rem);
-    }
-  }
-
-  .mobile-nav-item-stagger {
-    opacity: 0;
-    animation: mobile-nav-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-
-  .mobile-nav-item-stagger-out {
-    animation: mobile-nav-item-out 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  }
-
   /* 모바일 전용: 가로 스크롤 완전 차단, 상하 스크롤만 허용 */
   @media (max-width: 767px) {
     html,
@@ -361,20 +330,57 @@
   }
 }
 
-/* ── 타이포 스케일 (TDS: font-size / line-height) ─────────────────────────
- * weight는 400/500/600/700만 사용. 20px 이상은 letter-spacing -0.025em */
+/* ── 타이포 스케일 (TDS 실제 체계: t1~t7 + st1~st13, font-size / line-height) ──
+ * 20px 이상은 letter-spacing -0.025em.
+ * 굵기는 font-regular(400) / font-medium(500) / font-semibold(600) / font-bold(700) 네 가지만 사용. */
 @utility t1 { font-size: 30px; line-height: 40px; letter-spacing: -0.025em; }
+@utility st1 { font-size: 29px; line-height: 38px; letter-spacing: -0.025em; }
+@utility st2 { font-size: 28px; line-height: 37px; letter-spacing: -0.025em; }
+@utility st3 { font-size: 27px; line-height: 36px; letter-spacing: -0.025em; }
 @utility t2 { font-size: 26px; line-height: 35px; letter-spacing: -0.025em; }
+@utility st4 { font-size: 25px; line-height: 34px; letter-spacing: -0.025em; }
+@utility st5 { font-size: 24px; line-height: 33px; letter-spacing: -0.025em; }
+@utility st6 { font-size: 23px; line-height: 32px; letter-spacing: -0.025em; }
 @utility t3 { font-size: 22px; line-height: 31px; letter-spacing: -0.025em; }
+@utility st7 { font-size: 21px; line-height: 30px; letter-spacing: -0.025em; }
 @utility t4 { font-size: 20px; line-height: 29px; letter-spacing: -0.025em; }
+@utility st8 { font-size: 19px; line-height: 28px; letter-spacing: 0; }
+@utility st9 { font-size: 18px; line-height: 27px; letter-spacing: 0; }
 @utility t5 { font-size: 17px; line-height: 25.5px; letter-spacing: 0; }
+@utility st10 { font-size: 16px; line-height: 24px; letter-spacing: 0; }
 @utility t6 { font-size: 15px; line-height: 22.5px; letter-spacing: 0; }
+@utility st11 { font-size: 14px; line-height: 21px; letter-spacing: 0; }
 @utility t7 { font-size: 13px; line-height: 19.5px; letter-spacing: 0; }
-@utility t8 { font-size: 12px; line-height: 18px; letter-spacing: 0; }
-@utility t9 { font-size: 11px; line-height: 16.5px; letter-spacing: 0; }
+@utility st12 { font-size: 12px; line-height: 18px; letter-spacing: 0; }
+@utility st13 { font-size: 11px; line-height: 16.5px; letter-spacing: 0; }
+
+@utility font-regular { font-weight: 400; }
 
 /* 숫자 공용 */
 @utility numeric {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+
+/* 숫자 입력 스피너(위아래 화살표) 전역 제거 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* 모바일 하단 탭바 배경: 불투명 폴백 → color-mix 지원 시 반투명 → backdrop-filter 지원 시에만 블러 */
+.mobile-tabbar {
+  background: var(--tk-card);
+}
+@supports (background: color-mix(in srgb, red 50%, transparent)) and
+  ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .mobile-tabbar {
+    background: color-mix(in srgb, var(--tk-card) 72%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
 }

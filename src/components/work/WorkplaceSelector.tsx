@@ -1,12 +1,9 @@
 "use client";
 
-import { useLayoutEffect, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ResponsiveSelect } from "@/components/ui/responsive-select";
-import { Plus, Loader2 } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ChevronLeft, Check } from "lucide-react";
+import { BottomSheet, Button, IconButton, ListRow, Switch, Tab, TextField, useToast } from "@/components/ui";
+import { AMOUNT_INPUT_FORMAT } from "@/lib/number-input";
 import {
   PAY_PERIOD_MODE,
   SALARY_PERIOD_MODE,
@@ -15,28 +12,17 @@ import {
 import type { Workplace } from "@/generated/prisma";
 import { createWorkplace } from "@/actions/workplace.actions";
 import { WORKPLACE_TYPE } from "@/lib/workplace-type";
-import {
-  FieldSwitch,
-  HourlyWageField,
-} from "@/components/work/PayrollFormFields";
 
 const PAYDAY_OPTIONS = Array.from({ length: 31 }, (_, i) => i + 1);
 
-const PAYDAY_SELECT_OPTIONS = PAYDAY_OPTIONS.map((d) => ({
-  value: String(d),
-  label: `매월 ${d}일`,
-}));
+const PAY_PERIOD_OPTIONS = [
+  SALARY_PERIOD_MODE.CURRENT_MONTH,
+  PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY,
+] as string[];
 
-const PAY_PERIOD_SELECT_OPTIONS = [
-  {
-    value: SALARY_PERIOD_MODE.CURRENT_MONTH,
-    label: payPeriodModeLabel(SALARY_PERIOD_MODE.CURRENT_MONTH),
-  },
-  {
-    value: PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY,
-    label: payPeriodModeLabel(PAY_PERIOD_MODE.ROLLING_BEFORE_PAYDAY),
-  },
-];
+const DEFAULT_HOURLY = "10030";
+
+type Step = "form" | "payday" | "payMode";
 
 type Props = {
   workplaces: Workplace[];
@@ -53,33 +39,37 @@ export default function WorkplaceSelector({
 }: Props) {
   const active = workplaces.filter((w) => w.isActive);
   const [creating, setCreating] = useState(false);
+  const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
-  const [hourly, setHourly] = useState("10030");
+  const [hourly, setHourly] = useState(DEFAULT_HOURLY);
   const [weeklyOn, setWeeklyOn] = useState(true);
   const [taxOn, setTaxOn] = useState(true);
   const [payday, setPayday] = useState("10");
   const [payMode, setPayMode] = useState<string>(PAY_PERIOD_MODE.CALENDAR_MONTH);
-  const [error, setError] = useState<string | null>(null);
+  const [hourlyError, setHourlyError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { openToast } = useToast();
 
-  const [modalMount, setModalMount] = useState<HTMLElement | null>(null);
-
-  useLayoutEffect(() => {
-    setModalMount(document.body);
-  }, []);
-
-  function resetPayrollForm() {
-    setHourly("10030");
+  function resetForm() {
+    setStep("form");
+    setName("");
+    setHourly(DEFAULT_HOURLY);
     setWeeklyOn(true);
     setTaxOn(true);
     setPayday("10");
     setPayMode(PAY_PERIOD_MODE.CALENDAR_MONTH);
+    setHourlyError(null);
+  }
+
+  function handleClose() {
+    setCreating(false);
+    resetForm();
   }
 
   function submitCreate() {
     const wageNum = parseInt(hourly, 10);
     if (Number.isNaN(wageNum) || wageNum < 0) {
-      setError("시급을 올바르게 입력해 주세요.");
+      setHourlyError("시급을 올바르게 입력해 주세요.");
       return;
     }
     startTransition(async () => {
@@ -94,248 +84,181 @@ export default function WorkplaceSelector({
       });
       if (res.success) {
         onWorkplaceCreated(res.data);
-        setCreating(false);
-        setName("");
-        resetPayrollForm();
+        handleClose();
       } else {
-        setError(res.error);
+        openToast(res.error, { type: "bottom" });
       }
     });
   }
 
-  if (active.length === 0 && !creating) {
+  const subHeader = (title: string) => (
+    <div className="flex items-center gap-1">
+      <IconButton aria-label="뒤로가기" icon={ChevronLeft} variant="clear" iconSize={24} onClick={() => setStep("form")} />
+      <BottomSheet.Header>{title}</BottomSheet.Header>
+    </div>
+  );
+
+  const sheet = (
+    <BottomSheet
+      open={creating}
+      onClose={handleClose}
+      hasTextField
+      header={
+        step === "payday" ? subHeader("월급일 선택") : step === "payMode" ? subHeader("급여 기간 선택") : (
+          <BottomSheet.Header>새 근무지</BottomSheet.Header>
+        )
+      }
+      cta={
+        step === "form" ? (
+          <BottomSheet.CTA loading={pending} disabled={!name.trim()} onClick={submitCreate}>
+            추가
+          </BottomSheet.CTA>
+        ) : undefined
+      }
+    >
+      {step === "payday" ? (
+        <div className="-mx-6 flex flex-col">
+          {PAYDAY_OPTIONS.map((d) => (
+            <ListRow
+              key={d}
+              withTouchEffect
+              border="none"
+              verticalPadding="medium"
+              contents={<ListRow.Texts type="1RowTypeA" top={`매월 ${d}일`} />}
+              right={String(d) === payday ? <Check className="h-5 w-5 text-primary" aria-hidden /> : undefined}
+              onClick={() => {
+                setPayday(String(d));
+                setStep("form");
+              }}
+            />
+          ))}
+        </div>
+      ) : step === "payMode" ? (
+        <div className="-mx-6 flex flex-col">
+          {PAY_PERIOD_OPTIONS.map((m) => (
+            <ListRow
+              key={m}
+              withTouchEffect
+              border="none"
+              verticalPadding="medium"
+              contents={<ListRow.Texts type="1RowTypeA" top={payPeriodModeLabel(m)} />}
+              right={m === payMode ? <Check className="h-5 w-5 text-primary" aria-hidden /> : undefined}
+              onClick={() => {
+                setPayMode(m);
+                setStep("form");
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <form
+          className="flex flex-col gap-4 pb-1 pt-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (name.trim()) submitCreate();
+          }}
+        >
+          <TextField
+            variant="box"
+            label="근무지 이름"
+            labelOption="sustain"
+            placeholder="예: 편의점 A점"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <TextField
+            variant="box"
+            label="시급"
+            labelOption="sustain"
+            type="text"
+            inputMode="numeric"
+            format={AMOUNT_INPUT_FORMAT}
+            suffix="원"
+            hasError={!!hourlyError}
+            help={hourlyError ?? undefined}
+            value={hourly}
+            onChange={(e) => {
+              setHourly(e.target.value);
+              setHourlyError(null);
+            }}
+          />
+          <ListRow
+            border="none"
+            horizontalPadding="small"
+            className="rounded-control bg-divider"
+            contents={<span className="t5 font-medium text-foreground">주휴수당 적용</span>}
+            right={<Switch aria-label="주휴수당 적용" checked={weeklyOn} onCheckedChange={setWeeklyOn} />}
+          />
+          <ListRow
+            border="none"
+            horizontalPadding="small"
+            className="rounded-control bg-divider"
+            contents={<span className="t5 font-medium text-foreground">3.3% 세금 공제</span>}
+            right={<Switch aria-label="3.3% 세금 공제" checked={taxOn} onCheckedChange={setTaxOn} />}
+          />
+          <ListRow
+            withTouchEffect
+            withArrow
+            border="none"
+            horizontalPadding="small"
+            className="rounded-control bg-divider"
+            onClick={() => setStep("payday")}
+            contents={<span className="t5 font-medium text-fg-tertiary">월급일 (매월)</span>}
+            right={<span className="t5 font-medium text-foreground">매월 {payday}일</span>}
+          />
+          <ListRow
+            withTouchEffect
+            withArrow
+            border="none"
+            horizontalPadding="small"
+            className="rounded-control bg-divider"
+            onClick={() => setStep("payMode")}
+            contents={<span className="t5 font-medium text-fg-tertiary">급여 기간</span>}
+            right={<span className="t5 font-medium text-foreground">{payPeriodModeLabel(payMode)}</span>}
+          />
+        </form>
+      )}
+    </BottomSheet>
+  );
+
+  if (active.length === 0) {
     return (
       <div className="rounded-card bg-card p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <p className="t7 text-fg-tertiary mb-4">
           등록된 근무지가 없습니다. 첫 근무지를 추가해 주세요.
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
-          onClick={() => setCreating(true)}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          근무지 추가
+        <Button size="medium" color="light" variant="fill" display="inline" onClick={() => setCreating(true)}>
+          새 근무지 추가
         </Button>
+        {sheet}
       </div>
-    );
-  }
-
-  if (active.length === 0 && creating) {
-    return (
-      <form
-        className="rounded-card bg-card p-6 space-y-4 animate-in fade-in zoom-in-95 duration-300"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setError(null);
-          submitCreate();
-        }}
-      >
-        <p className="t5 font-bold text-foreground">새 근무지</p>
-        <div className="space-y-2">
-          <label className="t7 font-medium text-fg-tertiary ml-1">이름</label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="예: 편의점 A점"
-            className="t6 h-11 rounded-control border-0 bg-background text-foreground"
-            required
-          />
-        </div>
-        <HourlyWageField
-          id="wp-first-hourly"
-          value={hourly}
-          onChange={setHourly}
-        />
-        <FieldSwitch
-          label="주휴수당 적용"
-          checked={weeklyOn}
-          onCheckedChange={setWeeklyOn}
-        />
-        <FieldSwitch
-          label="3.3% 세금 공제"
-          checked={taxOn}
-          onCheckedChange={setTaxOn}
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <label className="t7 font-medium text-fg-tertiary ml-1">
-              월급일 (매월)
-            </label>
-            <ResponsiveSelect
-              value={payday}
-              onValueChange={(v) => v != null && setPayday(v)}
-              options={PAYDAY_SELECT_OPTIONS}
-              placeholder="일 선택"
-              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
-              contentClassName="max-h-60 rounded-control"
-            />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <label className="t7 font-medium text-fg-tertiary ml-1">
-              급여 기간
-            </label>
-            <ResponsiveSelect
-              value={payMode}
-              onValueChange={(v) => v != null && setPayMode(v)}
-              options={PAY_PERIOD_SELECT_OPTIONS}
-              placeholder="급여 기간 선택"
-              triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full min-w-0"
-              contentClassName="rounded-control max-w-[min(100vw-2rem,24rem)]"
-              renderValue={(v) =>
-                v != null && v !== "" ? payPeriodModeLabel(v) : null
-              }
-            />
-          </div>
-        </div>
-        {error && (
-          <p className="t7 text-negative" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="rounded-control border-0 bg-divider text-foreground hover:bg-divider"
-            onClick={() => {
-              setCreating(false);
-              setError(null);
-              resetPayrollForm();
-            }}
-          >
-            취소
-          </Button>
-          <Button type="submit" className="rounded-control bg-primary font-bold text-primary-foreground flex-1" disabled={pending}>
-            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "저장"}
-          </Button>
-        </div>
-      </form>
     );
   }
 
   return (
-    <div className="rounded-card bg-card p-4 sm:p-5 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
-        {active.map((w) => {
-          const isSel = selectedId === w.id;
-          return (
-            <button
-              key={w.id}
-              type="button"
-              onClick={() => onSelect(w.id)}
-              className={cn(
-                "t6 inline-flex max-w-full min-w-0 items-center rounded-pill px-4 py-2 font-semibold transition-colors duration-200 touch-manipulation",
-                isSel
-                  ? "bg-accent-soft text-primary"
-                  : "text-fg-tertiary hover:text-fg-secondary active:scale-[0.98]"
-              )}
-            >
-              <span className="truncate">{w.name}</span>
-            </button>
-          );
-        })}
+    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="min-w-0 flex-1">
+        <Tab
+          size="small"
+          fluid
+          itemGap={8}
+          ariaLabel="근무지"
+          onChange={(index) => {
+            const w = active[index];
+            if (w) onSelect(w.id);
+          }}
+        >
+          {active.map((w) => (
+            <Tab.Item key={w.id} selected={selectedId === w.id}>
+              {w.name}
+            </Tab.Item>
+          ))}
+        </Tab>
       </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="rounded-control border-0 bg-divider text-foreground hover:bg-divider shrink-0"
-        onClick={() => setCreating(true)}
-      >
-        <Plus className="h-4 w-4 mr-1" />
-        근무지 추가
+      <Button size="medium" color="light" variant="fill" display="inline" onClick={() => setCreating(true)}>
+        새 근무지 추가
       </Button>
-      {creating &&
-        modalMount &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in-0"
-            role="presentation"
-          >
-            <form
-            className="w-full max-w-sm max-h-[min(90vh,720px)] overflow-y-auto rounded-card bg-card p-6 space-y-4 animate-in zoom-in-95"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setError(null);
-              submitCreate();
-            }}
-          >
-            <p className="t5 font-bold text-foreground">새 근무지</p>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="근무지 이름"
-              className="t6 h-11 rounded-control border-0 bg-background text-foreground"
-              required
-            />
-            <HourlyWageField
-              id="wp-modal-hourly"
-              value={hourly}
-              onChange={setHourly}
-            />
-            <FieldSwitch
-              label="주휴수당 적용"
-              checked={weeklyOn}
-              onCheckedChange={setWeeklyOn}
-            />
-            <FieldSwitch
-              label="3.3% 세금 공제"
-              checked={taxOn}
-              onCheckedChange={setTaxOn}
-            />
-            <div className="space-y-2">
-              <label className="t7 font-medium text-fg-tertiary ml-1">
-                월급일 (매월)
-              </label>
-              <ResponsiveSelect
-                value={payday}
-                onValueChange={(v) => v != null && setPayday(v)}
-                options={PAYDAY_SELECT_OPTIONS}
-                placeholder="일 선택"
-                triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full"
-                contentClassName="max-h-60 rounded-control"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="t7 font-medium text-fg-tertiary ml-1">
-                급여 기간
-              </label>
-              <ResponsiveSelect
-                value={payMode}
-                onValueChange={(v) => v != null && setPayMode(v)}
-                options={PAY_PERIOD_SELECT_OPTIONS}
-                placeholder="급여 기간 선택"
-                triggerClassName="t6 h-11 rounded-control border-0 bg-background text-foreground w-full min-w-0"
-                contentClassName="rounded-control max-w-[min(100vw-2rem,24rem)]"
-                renderValue={(v) =>
-                  v != null && v !== "" ? payPeriodModeLabel(v) : null
-                }
-              />
-            </div>
-            {error && <p className="t7 text-negative">{error}</p>}
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="flex-1 rounded-control border-0 bg-divider text-foreground hover:bg-divider"
-                onClick={() => {
-                  setCreating(false);
-                  setError(null);
-                  resetPayrollForm();
-                }}
-              >
-                닫기
-              </Button>
-              <Button type="submit" className="flex-1 rounded-control bg-primary font-bold text-primary-foreground" disabled={pending}>
-                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "추가"}
-              </Button>
-            </div>
-          </form>
-          </div>,
-          modalMount
-        )}
+      {sheet}
     </div>
   );
 }

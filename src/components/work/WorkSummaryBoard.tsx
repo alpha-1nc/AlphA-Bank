@@ -43,7 +43,7 @@ export default function WorkSummaryBoard({ year, month, summary }: Props) {
           <p className="t5 numeric font-bold text-foreground">
             {formatWon(summary.paymentGross)}
           </p>
-          <p className="t8 numeric text-fg-tertiary mt-1">
+          <p className="st12 numeric text-fg-tertiary mt-1">
             기본 {formatWon(summary.basePay)} + 주휴 {formatWon(summary.weeklyPay)}
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function WorkSummaryBoard({ year, month, summary }: Props) {
           <p className="t5 numeric font-bold text-negative">
             {formatWon(summary.deductionTax)}
           </p>
-          <p className="t8 text-fg-tertiary mt-1">3.3% 세금 (주 단위 산정)</p>
+          <p className="st12 text-fg-tertiary mt-1">3.3% 세금 (주 단위 산정)</p>
         </div>
       </div>
 

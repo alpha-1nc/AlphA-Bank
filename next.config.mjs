@@ -19,6 +19,7 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
+    optimizePackageImports: ["@/components/ui"],
     serverActions: {
       bodySizeLimit: "10mb",
     },

@@ -94,7 +94,7 @@ export default function Sidebar() {
       {tooltip &&
         createPortal(
           <div
-            className="t8 fixed z-[2147483647] pointer-events-none -translate-y-1/2 whitespace-nowrap rounded-pill bg-foreground px-3 py-2 font-medium text-card"
+            className="st12 fixed z-[2147483647] pointer-events-none -translate-y-1/2 whitespace-nowrap rounded-pill bg-foreground px-3 py-2 font-medium text-card"
             style={{
               left: tooltip.x,
               top: tooltip.y,

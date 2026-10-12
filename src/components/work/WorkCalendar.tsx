@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ResponsiveSelect } from "@/components/ui/responsive-select";
+import { Button, IconButton } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { formatKstDateKey } from "@/lib/kst-date-key";
 import { effectivePaydayDay } from "@/lib/work-pay-schedule";
@@ -12,6 +10,10 @@ import { calculateDailyBasePay, getGrossWorkMinutes } from "@/utils/calculator";
 import type { WorkRecord } from "@/generated/prisma";
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** 연도 입력과 월 셀렉트가 같은 모양으로 보이도록 공유하는 필드 스타일 (/budget MonthNav 와 동일) */
+const POPOVER_FIELD_CLASS =
+  "t6 h-11 w-full min-w-0 rounded-control border-0 bg-divider px-3 text-foreground outline-none placeholder:text-fg-disabled focus-visible:ring-2 focus-visible:ring-primary/30";
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({
   value: String(i + 1).padStart(2, "0"),
@@ -168,15 +170,7 @@ export default function WorkCalendar({
   return (
     <div className="rounded-card bg-card p-3 sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-stretch justify-between gap-2 sm:gap-3 mb-6 p-2 sm:p-3 rounded-control bg-background">
-        <Button
-          type="button"
-          variant="outline"
-          size="default"
-          onClick={onPrevMonth}
-          className="h-11 w-11 px-0 rounded-control shrink-0 border-0 bg-card text-fg-secondary hover:bg-accent-soft hover:text-primary transition-all active:scale-95 touch-manipulation"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
+        <IconButton aria-label="이전 달" icon={ChevronLeft} variant="clear" onClick={onPrevMonth} />
         <div className="relative flex-1 flex items-center justify-center min-w-0">
           {onJumpToMonth ? (
             <>
@@ -200,42 +194,59 @@ export default function WorkCalendar({
               {monthPickerOpen && (
                 <div
                   ref={panelRef}
-                  className="absolute left-1/2 top-full z-50 mt-2 w-[min(100%,220px)] -translate-x-1/2 rounded-control border border-divider bg-card p-4 animate-in fade-in-0 zoom-in-95"
+                  className="absolute left-1/2 top-full z-50 mt-2 w-[220px] -translate-x-1/2 rounded-control border border-divider bg-card p-4 animate-in fade-in-0 zoom-in-95"
                   onKeyDown={(e) => e.key === "Enter" && applyMonthJump()}
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <label className="t7 font-medium text-fg-tertiary shrink-0">
+                      <label htmlFor="work-year" className="t7 w-8 shrink-0 text-left font-medium text-fg-tertiary">
                         연도
                       </label>
-                      <Input
-                        ref={yearInputRef}
-                        type="number"
-                        min={2000}
-                        max={2100}
-                        step={1}
-                        value={yearInput}
-                        onChange={(e) => setYearInput(e.target.value)}
-                        className="t7 h-8 rounded-control"
-                        placeholder="2026"
-                      />
+                      <div className="relative min-w-0 flex-1">
+                        <input
+                          id="work-year"
+                          ref={yearInputRef}
+                          type="number"
+                          inputMode="numeric"
+                          min={2000}
+                          max={2100}
+                          step={1}
+                          value={yearInput}
+                          onChange={(e) => setYearInput(e.target.value)}
+                          className={POPOVER_FIELD_CLASS}
+                          placeholder="2026"
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <label className="t7 font-medium text-fg-tertiary shrink-0">
+                      <label htmlFor="work-month" className="t7 w-8 shrink-0 text-left font-medium text-fg-tertiary">
                         월
                       </label>
-                      <ResponsiveSelect
-                        value={monthInput}
-                        onValueChange={(v) => v && setMonthInput(v)}
-                        options={MONTHS.map((mo) => ({ value: mo.value, label: mo.label }))}
-                        placeholder="월 선택"
-                        size="sm"
-                        triggerClassName="t7 h-8 flex-1 rounded-control"
-                      />
+                      <div className="relative min-w-0 flex-1">
+                        <select
+                          id="work-month"
+                          value={monthInput}
+                          onChange={(e) => e.target.value && setMonthInput(e.target.value)}
+                          className={cn(POPOVER_FIELD_CLASS, "appearance-none pr-9")}
+                        >
+                          {MONTHS.map((mo) => (
+                            <option key={mo.value} value={mo.value}>
+                              {mo.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2"
+                          style={{ color: "var(--tk-tertiary-fg)" }}
+                          aria-hidden
+                        />
+                      </div>
                     </div>
-                    <Button size="sm" className="w-full rounded-control bg-primary text-primary-foreground" onClick={applyMonthJump}>
-                      해당 월로 이동
-                    </Button>
+                    <div className="pl-10 pt-1">
+                      <Button size="small" color="primary" variant="fill" display="block" onClick={applyMonthJump}>
+                        해당 월로 이동
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -246,18 +257,10 @@ export default function WorkCalendar({
             </h2>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="default"
-          onClick={onNextMonth}
-          className="h-11 w-11 px-0 rounded-control shrink-0 border-0 bg-card text-fg-secondary hover:bg-accent-soft hover:text-primary transition-all active:scale-95 touch-manipulation"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+        <IconButton aria-label="다음 달" icon={ChevronRight} variant="clear" onClick={onNextMonth} />
       </div>
 
-      <p className="t8 text-fg-tertiary text-center px-1 mb-5">
+      <p className="st12 text-fg-tertiary text-center px-1 mb-5">
         {payPeriodCaption}
       </p>
 
@@ -300,9 +303,9 @@ export default function WorkCalendar({
               type="button"
               onClick={() => onDayClick(cell.date!)}
               className={cn(
-                "relative group flex min-h-[3.5rem] sm:min-h-[5.25rem] flex-col rounded-control border bg-card p-1 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
+                "relative group flex min-h-[3.5rem] sm:min-h-[5.25rem] flex-col rounded-control border p-1 sm:p-2 text-left transition-all duration-200 touch-manipulation select-none",
                 "md:hover:bg-accent-soft active:scale-[0.98]",
-                isToday ? "border-primary" : "border-divider"
+                isToday ? "border-accent-soft bg-accent-soft" : "border-divider bg-card"
               )}
             >
               <span className="flex items-start justify-between gap-1 w-full">
@@ -317,7 +320,7 @@ export default function WorkCalendar({
                 {isPayday && (
                   <>
                     <span
-                      className="t9 hidden sm:inline-flex shrink-0 rounded-pill bg-primary px-1 py-0.5 font-bold text-primary-foreground leading-none"
+                      className="st13 hidden sm:inline-flex shrink-0 rounded-pill bg-primary px-1 py-0.5 font-bold text-primary-foreground leading-none"
                       aria-hidden
                     >
                       월급
@@ -334,7 +337,7 @@ export default function WorkCalendar({
               {s && s.totalMinutes > 0 && (
                 <div className="mt-auto flex flex-col gap-1 items-center sm:items-stretch">
                   <span
-                    className="t9 numeric hidden sm:inline-flex max-w-full items-center justify-center rounded-pill bg-accent-soft px-1 py-0.5 font-semibold text-primary leading-none truncate"
+                    className={cn("st13 numeric hidden sm:inline-flex max-w-full items-center justify-center rounded-pill px-1 py-0.5 font-semibold text-primary leading-none truncate", isToday ? "bg-card" : "bg-accent-soft")}
                   >
                     {(s.totalMinutes / 60).toFixed(1)}h
                   </span>
@@ -344,7 +347,7 @@ export default function WorkCalendar({
                     aria-hidden
                   />
                   <span
-                    className="t8 numeric hidden sm:inline text-fg-tertiary truncate text-center"
+                    className="st12 numeric hidden sm:inline text-fg-tertiary truncate text-center"
                     title={`예상 일급 ${s.totalPay.toLocaleString("ko-KR")}원`}
                   >
                     {s.totalPay >= 10000

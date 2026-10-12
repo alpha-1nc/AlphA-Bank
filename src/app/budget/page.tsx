@@ -8,20 +8,17 @@ import { getBudgetPeriodRange } from "@/lib/budget-period";
 import { BudgetSummary } from "./BudgetSummary";
 import { CashFlowBoard } from "./CashFlowBoard";
 import { ImportPreviousMonthButton } from "./ImportPreviousMonthButton";
-import { MonthNav } from "./MonthNav";
-import { Wallet } from "lucide-react";
+import { BudgetHeader } from "./BudgetHeader";
 
 export const dynamic = "force-dynamic";
 
 /** 예산 통제 기간 표시 (시작일 ~ 종료일) */
 function formatPeriodLabel(start: Date, end: Date): string {
-  const f = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}.${m}.${day}`;
-  };
-  return `${f(start)} ~ ${f(end)}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const md = (d: Date) => `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+  if (start.getFullYear() === end.getFullYear()) return `${md(start)} ~ ${md(end)}`;
+  const ymd = (d: Date) => `${d.getFullYear()}.${md(d)}`;
+  return `${ymd(start)} ~ ${ymd(end)}`;
 }
 
 function isValidMonth(s: string): boolean {
@@ -48,27 +45,8 @@ export default async function BudgetPage({
   const { totalIncome, totalExpense, totalSaving, livingBalance } = computeBudgetTotals(budget.transactions);
 
   return (
-    <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="t3 hidden md:flex font-bold text-foreground mb-1 items-center gap-2 min-w-0">
-            <Wallet className="h-6 w-6 text-primary shrink-0" />
-            <span className="break-words">월별 예산</span>
-          </h1>
-          <p className="t7 hidden md:block text-fg-tertiary">
-            월간 예산 수립, 집행 추적
-          </p>
-        </div>
-      </header>
-
-      <MonthNav currentMonth={month} />
-
-      <p className="t7 md:hidden text-fg-tertiary break-words">
-        통제 기간 {periodLabel}
-      </p>
-      <p className="t7 hidden md:block text-fg-tertiary">
-        예산 통제 기간: {periodLabel}
-      </p>
+    <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[960px] mx-auto min-w-0 overflow-x-hidden">
+      <BudgetHeader month={month} periodLabel={periodLabel} />
 
       <BudgetSummary
         totalIncome={totalIncome}
@@ -77,21 +55,9 @@ export default async function BudgetPage({
         livingBalance={livingBalance}
       />
 
-      <div className="flex justify-end">
-        <ImportPreviousMonthButton currentMonth={month} />
-      </div>
+      <ImportPreviousMonthButton currentMonth={month} />
 
-      <section className="rounded-card bg-card p-4 md:p-7 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <h2 className="t5 font-bold text-foreground">
-            새 내역 추가
-          </h2>
-        </div>
-        <CashFlowBoard
-          monthlyBudgetId={budget.id}
-          transactions={budget.transactions}
-        />
-      </section>
+      <CashFlowBoard monthlyBudgetId={budget.id} transactions={budget.transactions} />
     </div>
   );
 }

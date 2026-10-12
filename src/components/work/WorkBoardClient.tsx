@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Briefcase } from "lucide-react";
+import { Badge, Top } from "@/components/ui";
 import WorkplaceSelector from "@/components/work/WorkplaceSelector";
 import WorkCalendar from "@/components/work/WorkCalendar";
 import WorkRecordModal from "@/components/work/WorkRecordModal";
@@ -64,6 +64,8 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDay, setModalDay] = useState<Date | null>(null);
+  /** 열 때마다 증가 — 같은 날짜를 다시 열어도 시트가 새로 마운트되어 입력값이 초기화됨 */
+  const [modalSeq, setModalSeq] = useState(0);
 
   const selected = useMemo(
     () => active.find((w) => w.id === selectedId) ?? null,
@@ -181,22 +183,33 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
 
   function handleDayClick(day: Date) {
     setModalDay(day);
+    setModalSeq((n) => n + 1);
     setModalOpen(true);
   }
 
   return (
-    <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[1600px] mx-auto min-w-0 overflow-x-hidden transition-opacity duration-300">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div>
-          <h1 className="t3 hidden md:flex font-bold text-foreground mb-1 items-center gap-2 min-w-0">
-            <Briefcase className="h-6 w-6 text-primary shrink-0" />
-            <span className="break-words">급여 계산기</span>
-          </h1>
-          <p className="t7 hidden md:block text-fg-tertiary">
+    <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[960px] mx-auto min-w-0 overflow-x-hidden">
+      {/* md 미만은 모바일 상단 바에 제목이 있어 Top 을 렌더하지 않는다 (월 이동은 캘린더 헤더) */}
+      <Top
+        className="hidden px-0 md:block"
+        upperGap={0}
+        lowerGap={0}
+        title={
+          <div className="flex min-w-0 items-center gap-2">
+            <Top.TitleParagraph size={22}>급여 계산기</Top.TitleParagraph>
+            {selected && (
+              <Badge color="grey" variant="weak" size="small">
+                {selected.name}
+              </Badge>
+            )}
+          </div>
+        }
+        subtitleBottom={
+          <Top.SubtitleParagraph size={15}>
             근무지별 시급·근무 기록으로 실수령액과 월별 추이를 확인합니다
-          </p>
-        </div>
-      </header>
+          </Top.SubtitleParagraph>
+        }
+      />
 
       <WorkplaceSelector
         workplaces={workplaces}
@@ -246,14 +259,11 @@ export default function WorkBoardClient({ initialWorkplaces }: Props) {
             onJumpToMonth={handleJumpToMonth}
           />
 
-          {modalOpen && modalDay && (
+          {modalDay && (
             <WorkRecordModal
-              key={`${selected.id}-${formatKstDateKey(modalDay)}`}
+              key={`${selected.id}-${formatKstDateKey(modalDay)}-${modalSeq}`}
               open={modalOpen}
-              onOpenChange={(o) => {
-                setModalOpen(o);
-                if (!o) setModalDay(null);
-              }}
+              onOpenChange={setModalOpen}
               workplaceId={selected.id}
               payroll={{
                 hourlyWage: selected.hourlyWage,
