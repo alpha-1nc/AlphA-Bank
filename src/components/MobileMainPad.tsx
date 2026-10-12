@@ -7,7 +7,7 @@ export default function MobileMainPad({ children }: { children: React.ReactNode 
     <main
       className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden min-w-0",
-        "pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0",
+        "mobile-main-pad",
         "pt-[calc(env(safe-area-inset-top,0px)+4rem)] md:pt-0"
       )}
     >

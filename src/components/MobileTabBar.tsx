@@ -53,18 +53,19 @@ function TabContent({ icon: Icon, label, active }: { icon: typeof Menu; label: s
   );
 }
 
-/** 탭 한 칸의 터치 영역: 높이 56 + safe-area 전체 */
+/** 탭 한 칸: 높이 56 (safe-area 여백은 nav 의 padding-bottom 이 따로 만든다) */
 const TAB_CELL =
-  "flex flex-1 min-w-0 select-none touch-manipulation pb-[env(safe-area-inset-bottom,0px)] [-webkit-tap-highlight-color:transparent]";
+  "flex h-14 flex-1 min-w-0 select-none touch-manipulation [-webkit-tap-highlight-color:transparent]";
+
+/** nav: 56px 탭 줄 아래 홈 인디케이터용 빈 띠(padding-bottom)는 globals.css 의 .mobile-tabbar 가 만든다 */
+const NAV_CLASS =
+  "mobile-tabbar fixed inset-x-0 bottom-0 z-[110] border-t border-border md:hidden";
 
 /** Suspense fallback: 같은 높이의 빈 탭바 */
 export function MobileTabBarFallback() {
   return (
-    <nav
-      className="mobile-tabbar fixed inset-x-0 bottom-0 z-[110] border-t border-border md:hidden"
-      aria-hidden
-    >
-      <div className="h-[calc(3.5rem+env(safe-area-inset-bottom,0px))]" />
+    <nav className={NAV_CLASS} aria-hidden>
+      <div className="h-14" />
     </nav>
   );
 }
@@ -109,11 +110,8 @@ export default function MobileTabBar() {
 
   return (
     <>
-      <nav
-        className="mobile-tabbar fixed inset-x-0 bottom-0 z-[110] border-t border-border md:hidden"
-        aria-label="주 메뉴"
-      >
-        <div className="flex h-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
+      <nav className={NAV_CLASS} aria-label="주 메뉴">
+        <div className="flex h-14">
           {TAB_ITEMS.map(({ href, label, icon }) => {
             const active = isActive(pathname, href);
             return (

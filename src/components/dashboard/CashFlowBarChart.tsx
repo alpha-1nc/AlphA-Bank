@@ -38,7 +38,7 @@ export default function CashFlowBarChart({ data }: { data: MonthlyData[] }) {
 
   return (
     <div className="flex w-full flex-col" role="img" aria-label="최근 6개월 수입·지출·저축 막대 그래프">
-      <div className="flex h-[180px] items-end">
+      <div className="flex h-[180px] items-end gap-[14px]">
         {data.map((d) => (
           <div key={d.month} className="flex h-full min-w-0 flex-1 items-end justify-center gap-[6px]">
             {SERIES.map((s) => {
@@ -49,7 +49,7 @@ export default function CashFlowBarChart({ data }: { data: MonthlyData[] }) {
                 <div
                   key={s.key}
                   title={`${d.month} ${s.label} ${formatWon(v)}`}
-                  className="w-4 rounded-[5px]"
+                  className="min-w-0 max-w-4 flex-1 rounded-[5px]"
                   style={{ height: `${pct}%`, background: s.color }}
                 />
               );
@@ -57,7 +57,7 @@ export default function CashFlowBarChart({ data }: { data: MonthlyData[] }) {
           </div>
         ))}
       </div>
-      <div className="mt-[10px] flex">
+      <div className="mt-[10px] flex gap-[14px]">
         {data.map((d) => (
           <div key={d.month} className="t7 numeric min-w-0 flex-1 text-center text-fg-tertiary">
             {d.month}
