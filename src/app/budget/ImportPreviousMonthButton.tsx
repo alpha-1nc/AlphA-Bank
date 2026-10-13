@@ -37,7 +37,7 @@ export function ImportPreviousMonthButton({ currentMonth }: ImportPreviousMonthB
   }
 
   return (
-    <div className="flex justify-end">
+    <div className="min-w-0">
       <Button size="medium" color="light" variant="fill" display="inline" loading={isPending} onClick={handleImport}>
         <Download className="h-4 w-4" aria-hidden />
         지난달 전체 불러오기

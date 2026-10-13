@@ -18,7 +18,6 @@ export interface AddSubscriptionData {
   amount: number;
   billingDay: number;
   category: string;
-  memo?: string | null;
 }
 
 export async function addSubscription(data: AddSubscriptionData) {
@@ -34,7 +33,6 @@ export async function addSubscription(data: AddSubscriptionData) {
       amount: data.amount,
       billingDay,
       category: data.category,
-      memo: data.memo?.trim() ?? null,
     },
   });
   revalidatePath("/subscription", "page");
@@ -46,7 +44,6 @@ export interface UpdateSubscriptionData {
   amount?: number;
   billingDay?: number;
   category?: string;
-  memo?: string | null;
 }
 
 export async function updateSubscription(id: string, data: UpdateSubscriptionData) {
@@ -66,9 +63,6 @@ export async function updateSubscription(id: string, data: UpdateSubscriptionDat
   }
   if (data.category !== undefined && data.category.trim()) {
     updateData.category = data.category;
-  }
-  if (data.memo !== undefined) {
-    updateData.memo = data.memo?.trim() || null;
   }
 
   if (Object.keys(updateData).length === 0) return;

@@ -123,6 +123,7 @@ export default function CashFlowFormSheet({
       open={open}
       onClose={handleClose}
       hasTextField
+      bodyFill={step === "emoji"}
       header={
         step === "emoji" ? (
           <div className="flex items-center gap-1">
@@ -157,8 +158,8 @@ export default function CashFlowFormSheet({
       }
     >
       {step === "emoji" ? (
-        <div className="-mx-6 flex flex-col items-center gap-2 overflow-x-auto">
-          <div className="flex w-full justify-end px-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 pb-1">
+          <div className="flex w-full flex-none justify-end">
             <Button
               size="small"
               color="light"
@@ -172,15 +173,17 @@ export default function CashFlowFormSheet({
               지우기
             </Button>
           </div>
-          <Suspense fallback={<div className="st12 flex h-48 items-center justify-center font-medium text-fg-tertiary">불러오는 중...</div>}>
-            <EmojiPickerPanel
-              theme={typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"}
-              onSelect={(native) => {
-                setEmoji(normalizeEmoji(native) ?? "");
-                setStep("form");
-              }}
-            />
-          </Suspense>
+          <div className="min-h-[230px] w-full min-w-0 flex-1 overflow-hidden">
+            <Suspense fallback={<div className="st12 flex h-48 items-center justify-center font-medium text-fg-tertiary">불러오는 중...</div>}>
+              <EmojiPickerPanel
+                theme={typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"}
+                onSelect={(native) => {
+                  setEmoji(normalizeEmoji(native) ?? "");
+                  setStep("form");
+                }}
+              />
+            </Suspense>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-4 pb-1 pt-2">

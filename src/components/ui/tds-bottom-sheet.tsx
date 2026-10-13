@@ -34,6 +34,8 @@ export type BottomSheetProps = {
   /** 키보드가 올라오면 시트를 키보드 위로 올린다 */
   hasTextField?: boolean;
   disableChildrenDragging?: boolean;
+  /** true 면 시트를 쓸 수 있는 최대 높이로 고정하고, 본문은 스크롤 없이 자식(flex-1 min-h-0)에게 높이를 넘긴다 */
+  bodyFill?: boolean;
   expandBottomSheet?: boolean;
   maxHeight?: number;
   expandedMaxHeight?: number;
@@ -87,6 +89,7 @@ function BottomSheetRoot({
   disableDimmer = false,
   hasTextField = false,
   disableChildrenDragging = false,
+  bodyFill = false,
   expandBottomSheet = false,
   maxHeight,
   expandedMaxHeight,
@@ -155,6 +158,8 @@ function BottomSheetRoot({
       : DEFAULT_EXPANDED_MAX_HEIGHT
     : undefined;
   const max = expanded ? height : maxHeight != null ? `${maxHeight}px` : DEFAULT_MAX_HEIGHT;
+  // bodyFill: 키보드가 올라오면 그만큼 줄여 시트가 화면 밖으로 밀리지 않게 한다
+  const fillHeight = bodyFill && keyboard > 0 ? `min(${max}, calc(100dvh - 64px - ${keyboard}px))` : max;
 
   return createPortal(
     <AnimatePresence onExitComplete={onExited}>
@@ -189,10 +194,10 @@ function BottomSheetRoot({
               if (typeof def === "object" && def !== null && "y" in def && def.y === 0) onEntered?.();
             }}
             className={cn(
-              "pointer-events-auto relative flex w-full max-w-[560px] flex-col rounded-t-[24px] bg-card text-foreground",
+              "pointer-events-auto relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-t-[24px] bg-card text-foreground",
               className
             )}
-            style={{ maxHeight: max, height, marginBottom: keyboard }}
+            style={{ maxHeight: fillHeight, height: bodyFill ? fillHeight : height, marginBottom: keyboard }}
           >
             {/* 핸들바 */}
             <div onPointerDown={startDrag} className="flex shrink-0 cursor-grab touch-none justify-center pb-1 pt-2">
@@ -207,12 +212,15 @@ function BottomSheetRoot({
             <div
               ref={contentRef}
               onPointerDown={(e) => {
-                if (!disableChildrenDragging && !contentScrollable()) startDrag(e);
+                if (!bodyFill && !disableChildrenDragging && !contentScrollable()) startDrag(e);
               }}
               onScroll={(e) => {
                 if (expandBottomSheetWhenScroll && e.currentTarget.scrollTop > 0) expand();
               }}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6"
+              className={cn(
+                "min-h-0 flex-1 overscroll-contain px-6",
+                bodyFill ? "flex flex-col overflow-y-hidden" : "overflow-y-auto"
+              )}
             >
               {children}
             </div>

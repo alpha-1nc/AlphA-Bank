@@ -9,7 +9,7 @@ export type CashFlowSection = (typeof CASHFLOW_SECTIONS)[number];
 
 export const SECTION_LABELS: Record<CashFlowSection, string> = {
   INCOME: "수입",
-  EXPENSE: "지출",
+  EXPENSE: "예상 지출",
   SAVING: "저축·투자",
 };
 

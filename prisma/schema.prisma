@@ -32,6 +32,7 @@ model Account {
   bankName       String?    // 은행/증권사 명
   accountNumber  String?    // 계좌번호
   description    String?    // 계좌 용도 설명
+  sortOrder      Int        @default(0) // 같은 type 안 표시 순서 (조회: sortOrder asc, createdAt asc)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @default(now()) @updatedAt
 }
@@ -98,7 +99,6 @@ model Subscription {
   billingDay Int      @default(1)
   category   String
   isActive   Boolean  @default(true)
-  memo       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 }

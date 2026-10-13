@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { Reorder, useDragControls } from "motion/react";
 import {
   Pencil,
   Trash2,
@@ -12,6 +13,7 @@ import {
   Vault,
   Copy,
   ChevronLeft,
+  GripVertical,
 } from "lucide-react";
 import {
   Badge,
@@ -20,12 +22,13 @@ import {
   IconButton,
   ListRow,
   SegmentedControl,
+  TextButton,
   TextField,
   Top,
   useDialog,
   useToast,
 } from "@/components/ui";
-import { addAccount, updateAccount, deleteAccount } from "@/app/actions/asset";
+import { addAccount, updateAccount, deleteAccount, reorderAccounts } from "@/app/actions/asset";
 import { ACCOUNT_TYPES, type AccountType } from "@/lib/asset-constants";
 import { getBanksByType, getBankLogoPath } from "@/lib/bank-constants";
 
@@ -210,15 +213,84 @@ function AccountFormSheet({
 
 // ─── Account Row ──────────────────────────────────────────────────────────────
 
-function AccountRow({ account, last }: { account: Account; last: boolean }) {
+function accountLeft(account: Account) {
   const Icon = getTypeIcon(account.type);
   const logoPath = getBankLogoPath(account.bankName);
+  return logoPath ? (
+    <ListRow.AssetIcon src={logoPath} shape="squircle" size="medium" />
+  ) : (
+    <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-divider">
+      <Icon className="h-5 w-5 text-fg-tertiary" aria-hidden />
+    </span>
+  );
+}
+
+function accountContents(account: Account) {
+  const bankLine = [account.bankName, account.accountNumber].filter(Boolean).join(" · ");
+  return account.description ? (
+    <ListRow.Texts type="3RowTypeA" top={account.description} middle={account.name} bottom={bankLine} />
+  ) : (
+    <ListRow.Texts type="2RowTypeA" top={account.name} bottom={bankLine} />
+  );
+}
+
+/** 편집 모드 행 — 핸들을 잡았을 때만 드래그, 핸들에서 ↑/↓ 키로도 이동 */
+function ReorderableAccountRow({
+  account,
+  last,
+  onMove,
+}: {
+  account: Account;
+  last: boolean;
+  onMove: (direction: -1 | 1) => void;
+}) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      as="div"
+      value={account}
+      dragListener={false}
+      dragControls={controls}
+      whileDrag={{ scale: 1.02 }}
+      className="relative bg-card"
+    >
+      <ListRow
+        border={last ? "none" : "indented"}
+        verticalPadding="medium"
+        left={accountLeft(account)}
+        contents={accountContents(account)}
+        right={
+          <button
+            type="button"
+            aria-label="순서 변경 핸들"
+            aria-description={`${account.name} 순서 변경. 위/아래 방향키로도 이동할 수 있어요`}
+            className="flex h-9 w-9 cursor-grab items-center justify-center text-fg-tertiary active:cursor-grabbing"
+            style={{ touchAction: "none" }}
+            onPointerDown={(e) => controls.start(e)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                onMove(-1);
+              } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                onMove(1);
+              }
+            }}
+          >
+            <GripVertical className="h-5 w-5" aria-hidden />
+          </button>
+        }
+      />
+    </Reorder.Item>
+  );
+}
+
+function AccountRow({ account, last }: { account: Account; last: boolean }) {
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const { openToast } = useToast();
   const { openConfirm } = useDialog();
-
-  const bankLine = [account.bankName, account.accountNumber].filter(Boolean).join(" · ");
 
   async function handleCopy() {
     if (!account.accountNumber) return;
@@ -243,22 +315,8 @@ function AccountRow({ account, last }: { account: Account; last: boolean }) {
       <ListRow
         border={last ? "none" : "indented"}
         verticalPadding="medium"
-        left={
-          logoPath ? (
-            <ListRow.AssetIcon src={logoPath} shape="squircle" size="medium" />
-          ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-divider">
-              <Icon className="h-5 w-5 text-fg-tertiary" aria-hidden />
-            </span>
-          )
-        }
-        contents={
-          account.description ? (
-            <ListRow.Texts type="3RowTypeA" top={account.description} middle={account.name} bottom={bankLine} />
-          ) : (
-            <ListRow.Texts type="2RowTypeA" top={account.name} bottom={bankLine} />
-          )
-        }
+        left={accountLeft(account)}
+        contents={accountContents(account)}
         right={
           <>
             {account.accountNumber && (
@@ -286,9 +344,13 @@ function AccountRow({ account, last }: { account: Account; last: boolean }) {
 function BoardColumn({
   type,
   accounts,
+  editing,
+  onReorder,
 }: {
   type: string;
   accounts: Account[];
+  editing: boolean;
+  onReorder: (type: string, next: Account[]) => void;
 }) {
   const Icon = getTypeIcon(type);
 
@@ -307,6 +369,29 @@ function BoardColumn({
         <div className="rounded-card bg-card px-4 py-6 text-center">
           <p className="t7 text-fg-tertiary">등록된 계좌가 없습니다</p>
         </div>
+      ) : editing ? (
+        <Reorder.Group
+          as="div"
+          axis="y"
+          values={accounts}
+          onReorder={(next) => onReorder(type, next)}
+          className="rounded-card bg-card"
+        >
+          {accounts.map((acc, i) => (
+            <ReorderableAccountRow
+              key={acc.id}
+              account={acc}
+              last={i === accounts.length - 1}
+              onMove={(dir) => {
+                const to = i + dir;
+                if (to < 0 || to >= accounts.length) return;
+                const next = [...accounts];
+                [next[i], next[to]] = [next[to], next[i]];
+                onReorder(type, next);
+              }}
+            />
+          ))}
+        </Reorder.Group>
       ) : (
         <div className="overflow-hidden rounded-card bg-card">
           {accounts.map((acc, i) => (
@@ -324,12 +409,72 @@ export default function AssetBoardClient({ grouped }: Props) {
   const allTypes = Array.from(ACCOUNT_TYPES);
   const totalAccounts = allTypes.reduce((sum, t) => sum + (grouped[t]?.length ?? 0), 0);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, startSaving] = useTransition();
+  const { openToast } = useToast();
+  /** 편집 중(또는 저장 직후 서버 갱신 전)에 보여줄 작업용 순서 */
+  const [draft, setDraft] = useState<GroupedAccounts | null>(null);
+
+  // 서버에서 새 목록이 내려오면 작업용 순서를 버리고 서버 값을 쓴다
+  useEffect(() => {
+    if (!editing) setDraft(null);
+  }, [grouped, editing]);
+
+  const view = draft ?? grouped;
+
+  function startEditing() {
+    setDraft(Object.fromEntries(allTypes.map((t) => [t, [...(grouped[t] ?? [])]])));
+    setEditing(true);
+  }
+
+  function handleReorder(type: string, next: Account[]) {
+    setDraft((prev) => (prev ? { ...prev, [type]: next } : prev));
+  }
+
+  function finishEditing() {
+    if (!draft) {
+      setEditing(false);
+      return;
+    }
+    const changed = allTypes.filter((t) => {
+      const before = (grouped[t] ?? []).map((a) => a.id).join(",");
+      const after = (draft[t] ?? []).map((a) => a.id).join(",");
+      return before !== after;
+    });
+    if (changed.length === 0) {
+      setEditing(false);
+      return;
+    }
+    startSaving(async () => {
+      try {
+        const results = await Promise.all(changed.map((t) => reorderAccounts(draft[t].map((a) => a.id))));
+        if (results.some((ok) => !ok)) throw new Error("reorder rejected");
+        openToast("순서를 저장했어요", { type: "bottom" });
+        setEditing(false);
+      } catch {
+        openToast("순서를 저장하지 못했어요. 다시 시도해 주세요", { type: "bottom" });
+      }
+    });
+  }
+
+  const editButton = (
+    <TextButton
+      size="small"
+      variant="clear"
+      className="text-primary"
+      disabled={saving}
+      onClick={editing ? finishEditing : startEditing}
+    >
+      {editing ? (saving ? "저장 중…" : "완료") : "순서 편집"}
+    </TextButton>
+  );
 
   return (
     <div className="px-4 py-6 md:p-7 space-y-7 min-h-full max-w-[960px] mx-auto min-w-0 overflow-x-hidden">
       {/* Page Header */}
-      <div className="flex justify-end md:hidden">
-        <Button size="medium" color="primary" variant="fill" onClick={() => setAdding(true)}>
+      <div className="flex items-center justify-end gap-3 md:hidden">
+        {editButton}
+        <Button size="medium" color="primary" variant="fill" disabled={editing} onClick={() => setAdding(true)}>
           새 계좌 추가
         </Button>
       </div>
@@ -346,9 +491,22 @@ export default function AssetBoardClient({ grouped }: Props) {
           </div>
         }
         subtitleBottom={<Top.SubtitleParagraph size={15}>계좌 정보 관리</Top.SubtitleParagraph>}
-        right={<Top.RightButton onClick={() => setAdding(true)}>새 계좌 추가</Top.RightButton>}
+        right={
+          <div className="flex items-center gap-3">
+            {editButton}
+            <Top.RightButton disabled={editing} onClick={() => setAdding(true)}>
+              새 계좌 추가
+            </Top.RightButton>
+          </div>
+        }
       />
       <AccountFormSheet open={adding} onClose={() => setAdding(false)} />
+
+      {editing && (
+        <p className="t7 text-fg-tertiary">
+          같은 종류 안에서만 순서를 바꿀 수 있어요. 종류를 바꾸려면 계좌 수정에서 변경해 주세요.
+        </p>
+      )}
 
       {/* Board View */}
       <div className="flex flex-col gap-7">
@@ -356,7 +514,9 @@ export default function AssetBoardClient({ grouped }: Props) {
           <BoardColumn
             key={type}
             type={type}
-            accounts={grouped[type] ?? []}
+            accounts={view[type] ?? []}
+            editing={editing}
+            onReorder={handleReorder}
           />
         ))}
       </div>

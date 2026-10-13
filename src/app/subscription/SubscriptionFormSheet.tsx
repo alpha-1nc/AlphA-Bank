@@ -18,7 +18,6 @@ interface Subscription {
   amount: number;
   billingDay: number;
   category: string;
-  memo: string | null;
 }
 
 /** 구독 추가 / 수정 공용 시트 */
@@ -49,7 +48,6 @@ export default function SubscriptionFormSheet({
   const [amount, setAmount] = useState(subscription ? String(subscription.amount) : "");
   const [billingDay, setBillingDay] = useState(subscription ? String(subscription.billingDay) : "1");
   const [category, setCategory] = useState<string>(subscription?.category ?? SUBSCRIPTION_CATEGORIES[0]);
-  const [memo, setMemo] = useState(subscription?.memo ?? "");
   const [step, setStep] = useState<"form" | "category">("form");
 
   const parsedAmount = parseInt(amount, 10);
@@ -68,7 +66,6 @@ export default function SubscriptionFormSheet({
     setAmount(subscription ? String(subscription.amount) : "");
     setBillingDay(subscription ? String(subscription.billingDay) : "1");
     setCategory(subscription?.category ?? SUBSCRIPTION_CATEGORIES[0]);
-    setMemo(subscription?.memo ?? "");
   }
 
   function handleClose() {
@@ -85,7 +82,6 @@ export default function SubscriptionFormSheet({
         amount: parsedAmount,
         billingDay: parsedDay,
         category,
-        memo: memo || null,
       };
       if (subscription) {
         await updateSubscription(subscription.id, data);
@@ -233,13 +229,6 @@ export default function SubscriptionFormSheet({
             onClick={() => setStep("category")}
             contents={<span className="t5 font-medium text-fg-tertiary">카테고리</span>}
             right={<span className="t5 font-medium text-foreground">{category}</span>}
-          />
-          <TextField
-            variant="box"
-            label="메모 (선택)"
-            labelOption="sustain"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
           />
         </div>
       )}

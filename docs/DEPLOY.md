@@ -34,6 +34,7 @@ DB에 손대기 전에 새 이미지 빌드가 성공하는지 먼저 확인하�
 | `MonthlyBudget` | `personalAllowance` | 개인 용돈 |
 | `CashFlow` | `accountId` | 계좌 연동 (Account FK 포함) |
 | `Subscription` | `accountId` | 결제 계좌 (Account FK 포함) |
+| `Subscription` | `memo` | 구독 메모 (기능 제거) |
 
 `Workplace.color`(근무지 색상, `NOT NULL`·기본값 없음)는 `db push`로 지우지 않는다. 테이블 재생성을 피하려고 `scripts/drop-workplace-color.cjs`(`ALTER TABLE … DROP COLUMN` 한 줄)로 먼저 제거한다 (3-3 ②). 이 스크립트를 건너뛰면 `db push`가 `color`도 삭제 대상으로 표시한다.
 
@@ -356,6 +357,8 @@ docker compose up -d --no-build --force-recreate alphabank-web
 
 ## 다음에 할 일
 
+- `Account.sortOrder`(Int, 기본값 0) 컬럼이 추가된다. 컬럼 추가라 데이터 손실이 없고 `--accept-data-loss`가 필요 없다. 기존 행은 전부 0이며 조회가 `sortOrder, createdAt` 순이라 현재 순서가 유지된다.
+- `Subscription.memo` 컬럼은 `prisma db push`로 삭제된다. 데이터 손실이므로 `--accept-data-loss`가 필요하다. 실행 전 `SELECT COUNT(*) FROM "Subscription" WHERE memo IS NOT NULL AND TRIM(memo) <> '';`로 값이 들어 있는 행 수를 확인하고 백업(3-2)을 먼저 한다.
 - `Dockerfile`과 `.dockerignore`가 아직 git에 커밋되지 않았다면 커밋한다. 서버의 미추적 Dockerfile은 정리한다.
 - `Dockerfile`이 `node:20-alpine`이라 컨테이너 안에서는 libsql 스크립트를 돌릴 수 없다. 배포마다 DB 작업이 필요하면 debian 기반(`node:20-bookworm-slim`)으로 바꾸는 것을 검토한다.
 - 운영 DB의 Prisma 7 요구 Node 버전(`^20.19 || ^22.12 || >=24.0`)과 이미지의 `node:20`이 맞는지 확인한다.

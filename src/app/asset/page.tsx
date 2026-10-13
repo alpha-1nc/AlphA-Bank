@@ -10,7 +10,7 @@ export default async function AssetStatusPage() {
   try {
     accounts = await prisma.account.findMany({
       where: { userId },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
   } catch (err) {
     console.error("Asset: DB 조회 실패", err);

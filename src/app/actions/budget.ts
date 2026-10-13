@@ -175,6 +175,22 @@ export async function updateCashFlow(id: string, data: UpdateCashFlowData) {
   revalidatePath("/");
 }
 
+/**
+ * 이모지만 갱신합니다. 알바 동기화 항목(workplaceId 있음)도 허용 — 이모지는 표시용이며
+ * 금액·제목·구분·카테고리는 이 경로로 바뀌지 않습니다.
+ */
+export async function updateCashFlowEmoji(id: string, emoji: string | null) {
+  const userId = await getCurrentUserId();
+  const row = await prisma.cashFlow.findFirst({
+    where: { id, monthlyBudget: { userId } },
+    select: { id: true },
+  });
+  if (!row) return;
+  await prisma.cashFlow.update({ where: { id }, data: { emoji: normalizeEmoji(emoji) } });
+  revalidatePath("/budget");
+  revalidatePath("/");
+}
+
 export async function addCashFlow(data: AddCashFlowData) {
   const userId = await getCurrentUserId();
   const budget = await prisma.monthlyBudget.findFirst({

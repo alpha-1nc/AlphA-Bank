@@ -20,6 +20,8 @@ import {
   Top,
   useToast,
 } from "@/components/ui";
+import { SortControl, useSortState, type SortOption } from "@/components/SortControl";
+import { daysUntilBilling, formatBillingCountdown } from "@/lib/subscription-billing";
 import SubscriptionFormSheet from "./SubscriptionFormSheet";
 import {
   toggleSubscriptionActive,
@@ -35,7 +37,6 @@ interface Subscription {
   billingDay: number;
   category: string;
   isActive: boolean;
-  memo: string | null;
 }
 
 interface Props {
@@ -44,10 +45,26 @@ interface Props {
   totalMonthly: number;
 }
 
-/** 결제일이 오늘 포함 3일 이내로 임박했는지 (D-day 강조용) */
-function isBillingImminent(day: number): boolean {
-  const diff = day - new Date().getDate();
-  return diff >= 0 && diff <= 3;
+type SubSort = "amountDesc" | "amountAsc" | "billing" | "name";
+const SORT_OPTIONS: readonly SortOption<SubSort>[] = [
+  { value: "amountDesc", label: "금액 큰 순" },
+  { value: "amountAsc", label: "금액 작은 순" },
+  { value: "billing", label: "결제일 가까운 순" },
+  { value: "name", label: "이름순" },
+];
+
+/** 일시정지는 항상 맨 아래, 같은 값이면 이름순 */
+function sortSubscriptions(list: Subscription[], sort: SubSort): Subscription[] {
+  const byName = (a: Subscription, b: Subscription) => a.name.localeCompare(b.name, "ko");
+  return [...list].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    let primary = 0;
+    if (sort === "amountDesc") primary = b.amount - a.amount;
+    else if (sort === "amountAsc") primary = a.amount - b.amount;
+    else if (sort === "billing") primary = daysUntilBilling(a.billingDay) - daysUntilBilling(b.billingDay);
+    else return byName(a, b);
+    return primary || byName(a, b);
+  });
 }
 
 /** 카테고리별 아이콘 (매핑에 없으면 Repeat) */
@@ -60,20 +77,14 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   게임: Gamepad2,
 };
 
-function getBillingDayLabel(day: number): string {
-  const today = new Date().getDate();
-  const diff = day - today;
-  if (diff === 0) return "오늘 결제";
-  if (diff > 0) return `D-${diff}`;
-  return `매월 ${day}일`;
-}
-
 export default function SubscriptionBoard({ subscriptions, currentBudgetMonth, totalMonthly }: Props) {
   const [adding, setAdding] = useState(false);
   const [editTarget, setEditTarget] = useState<Subscription | null>(null);
   const [reflectedIds, setReflectedIds] = useState<Set<string>>(new Set());
   const [isPendingAll, startAllTransition] = useTransition();
   const { openToast } = useToast();
+  const [sort, setSort] = useSortState("alpha-bank:subscription-sort", SORT_OPTIONS);
+  const sorted = sortSubscriptions(subscriptions, sort);
 
   function handleAddAllToBudget() {
     startAllTransition(async () => {
@@ -128,6 +139,8 @@ export default function SubscriptionBoard({ subscriptions, currentBudgetMonth, t
         </Button>
       </div>
 
+      {subscriptions.length > 0 && <SortControl value={sort} options={SORT_OPTIONS} onChange={setSort} />}
+
       {subscriptions.length === 0 ? (
         <div className="rounded-card bg-card px-7 py-7 flex flex-col items-center justify-center text-center">
           <RefreshCw className="h-12 w-12 text-fg-disabled mb-4" />
@@ -136,11 +149,11 @@ export default function SubscriptionBoard({ subscriptions, currentBudgetMonth, t
         </div>
       ) : (
         <div className="overflow-hidden rounded-card bg-card">
-          {subscriptions.map((sub, i) => (
+          {sorted.map((sub, i) => (
             <SubscriptionRow
               key={sub.id}
               subscription={sub}
-              last={i === subscriptions.length - 1}
+              last={i === sorted.length - 1}
               onEdit={() => setEditTarget(sub)}
             />
           ))}
@@ -170,16 +183,14 @@ interface RowProps {
 function SubscriptionRow({ subscription: sub, last, onEdit }: RowProps) {
   const [isPendingToggle, startToggle] = useTransition();
 
-  const billingLabel = getBillingDayLabel(sub.billingDay);
   // 일시정지 행은 전체를 fg-disabled로 흐리게
   const off = !sub.isActive;
-  const billingColor = off
-    ? "text-fg-disabled"
-    : isBillingImminent(sub.billingDay)
-      ? "text-primary"
-      : "text-fg-tertiary";
+  // 활성: 정렬과 같은 계산(daysUntilBilling)으로 남은 일수, 일시정지: 결제가 없으니 "매월 N일"
+  const daysLeft = daysUntilBilling(sub.billingDay);
+  const billingLabel = off ? `매월 ${sub.billingDay}일` : formatBillingCountdown(daysLeft);
+  const billingColor = off ? "text-fg-disabled" : daysLeft <= 3 ? "text-primary" : "text-fg-tertiary";
 
-  const infoLine = [off ? "일시정지" : null, sub.category, sub.memo].filter(Boolean).join(" · ");
+  const infoLine = [off ? "일시정지" : null, sub.category].filter(Boolean).join(" · ");
   const Icon = CATEGORY_ICONS[sub.category] ?? Repeat;
 
   function handleToggle() {

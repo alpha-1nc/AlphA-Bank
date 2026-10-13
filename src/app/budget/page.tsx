@@ -55,9 +55,11 @@ export default async function BudgetPage({
         livingBalance={livingBalance}
       />
 
-      <ImportPreviousMonthButton currentMonth={month} />
-
-      <CashFlowBoard monthlyBudgetId={budget.id} transactions={budget.transactions} />
+      <CashFlowBoard
+        monthlyBudgetId={budget.id}
+        transactions={budget.transactions}
+        toolbarLeft={<ImportPreviousMonthButton currentMonth={month} />}
+      />
     </div>
   );
 }

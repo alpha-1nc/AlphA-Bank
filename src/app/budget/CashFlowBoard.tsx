@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { toggleCashFlow, deleteCashFlow } from "@/app/actions/budget";
 import { Button, Checkbox, ListRow, useDialog } from "@/components/ui";
 import { CASHFLOW_SECTIONS, SECTION_LABELS, getCategoryLabel, type CashFlowSection } from "@/lib/cashflow-categories";
 import { cn } from "@/lib/utils";
 import { formatWon } from "@/lib/format-money";
+import { SortControl, useSortState, type SortOption } from "@/components/SortControl";
+import EmojiOnlySheet from "./EmojiOnlySheet";
 import CashFlowFormSheet, { type CashFlowItem } from "./CashFlowFormSheet";
+
+type BudgetSort = "amountDesc" | "amountAsc" | "created";
+const SORT_OPTIONS: readonly SortOption<BudgetSort>[] = [
+  { value: "amountDesc", label: "금액 큰 순" },
+  { value: "amountAsc", label: "금액 작은 순" },
+  { value: "created", label: "등록순" },
+];
 
 /** 금액 색: 수입·저축 positive / 지출 negative */
 const SECTION_COLORS: Record<CashFlowSection, string> = {
@@ -14,6 +23,13 @@ const SECTION_COLORS: Record<CashFlowSection, string> = {
   EXPENSE: "text-negative",
   SAVING: "text-positive",
 };
+
+/** 금액 정렬은 동액이면 원래(등록) 순서 유지 — Array.sort 는 stable */
+function sortItems(items: CashFlowItem[], sort: BudgetSort): CashFlowItem[] {
+  if (sort === "created") return items;
+  const dir = sort === "amountDesc" ? -1 : 1;
+  return [...items].sort((a, b) => dir * (a.amount - b.amount));
+}
 
 /** 예산 항목 한 줄 — 탭하면 수정 모달, 오른쪽 원형 체크로 집행 완료 토글 */
 function CashFlowRow({
@@ -42,8 +58,8 @@ function CashFlowRow({
       border={last ? "none" : "indented"}
       verticalPadding="medium"
       className={cn(pending && "opacity-70")}
-      /* 알바 동기화 항목은 근무에서만 수정 → 탭 동작 없음 */
-      onClick={item.workplaceId ? undefined : onEdit}
+      /* 알바 동기화 항목은 금액·제목을 근무에서만 수정 → 탭하면 이모지 전용 시트 */
+      onClick={onEdit}
       left={
         <span className="flex h-9 w-9 items-center justify-center text-[24px] leading-none" aria-hidden>
           {item.emoji ?? ""}
@@ -87,13 +103,17 @@ function CashFlowRow({
 interface CashFlowBoardProps {
   monthlyBudgetId: string;
   transactions: CashFlowItem[];
+  /** 정렬 컨트롤과 같은 줄 왼쪽에 놓을 요소 */
+  toolbarLeft?: ReactNode;
 }
 
-export function CashFlowBoard({ monthlyBudgetId, transactions }: CashFlowBoardProps) {
+export function CashFlowBoard({ monthlyBudgetId, transactions, toolbarLeft }: CashFlowBoardProps) {
   const [adding, setAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<CashFlowItem | null>(null);
+  const [emojiItem, setEmojiItem] = useState<CashFlowItem | null>(null);
   const [togglePending, startToggleTransition] = useTransition();
   const { openConfirm } = useDialog();
+  const [sort, setSort] = useSortState("alpha-bank:budget-sort", SORT_OPTIONS);
 
   function handleToggle(item: CashFlowItem) {
     startToggleTransition(async () => {
@@ -109,8 +129,8 @@ export function CashFlowBoard({ monthlyBudgetId, transactions }: CashFlowBoardPr
   }
 
   function handleEdit(item: CashFlowItem) {
-    if (item.workplaceId) return;
-    setEditingItem(item);
+    if (item.workplaceId) setEmojiItem(item);
+    else setEditingItem(item);
   }
 
   async function handleDeleteWithConfirm(item: CashFlowItem) {
@@ -127,7 +147,8 @@ export function CashFlowBoard({ monthlyBudgetId, transactions }: CashFlowBoardPr
   const grouped = CASHFLOW_SECTIONS.map((t) => ({
     type: t,
     label: SECTION_LABELS[t],
-    items: transactions.filter((c) => c.type === t),
+    // 서버가 createdAt 오름차순으로 내려주므로 filter 결과 순서 = 등록순. 완료 여부는 정렬에 반영하지 않음
+    items: sortItems(transactions.filter((c) => c.type === t), sort),
   }));
 
   return (
@@ -136,6 +157,12 @@ export function CashFlowBoard({ monthlyBudgetId, transactions }: CashFlowBoardPr
         새 내역 추가
       </Button>
       <CashFlowFormSheet monthlyBudgetId={monthlyBudgetId} open={adding} onClose={() => setAdding(false)} />
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">{toolbarLeft}</div>
+        <div className="shrink-0">
+          <SortControl value={sort} options={SORT_OPTIONS} onChange={setSort} />
+        </div>
+      </div>
 
       <div className="space-y-7">
         {grouped.map(({ type: groupType, label, items }) => (
@@ -166,6 +193,8 @@ export function CashFlowBoard({ monthlyBudgetId, transactions }: CashFlowBoardPr
           </div>
         ))}
       </div>
+
+      {emojiItem && <EmojiOnlySheet key={emojiItem.id} item={emojiItem} onClose={() => setEmojiItem(null)} />}
 
       {editingItem && (
         <CashFlowFormSheet

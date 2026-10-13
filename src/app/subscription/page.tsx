@@ -26,7 +26,6 @@ export default async function SubscriptionPage() {
     billingDay: s.billingDay,
     category: s.category,
     isActive: s.isActive,
-    memo: s.memo,
   }));
 
   return (
