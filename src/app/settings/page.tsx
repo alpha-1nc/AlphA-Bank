@@ -19,6 +19,13 @@ export default async function SettingsPage() {
   return (
     <SettingsClient
       initialBudgetStartDate={systemSettings.budgetStartDate}
+      initialNotificationSettings={{
+        notifyBudgetStart: systemSettings.notifyBudgetStart,
+        notifyUncompleted: systemSettings.notifyUncompleted,
+        notifyPaydayEve: systemSettings.notifyPaydayEve,
+        notifyMidCycle: systemSettings.notifyMidCycle,
+        notifyHour: systemSettings.notifyHour,
+      }}
       initialWorkplaces={JSON.parse(JSON.stringify(workplaces))}
     />
   );

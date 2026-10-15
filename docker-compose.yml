@@ -5,5 +5,12 @@ services:
     restart: unless-stopped
     ports:
       - "3005:3000"
+    environment:
+      - TZ=Asia/Seoul
+      - CRON_SECRET=${CRON_SECRET:-}
+      # compose 가 같은 폴더의 .env 를 읽어 치환한다. 필요한 키만 컨테이너에 전달.
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
     volumes:
       - ./prisma:/app/prisma

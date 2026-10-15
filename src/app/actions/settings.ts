@@ -7,14 +7,40 @@ import { getCurrentUserId } from "@/lib/auth";
 export interface SystemSettingsData {
   id: string;
   budgetStartDate: number;
+  notifyBudgetStart: boolean;
+  notifyUncompleted: boolean;
+  notifyPaydayEve: boolean;
+  notifyMidCycle: boolean;
+  notifyHour: number;
   updatedAt: Date;
 }
 
 const DEFAULT_SETTINGS: SystemSettingsData = {
   id: "global",
   budgetStartDate: 1,
+  notifyBudgetStart: true,
+  notifyUncompleted: true,
+  notifyPaydayEve: true,
+  notifyMidCycle: true,
+  notifyHour: 10,
   updatedAt: new Date(),
 };
+
+/** raw SQL 행(SQLite: boolean 은 0/1, 컬럼이 아직 없으면 undefined) → 기본값 보정 */
+function fromRawRow(row: Record<string, unknown>): SystemSettingsData {
+  const bool = (v: unknown, fallback: boolean) => (v === undefined || v === null ? fallback : Boolean(Number(v)));
+  const hour = Number(row.notifyHour);
+  return {
+    id: String(row.id),
+    budgetStartDate: Number(row.budgetStartDate),
+    notifyBudgetStart: bool(row.notifyBudgetStart, DEFAULT_SETTINGS.notifyBudgetStart),
+    notifyUncompleted: bool(row.notifyUncompleted, DEFAULT_SETTINGS.notifyUncompleted),
+    notifyPaydayEve: bool(row.notifyPaydayEve, DEFAULT_SETTINGS.notifyPaydayEve),
+    notifyMidCycle: bool(row.notifyMidCycle, DEFAULT_SETTINGS.notifyMidCycle),
+    notifyHour: Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : DEFAULT_SETTINGS.notifyHour,
+    updatedAt: new Date(String(row.updatedAt)),
+  };
+}
 
 export async function getSystemSettings(): Promise<SystemSettingsData> {
   try {
@@ -29,6 +55,11 @@ export async function getSystemSettings(): Promise<SystemSettingsData> {
     return {
       id: settings.id,
       budgetStartDate: settings.budgetStartDate,
+      notifyBudgetStart: settings.notifyBudgetStart,
+      notifyUncompleted: settings.notifyUncompleted,
+      notifyPaydayEve: settings.notifyPaydayEve,
+      notifyMidCycle: settings.notifyMidCycle,
+      notifyHour: settings.notifyHour,
       updatedAt: settings.updatedAt,
     };
   } catch {
@@ -37,16 +68,13 @@ export async function getSystemSettings(): Promise<SystemSettingsData> {
 
   // Fallback: raw SQL (SystemSettings table)
   try {
-    const rows = await prisma.$queryRawUnsafe<Array<{ id: string; budgetStartDate: number; updatedAt: string }>>(
-      'SELECT "id", "budgetStartDate", "updatedAt" FROM "SystemSettings" WHERE "id" = ?',
+    // SELECT * : notify* 컬럼이 아직 DB 에 없어도(스키마 미적용) 깨지지 않고 기본값으로 보정
+    const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      'SELECT * FROM "SystemSettings" WHERE "id" = ?',
       "global"
     );
     if (rows && rows.length > 0) {
-      return {
-        id: rows[0].id,
-        budgetStartDate: rows[0].budgetStartDate,
-        updatedAt: new Date(rows[0].updatedAt),
-      };
+      return fromRawRow(rows[0]);
     }
     await prisma.$executeRawUnsafe(
       'INSERT OR IGNORE INTO "SystemSettings" ("id", "budgetStartDate", "updatedAt") VALUES (?, ?, ?)',

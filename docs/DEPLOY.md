@@ -341,6 +341,37 @@ docker compose up -d --no-build --force-recreate alphabank-web
 
 ---
 
+## 웹 푸시 알림 — cron 설정
+
+알림 판정·발송은 앱(`POST /api/push/run`)이 한다. cron 은 **매시 정각에 이 라우트를 호출하기만** 하면 된다. 한국 시각의 "시"가 설정의 알림 시각(`notifyHour`)과 같을 때만 앱이 실제로 판정·발송하고, 다르면 `{"skipped":true}` 를 돌려준다. 컨테이너 안에서 node 스크립트를 돌리지 않으므로 alpine/libsql 문제와 무관하다.
+
+### 준비
+1. 서버 `.env` 에 값을 채운다 (compose 가 `.env` 를 읽어 컨테이너에 전달한다).
+   ```bash
+   node scripts/gen-vapid.cjs     # VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT 출력 → .env 에 붙여넣기
+   openssl rand -hex 32           # 출력값을 CRON_SECRET=... 로 .env 에 추가
+   ```
+2. 스키마 반영: `PushSubscription`, `NotificationLog` 테이블과 `SystemSettings.notify*` 컬럼이 추가된다 (모두 추가라 `--accept-data-loss` 불필요).
+3. `docker compose up -d --force-recreate` — `TZ=Asia/Seoul`, `VAPID_*`, `CRON_SECRET` 이 컨테이너에 들어간다.
+
+### crontab (서버 호스트에서 직접 등록: `crontab -e`)
+`CRON_SECRET` 값은 `.env` 와 같은 값을 넣는다.
+```cron
+0 * * * * curl -fsS -m 30 -X POST -H "x-cron-secret: <CRON_SECRET 값>" http://localhost:3005/api/push/run >> /var/log/alphabank-push.log 2>&1
+```
+- 로그 파일을 쓸 수 없으면 `$HOME/alphabank-push.log` 로 바꾼다. 응답은 한 줄 JSON 이라 줄바꿈이 없으니 필요하면 `; echo` 를 덧붙인다.
+- 호스트 시간대가 UTC 여도 상관없다. 시각 판정은 앱이 한국 시각으로 한다.
+
+### 수동 테스트
+시각과 상관없이 판정·발송을 돌려 본다 (`force=1`). 조건에 맞는 알림이 없으면 `due: []` 가 나온다.
+```bash
+curl -fsS -X POST -H "x-cron-secret: <CRON_SECRET 값>" "http://localhost:3005/api/push/run?force=1"
+```
+- 응답 코드: `401` 비밀값 불일치 · `503` 서버에 `CRON_SECRET` 미설정.
+- 같은 종류는 하루(KST)에 한 번만 나간다 (`NotificationLog`). 기기에 한 건도 못 보낸 경우엔 기록을 지워서 다시 시도할 수 있다.
+
+---
+
 ## 요약 체크리스트
 
 1. [ ] (PC) 커밋·푸시. DB 파일·`.env`가 커밋에 들어가지 않았는지 확인 (`Dockerfile`·`.dockerignore`는 커밋 대상)

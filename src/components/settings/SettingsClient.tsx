@@ -19,6 +19,7 @@ import {
 } from "@/app/actions/settings";
 import type { Workplace } from "@/generated/prisma";
 import WorkplaceSettingsCard from "@/components/settings/WorkplaceSettingsCard";
+import NotificationSettingsCard, { type NotificationSettingsValues } from "@/components/settings/NotificationSettingsCard";
 import SettingsSection, { SettingsIconBox } from "@/components/settings/SettingsSection";
 
 const CONFIRM_TEXT = "AlphA Inc.";
@@ -35,11 +36,13 @@ function downloadCSV(content: string, filename: string) {
 
 interface SettingsClientProps {
   initialBudgetStartDate: number;
+  initialNotificationSettings: NotificationSettingsValues;
   initialWorkplaces: Workplace[];
 }
 
 export default function SettingsClient({
   initialBudgetStartDate,
+  initialNotificationSettings,
   initialWorkplaces,
 }: SettingsClientProps) {
   const [budgetStartDate, setBudgetStartDate] = useState(initialBudgetStartDate);
@@ -144,6 +147,11 @@ export default function SettingsClient({
           right={<span className="t5 numeric font-medium text-fg-secondary">{budgetStartDate}일</span>}
         />
       </SettingsSection>
+
+      <NotificationSettingsCard
+        initialSettings={initialNotificationSettings}
+        hasActiveWorkplace={initialWorkplaces.some((w) => w.isActive)}
+      />
 
       {/* 데이터 관리 */}
       <SettingsSection title="데이터 관리">

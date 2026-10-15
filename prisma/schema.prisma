@@ -21,6 +21,7 @@ model User {
   monthlyBudgets MonthlyBudget[]
   bucketLists   BucketList[]
   subscriptions Subscription[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -87,6 +88,11 @@ model BucketList {
 model SystemSettings {
   id              String   @id @default("global")
   budgetStartDate Int      @default(1) // 예산 시작일 (1~31)
+  notifyBudgetStart Boolean @default(true) // 예산 기간 시작 7일 전
+  notifyUncompleted Boolean @default(true) // 기간 끝 하루 전 미집행 항목
+  notifyPaydayEve   Boolean @default(true) // 월급 전날
+  notifyMidCycle    Boolean @default(true) // 월급 +15일
+  notifyHour        Int     @default(10)   // 발송 시각 (0~23)
   updatedAt       DateTime @updatedAt
 }
 
@@ -167,4 +173,29 @@ model WorkRecord {
 
   @@index([workplaceId])
   @@index([date])
+}
+
+model PushSubscription {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint      String    @unique
+  p256dh        String
+  auth          String
+  userAgent     String?   // 어느 기기인지 구분용
+  createdAt     DateTime  @default(now())
+  lastSuccessAt DateTime?
+  failureCount  Int       @default(0)
+
+  @@index([userId])
+}
+
+/// 알림 중복 발송 방지: 같은 종류를 같은 날(KST) 두 번 보내지 않는다. (test 는 기록하지 않음)
+model NotificationLog {
+  id        String   @id @default(uuid())
+  type      String   // budget_start | uncompleted | payday_eve | mid_cycle | test
+  sentOn    String   // 발송한 한국 날짜 YYYY-MM-DD
+  createdAt DateTime @default(now())
+
+  @@unique([type, sentOn])
 }
