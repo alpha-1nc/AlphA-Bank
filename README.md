@@ -1,5 +1,5 @@
 # AlphA Bank
-개인 가계·예산 관리 웹앱. 홈서버에서 Docker로 운영합니다.
+개인 재무관리(예산·자산) 웹앱. 홈서버에서 Docker로 운영합니다.
 
 - 주소: bank.alphaintlgroup.com (Cloudflare Zero Trust 이메일 인증 필요)
 - 인프라 구성: [alpha-infra](https://github.com/alpha-1nc/alpha-infra)
